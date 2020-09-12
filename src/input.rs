@@ -107,7 +107,7 @@ impl Input {
 }
 
 fn set_handler<E, F>(
-    canvas: &HtmlCanvasElement,
+    _canvas: &HtmlCanvasElement,
     event_name: &str,
     mut handler: F,
 ) -> EventHandler<E>
@@ -117,6 +117,9 @@ where
 {
     // Source:
     // https://github.com/rust-windowing/winit/blob/e4754999b7e7f27786092a62eda5275672d74130/src/platform_impl/web/web_sys/canvas.rs#L295
+
+    // For now, we just use the window callbacks, instead of limiting ourselves
+    // to the canvas. Why bother with all this focus stuff anyway?
 
     let closure = Closure::wrap(Box::new(move |event: E| {
         {
@@ -128,7 +131,8 @@ where
         handler(event);
     }) as Box<dyn FnMut(E)>);
 
-    canvas
+    web_sys::window()
+        .unwrap()
         .add_event_listener_with_callback(event_name, &closure.as_ref().unchecked_ref())
         .expect("Failed to add event listener with callback");
 

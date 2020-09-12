@@ -5,6 +5,8 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError};
 
+use crate::Input;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("no window")]
@@ -31,6 +33,7 @@ pub enum Error {
 
 pub struct Context {
     canvas: HtmlCanvasElement,
+    input: Input,
     golem_context: golem::Context,
 }
 
@@ -49,6 +52,7 @@ impl Context {
     }
 
     pub fn from_canvas_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
+        let input = Input::new(&canvas)?;
         let webgl_context = canvas
             .get_context("webgl")
             .map_err(Error::GetContext)?
@@ -60,8 +64,17 @@ impl Context {
 
         Ok(Context {
             canvas,
+            input,
             golem_context,
         })
+    }
+
+    pub fn input(&self) -> &Input {
+        &self.input
+    }
+
+    pub fn input_mut(&mut self) -> &mut Input {
+        &mut self.input
     }
 }
 
