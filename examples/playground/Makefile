@@ -1,8 +1,8 @@
 build:
 	wasm-pack build --target web --no-typescript
-	cp pkg/playground.js pkg/playground_bg.wasm static/
+	cp static/* pkg/
 
 run: build
-	(cd static && python3 -m http.server)
+	(cd pkg && python3 -m http.server)
 
 .PHONY: build run
