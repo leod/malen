@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+log = "0.4"
 thiserror = "1.0"
 wasm-bindgen = "0.2"
 golem = { version = "0.1.7", features = ["web-sys"] }
@@ -17,4 +18,7 @@ features = [
     "WebGlRenderingContext",
     "HtmlCanvasElement",
     "Window",
+    "KeyboardEvent",
+    "Event",
+    "FocusEvent",
 ]
