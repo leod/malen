@@ -18,7 +18,7 @@ If the `Makefile` does not work for you, you can run the steps manually.
 Build:
 ```
 wasm-pack build --target web --no-typescript
-cp pkg/{playground.js,playground_bg.wasm} static/
+cp static/* pkg/
 ```
 
 Run:
