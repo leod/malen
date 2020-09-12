@@ -1,12 +1,6 @@
-pub mod draw;
+pub mod context;
 
 pub use golem;
 pub use golem::glow;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use context::{Context, Error};
