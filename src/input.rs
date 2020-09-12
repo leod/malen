@@ -51,7 +51,7 @@ pub struct Input {
     state: Rc<RefCell<State>>,
     _on_focus: EventHandler<FocusEvent>,
     _on_blur: EventHandler<FocusEvent>,
-    _on_key_press: EventHandler<KeyboardEvent>,
+    _on_key_down: EventHandler<KeyboardEvent>,
     _on_key_release: EventHandler<KeyboardEvent>,
 }
 
@@ -75,7 +75,7 @@ impl Input {
                 state.events.push_back(Event::Unfocused);
             }
         });
-        let on_key_press = set_handler(canvas, "keypress", {
+        let on_key_down = set_handler(canvas, "keydown", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {
@@ -96,7 +96,7 @@ impl Input {
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,
-            _on_key_press: on_key_press,
+            _on_key_down: on_key_down,
             _on_key_release: on_key_release,
         })
     }
