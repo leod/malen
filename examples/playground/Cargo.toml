@@ -12,5 +12,5 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 webglee = { path = "../../" }
 wasm-bindgen = "0.2"
-web_logger = "0.2"
+console_log = "0.2"
 log = "0.4"

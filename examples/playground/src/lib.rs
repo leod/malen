@@ -4,7 +4,7 @@ use webglee::Event::*;
 
 #[wasm_bindgen(start)]
 pub fn main() {
-    web_logger::init();
+    console_log::init_with_level(log::Level::Debug);
     log::info!("Hi, starting the example");
 
     let mut context = webglee::Context::from_canvas_id("canvas").unwrap();
@@ -21,6 +21,9 @@ pub fn main() {
                 }
                 KeyPressed(key) => {
                     log::info!("key pressed: {:?}", key);
+                }
+                WindowResized(size) => {
+                    log::info!("window resized to: {:?}", size);
                 }
                 _ => (),
             }

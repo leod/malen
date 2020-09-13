@@ -24,13 +24,10 @@ pub fn main_loop(mut callback: impl FnMut(Duration, &mut bool) + 'static) {
     let mut running = true;
 
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move |timestamp: f64| {
-        let dt = last_timestamp.map_or(
-            Duration::from_secs(0),
-            |last_timestamp: f64| {
-                let dt_ms = (timestamp - last_timestamp).max(0.0);
-                Duration::from_secs_f64(dt_ms / 1000.0)
-            },
-        );
+        let dt = last_timestamp.map_or(Duration::from_secs(0), |last_timestamp: f64| {
+            let dt_ms = (timestamp - last_timestamp).max(0.0);
+            Duration::from_secs_f64(dt_ms / 1000.0)
+        });
         last_timestamp = Some(timestamp);
 
         callback(dt, &mut running);

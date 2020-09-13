@@ -7,6 +7,8 @@ use std::{
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
 
+use nalgebra as na;
+
 use crate::Error;
 
 #[derive(Debug, Clone)]
@@ -15,6 +17,7 @@ pub enum Event {
     Unfocused,
     KeyPressed(VirtualKeyCode),
     KeyReleased(VirtualKeyCode),
+    WindowResized(na::Vector2<f64>),
 }
 
 type EventHandler<T> = Closure<dyn FnMut(T)>;
@@ -53,13 +56,16 @@ pub struct Input {
     _on_blur: EventHandler<FocusEvent>,
     _on_key_down: EventHandler<KeyboardEvent>,
     _on_key_release: EventHandler<KeyboardEvent>,
+    _on_resize: EventHandler<web_sys::Event>,
 }
 
 impl Input {
-    pub fn new(canvas: &HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn new(_canvas: &HtmlCanvasElement) -> Result<Self, Error> {
         let state = Rc::new(RefCell::new(State::default()));
 
-        let on_focus = set_handler(canvas, "focus", {
+        let window = web_sys::window().ok_or(Error::NoWindow)?;
+
+        let on_focus = set_handler(&window, "focus", {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
@@ -67,7 +73,8 @@ impl Input {
                 state.events.push_back(Event::Focused);
             }
         });
-        let on_blur = set_handler(canvas, "blur", {
+
+        let on_blur = set_handler(&window, "blur", {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
@@ -75,7 +82,8 @@ impl Input {
                 state.events.push_back(Event::Unfocused);
             }
         });
-        let on_key_down = set_handler(canvas, "keydown", {
+
+        let on_key_down = set_handler(&window, "keydown", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {
@@ -83,11 +91,32 @@ impl Input {
                 }
             }
         });
-        let on_key_release = set_handler(canvas, "keyrelease", {
+
+        let on_key_release = set_handler(&window, "keyrelease", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {
                     state.borrow_mut().events.push_back(Event::KeyReleased(key));
+                }
+            }
+        });
+
+        let on_resize = set_handler(&window.clone(), "resize", {
+            let state = state.clone();
+            move |_| {
+                let width = window.inner_width().map(|w| w.as_f64());
+                let height = window.inner_height().map(|w| w.as_f64());
+                if let (Ok(Some(width)), Ok(Some(height))) = (&width, &height) {
+                    state
+                        .borrow_mut()
+                        .events
+                        .push_back(Event::WindowResized(na::Vector2::new(*width, *height)));
+                } else {
+                    log::warn!(
+                        "Failed to read innerWidth/innerHeight from window. Got: {:?}, {:?}",
+                        width,
+                        height
+                    );
                 }
             }
         });
@@ -98,6 +127,7 @@ impl Input {
             _on_blur: on_blur,
             _on_key_down: on_key_down,
             _on_key_release: on_key_release,
+            _on_resize: on_resize,
         })
     }
 
@@ -106,20 +136,14 @@ impl Input {
     }
 }
 
-fn set_handler<E, F>(
-    _canvas: &HtmlCanvasElement,
-    event_name: &str,
-    mut handler: F,
-) -> EventHandler<E>
+fn set_handler<T, E, F>(target: T, event_name: &str, mut handler: F) -> EventHandler<E>
 where
+    T: AsRef<web_sys::EventTarget>,
     E: 'static + AsRef<web_sys::Event> + FromWasmAbi,
     F: 'static + FnMut(E),
 {
     // Source:
     // https://github.com/rust-windowing/winit/blob/e4754999b7e7f27786092a62eda5275672d74130/src/platform_impl/web/web_sys/canvas.rs#L295
-
-    // For now, we just use the window callbacks, instead of limiting ourselves
-    // to the canvas. Why bother with all this focus stuff anyway?
 
     let closure = Closure::wrap(Box::new(move |event: E| {
         {
@@ -131,8 +155,8 @@ where
         handler(event);
     }) as Box<dyn FnMut(E)>);
 
-    web_sys::window()
-        .unwrap()
+    target
+        .as_ref()
         .add_event_listener_with_callback(event_name, &closure.as_ref().unchecked_ref())
         .expect("Failed to add event listener with callback");
 
