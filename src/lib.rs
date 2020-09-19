@@ -1,3 +1,6 @@
+//! `webglee` is yet another one of these libraries for 2D web game
+//! development.
+
 mod context;
 pub mod geom;
 mod input;
