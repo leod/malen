@@ -1,35 +1,9 @@
-use thiserror::Error;
-
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError};
 
-use crate::Input;
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("no window")]
-    NoWindow,
-
-    #[error("no document")]
-    NoDocument,
-
-    #[error("could not find HTML element with id `{0}`")]
-    InvalidElementId(String),
-
-    #[error("HTML element with id `{0}` is not a canvas")]
-    ElementIsNotCanvas(String),
-
-    #[error("error from golem crate: {0}")]
-    Golem(GolemError),
-
-    #[error("could not get WebGL1 context")]
-    GetContext(JsValue),
-
-    #[error("could not initialize WebGL1")]
-    InitializeWebGl,
-}
+use crate::{Error, Input};
 
 pub struct Context {
     canvas: HtmlCanvasElement,
