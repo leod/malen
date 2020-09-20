@@ -15,7 +15,7 @@ pub use context::Context;
 pub use input::{Event, Input, KeysState, VirtualKeyCode};
 pub use main_loop::main_loop;
 
-pub use geom::{Matrix2, Matrix3, Point2, Point3, Vector2, Vector3};
+pub use geom::{Matrix2, Matrix3, Point2, Point3, Vector2, Vector3, Camera};
 
 pub type Color = nalgebra::Point4<f32>;
 

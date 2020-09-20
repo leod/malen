@@ -7,6 +7,20 @@ pub type Vector3 = na::Vector3<f32>;
 pub type Matrix2 = na::Matrix2<f32>;
 pub type Matrix3 = na::Matrix3<f32>;
 
+pub fn matrix3_to_flat_array(m: &Matrix3) -> [f32; 9] {
+    [
+        m[(0, 0)],
+        m[(1, 0)],
+        m[(2, 0)],
+        m[(0, 1)],
+        m[(1, 1)],
+        m[(2, 1)],
+        m[(0, 2)],
+        m[(1, 2)],
+        m[(2, 2)],
+    ]
+}
+
 /// Build a 3x3 matrix that applies transformations in this order: first
 /// translation, then scaling and rotation.
 pub fn translate_rotate_scale(offset: Vector2, angle: f32, scale: Vector2) -> Matrix3 {
