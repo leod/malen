@@ -2,10 +2,10 @@ use std::marker::PhantomData;
 
 use golem::{
     Attribute, AttributeType, Dimension, ElementBuffer, GeometryMode, ShaderDescription,
-    ShaderProgram, Uniform, UniformType, VertexBuffer,
+    ShaderProgram, Uniform, UniformType, VertexBuffer, UniformValue,
 };
 
-use crate::{Color, Error, Matrix3, Vector2, Vector3};
+use crate::{Color, Error, Matrix3, Vector2, Vector3, geom::matrix3_to_flat_array};
 
 pub trait Sprite {
     fn attributes() -> Vec<Attribute>;
@@ -59,14 +59,41 @@ impl Sprite for ColorSprite {
     }
 }
 
-#[derive(Default)]
-pub struct SpriteStage<S> {
+#[derive(Debug, Clone)]
+pub struct SpriteList<S> {
     vertices: Vec<f32>,
     elements: Vec<u32>,
     _phantom: PhantomData<S>,
 }
 
-impl<S: Sprite> SpriteStage<S> {
+impl<S> Default for SpriteList<S> {
+    fn default() -> Self {
+        Self {
+            vertices: Vec::new(),
+            elements: Vec::new(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<S, T> From<T> for SpriteList<S>
+where
+    T: IntoIterator<Item = S>,
+{
+    fn from(sprites: T) -> Self {
+        let mut list = SpriteList::new();
+        list.extend(sprites);
+        list
+    }
+}
+
+impl<S> SpriteList<S> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl<S: Sprite> SpriteList<S> {
     pub fn push(&mut self, sprite: S) {
         let first_idx = self.vertices.len() as u32;
 
@@ -107,7 +134,7 @@ impl<S: Sprite> SpriteBatch<S> {
         })
     }
 
-    pub fn set_data(&mut self, data: &SpriteStage<S>) {
+    pub fn set_data(&mut self, data: &SpriteList<S>) {
         self.vertices.set_data(&data.vertices);
         self.elements.set_data(&data.elements);
     }
@@ -153,7 +180,17 @@ impl SpritePass<ColorSprite> {
         })
     }
 
-    pub fn draw(&self, batch: &SpriteBatch<ColorSprite>) -> Result<(), Error> {
+    pub fn draw(
+        &mut self,
+        projection: &Matrix3,
+        view: &Matrix3,
+        batch: &SpriteBatch<ColorSprite>,
+    ) -> Result<(), Error> {
+        let projection_view = projection * view;
+
+        self.shader.bind();
+        self.shader.set_uniform("mat_projection_view", UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)))?;
+
         unsafe {
             self.shader.draw(
                 &batch.vertices,

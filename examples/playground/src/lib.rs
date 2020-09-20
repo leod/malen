@@ -1,5 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use webglee::{Camera, draw::{ColorSprite, SpriteBatch, SpriteList, SpritePass}};
+
 use webglee::Event::*;
 
 #[wasm_bindgen(start)]
@@ -9,6 +11,12 @@ pub fn main() {
 
     let mut context = webglee::Context::from_canvas_id("canvas").unwrap();
     log::info!("Initialized webglee context");
+
+    let sprite_pass = SpritePass::new(context.golem_context());
+    let sprite_batch = SpriteBatch::new();
+    let sprite_list = SpriteList::new();
+
+    sprite_stage.
 
     webglee::main_loop(move |dt, _running| {
         while let Some(event) = context.input_mut().pop_event() {
