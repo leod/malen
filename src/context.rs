@@ -3,7 +3,12 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError};
 
-use crate::{Error, Input};
+use crate::{Error, Input, Vector2};
+
+#[derive(Debug, Clone)]
+pub struct Screen {
+    pub size: Vector2,
+}
 
 pub struct Context {
     canvas: HtmlCanvasElement,
@@ -49,6 +54,16 @@ impl Context {
 
     pub fn input_mut(&mut self) -> &mut Input {
         &mut self.input
+    }
+
+    pub fn screen(&self) -> Screen {
+        Screen {
+            size: Vector2::new(self.canvas.width() as f32, self.canvas.height() as f32)
+        }
+    }
+
+    pub fn golem_context(&self) -> &golem::Context {
+        &self.golem_context
     }
 }
 

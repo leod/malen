@@ -28,5 +28,12 @@ pub fn main() {
                 _ => (),
             }
         }
-    })
+
+        let golem_ctx = context.golem_context();
+        let screen = context.screen();
+
+        golem_ctx.set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
+        golem_ctx.set_clear_color(1.0, 1.0, 0.0, 1.0);
+        golem_ctx.clear();
+    });
 }
