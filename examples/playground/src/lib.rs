@@ -1,25 +1,29 @@
 use wasm_bindgen::prelude::wasm_bindgen;
-
-use webglee::{Camera, draw::{ColorSprite, SpriteBatch, SpriteList, SpritePass}};
-
 use webglee::Event::*;
+use webglee::{
+    draw::{ColorSprite, SpriteBatch, SpriteList, SpritePass},
+    na, Camera, Color, Matrix3, Point3, Vector2,
+};
 
 #[wasm_bindgen(start)]
 pub fn main() {
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Hi, starting the example");
 
-    let mut context = webglee::Context::from_canvas_id("canvas").unwrap();
+    let mut ctx = webglee::Context::from_canvas_id("canvas").unwrap();
     log::info!("Initialized webglee context");
 
-    let sprite_pass = SpritePass::new(context.golem_context());
-    let sprite_batch = SpriteBatch::new();
-    let sprite_list = SpriteList::new();
-
-    sprite_stage.
+    let mut sprite_pass = SpritePass::new(ctx.golem_context()).unwrap();
+    let sprite_list = vec![ColorSprite::new_axis_aligned(
+        Point3::new(300.0, 300.0, 0.5),
+        Vector2::new(300.0, 300.0),
+        Color::new(1.0, 0.0, 0.0, 1.0),
+    )]
+    .into();
+    let sprite_batch = SpriteBatch::from_list(ctx.golem_context(), &sprite_list).unwrap();
 
     webglee::main_loop(move |dt, _running| {
-        while let Some(event) = context.input_mut().pop_event() {
+        while let Some(event) = ctx.input_mut().pop_event() {
             match event {
                 Focused => {
                     log::info!("got focus");
@@ -37,11 +41,19 @@ pub fn main() {
             }
         }
 
-        let golem_ctx = context.golem_context();
-        let screen = context.screen();
+        let screen = ctx.screen();
+        let golem_ctx = ctx.golem_context();
 
         golem_ctx.set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
         golem_ctx.set_clear_color(1.0, 1.0, 0.0, 1.0);
         golem_ctx.clear();
+
+        sprite_pass
+            .draw(
+                &screen.orthographic_projection(),
+                &Matrix3::identity(),
+                &sprite_batch,
+            )
+            .unwrap();
     });
 }

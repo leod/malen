@@ -2,12 +2,35 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError};
+use nalgebra as na;
 
-use crate::{Error, Input, Vector2};
+use crate::{Error, Input, Matrix3, Vector2};
 
 #[derive(Debug, Clone)]
 pub struct Screen {
+    /// The screen size in pixels.
     pub size: Vector2,
+}
+
+impl Screen {
+    /// Returns an orthographic projection matrix.
+    ///
+    /// The returned matrix maps `[0..width] x [0..height]` to
+    /// `[-1..1] x [-1..1]` (i.e. the OpenGL normalized device coordinates).
+    /// Z coordinates are not transformed at all.
+    ///
+    /// Note that this projection also flips the Y axis, so that (0,0) is at
+    /// the top-left of your screen.
+    pub fn orthographic_projection(&self) -> Matrix3 {
+        let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
+            1.0 / self.size.x,
+            1.0 / self.size.y,
+        ));
+        let shift = na::Matrix3::new_translation(&-Vector2::new(-0.5, -0.5));
+        let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
+
+        scale_and_flip_y * shift * scale_to_unit
+    }
 }
 
 pub struct Context {
@@ -58,7 +81,7 @@ impl Context {
 
     pub fn screen(&self) -> Screen {
         Screen {
-            size: Vector2::new(self.canvas.width() as f32, self.canvas.height() as f32)
+            size: Vector2::new(self.canvas.width() as f32, self.canvas.height() as f32),
         }
     }
 

@@ -1,11 +1,16 @@
 use std::marker::PhantomData;
 
+use nalgebra as na;
+
 use golem::{
     Attribute, AttributeType, Dimension, ElementBuffer, GeometryMode, ShaderDescription,
-    ShaderProgram, Uniform, UniformType, VertexBuffer, UniformValue,
+    ShaderProgram, Uniform, UniformType, UniformValue, VertexBuffer,
 };
 
-use crate::{Color, Error, Matrix3, Vector2, Vector3, geom::matrix3_to_flat_array};
+use crate::{
+    geom::{matrix3_to_flat_array, scale_translate3},
+    Color, Error, Matrix3, Point3, Vector2, Vector3,
+};
 
 pub trait Sprite {
     fn attributes() -> Vec<Attribute>;
@@ -16,6 +21,15 @@ pub trait Sprite {
 pub struct ColorSprite {
     pub transform: Matrix3,
     pub color: Color,
+}
+
+impl ColorSprite {
+    pub fn new_axis_aligned(pos: Point3, size: Vector2, color: Color) -> Self {
+        Self {
+            transform: scale_translate3(size, pos.coords),
+            color,
+        }
+    }
 }
 
 impl Sprite for ColorSprite {
@@ -46,6 +60,8 @@ impl Sprite for ColorSprite {
         // data to GPU, since we don't have access to UBOs and SSBOs.
         for corner in &corners {
             let corner_world = self.transform * Vector3::new(corner.x, corner.y, 1.0);
+
+            log::info!("{} -> {}", corner, corner_world);
 
             out.push(corner_world.x);
             out.push(corner_world.y);
@@ -79,6 +95,7 @@ impl<S> Default for SpriteList<S> {
 impl<S, T> From<T> for SpriteList<S>
 where
     T: IntoIterator<Item = S>,
+    S: Sprite,
 {
     fn from(sprites: T) -> Self {
         let mut list = SpriteList::new();
@@ -122,6 +139,7 @@ impl<S: Sprite> SpriteList<S> {
 pub struct SpriteBatch<S> {
     vertices: VertexBuffer,
     elements: ElementBuffer,
+    num_elements: usize,
     _phantom: PhantomData<S>,
 }
 
@@ -130,13 +148,22 @@ impl<S: Sprite> SpriteBatch<S> {
         Ok(Self {
             vertices: VertexBuffer::new(ctx)?,
             elements: ElementBuffer::new(ctx)?,
+            num_elements: 0,
             _phantom: PhantomData,
         })
+    }
+
+    pub fn from_list(ctx: &golem::Context, data: &SpriteList<S>) -> Result<Self, Error> {
+        let mut result = Self::new(ctx)?;
+        result.set_data(data);
+        Ok(result)
     }
 
     pub fn set_data(&mut self, data: &SpriteList<S>) {
         self.vertices.set_data(&data.vertices);
         self.elements.set_data(&data.elements);
+
+        self.num_elements = data.elements.len() / 6;
     }
 }
 
@@ -161,8 +188,8 @@ impl SpritePass<ColorSprite> {
                 )],
                 vertex_shader: r#"
                 void main() {
-                    vec3 p = mat_projection_view * vec3(a_world_pos);
-                    gl_Position = vec4(p.xy, a_world_pos.z, 1.0);
+                    vec3 p = mat_projection_view * a_world_pos;
+                    gl_Position = vec4(p, 1.0);
                     v_color = a_color;
                 }
                 "#,
@@ -189,14 +216,17 @@ impl SpritePass<ColorSprite> {
         let projection_view = projection * view;
 
         self.shader.bind();
-        self.shader.set_uniform("mat_projection_view", UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)))?;
+        self.shader.set_uniform(
+            "mat_projection_view",
+            UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
+        )?;
 
         unsafe {
             self.shader.draw(
                 &batch.vertices,
                 &batch.elements,
-                0..batch.elements.size(),
-                GeometryMode::TriangleStrip,
+                0..batch.num_elements,
+                GeometryMode::Triangles,
             )?;
         }
 
