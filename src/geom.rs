@@ -22,6 +22,25 @@ pub fn matrix3_to_flat_array(m: &Matrix3) -> [f32; 9] {
 }
 
 /// Build a 3x3 matrix that applies transformations in this order: first
+/// scaling, then translation
+pub fn scale_translate3(scale: Vector2, offset: Vector3) -> Matrix3 {
+    #[rustfmt::skip]
+    let transform = na::Matrix3::new(
+        scale.x, 0.0,     offset.x,
+        0.0,     scale.y, offset.y,
+        0.0,     0.0,     offset.z,
+    );
+
+    transform
+}
+
+/// Build a 3x3 matrix that applies transformations in this order: first
+/// scaling, then translation
+pub fn scale_translate(scale: Vector2, offset: Vector2) -> Matrix3 {
+    scale_translate3(scale, Vector3::new(offset.x, offset.y, 0.0))
+}
+
+/// Build a 3x3 matrix that applies transformations in this order: first
 /// translation, then scaling and rotation.
 pub fn translate_rotate_scale(offset: Vector2, angle: f32, scale: Vector2) -> Matrix3 {
     // TODO: The point is that we can write this without using matrix
@@ -29,6 +48,16 @@ pub fn translate_rotate_scale(offset: Vector2, angle: f32, scale: Vector2) -> Ma
     na::Matrix3::new_nonuniform_scaling(&scale)
         * na::Matrix3::new_rotation(angle)
         * na::Matrix3::new_translation(&offset)
+}
+
+/// Build a 3x3 matrix that applies transformations in this order: first
+/// scaling, then rotation, and finally translation.
+pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Matrix3 {
+    // TODO: The point is that we can write this without using matrix
+    //       multiplications.
+    na::Matrix3::new_translation(&offset)
+        * na::Matrix3::new_rotation(angle)
+        * na::Matrix3::new_nonuniform_scaling(&scale)
 }
 
 #[derive(Debug, Clone)]

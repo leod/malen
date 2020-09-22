@@ -1,3 +1,3 @@
 mod sprite;
 
-pub use sprite::{Sprite, SpriteBatch, SpritePass, SpriteStage, ColorSprite};
+pub use sprite::{ColorSprite, Sprite, SpriteBatch, SpriteList, SpritePass};
