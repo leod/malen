@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use webglee::Event::*;
 use webglee::{
     draw::{ColorSprite, SpriteBatch, SpriteList, SpritePass},
-    na, Camera, Color, Matrix3, Point3, Vector2,
+    na, Camera, Color, Matrix3, Point3, Vector2, Vector3,
 };
 
 #[wasm_bindgen(start)]
@@ -15,8 +15,8 @@ pub fn main() {
 
     let mut sprite_pass = SpritePass::new(ctx.golem_context()).unwrap();
     let sprite_list = vec![ColorSprite::new_axis_aligned(
-        Point3::new(300.0, 300.0, 0.5),
-        Vector2::new(300.0, 300.0),
+        Point3::new(320.0, 240.0, 0.5),
+        Vector2::new(100.0, 100.0),
         Color::new(1.0, 0.0, 0.0, 1.0),
     )]
     .into();

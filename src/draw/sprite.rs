@@ -61,17 +61,16 @@ impl Sprite for ColorSprite {
         for corner in &corners {
             let corner_world = self.transform * Vector3::new(corner.x, corner.y, 1.0);
 
-            log::info!("{} -> {}", corner, corner_world);
-
-            out.push(corner_world.x);
-            out.push(corner_world.y);
-            out.push(corner_world.z);
+            out.extend_from_slice(&[
+                corner_world.x,
+                corner_world.y,
+                corner_world.z,
+                self.color.x,
+                self.color.y,
+                self.color.z,
+                self.color.w,
+            ]);
         }
-
-        out.push(self.color.x);
-        out.push(self.color.y);
-        out.push(self.color.z);
-        out.push(self.color.w);
     }
 }
 
@@ -163,7 +162,7 @@ impl<S: Sprite> SpriteBatch<S> {
         self.vertices.set_data(&data.vertices);
         self.elements.set_data(&data.elements);
 
-        self.num_elements = data.elements.len() / 6;
+        self.num_elements = data.elements.len();
     }
 }
 
@@ -188,8 +187,8 @@ impl SpritePass<ColorSprite> {
                 )],
                 vertex_shader: r#"
                 void main() {
-                    vec3 p = mat_projection_view * a_world_pos;
-                    gl_Position = vec4(p, 1.0);
+                    vec3 p = mat_projection_view * vec3(a_world_pos.xy, 1.0);
+                    gl_Position = vec4(p.xy, a_world_pos.z, 1.0);
                     v_color = a_color;
                 }
                 "#,
