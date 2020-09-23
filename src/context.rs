@@ -4,7 +4,7 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 use golem::{glow, GolemError};
 use nalgebra as na;
 
-use crate::{Error, Input, Matrix3, Vector2};
+use crate::{Error, Input, Matrix3, Vector2, Vector3};
 
 #[derive(Debug, Clone)]
 pub struct Screen {
@@ -17,16 +17,17 @@ impl Screen {
     ///
     /// The returned matrix maps `[0..width] x [0..height]` to
     /// `[-1..1] x [-1..1]` (i.e. the OpenGL normalized device coordinates).
-    /// Z coordinates are not transformed at all.
     ///
-    /// Note that this projection also flips the Y axis, so that (0,0) is at
-    /// the top-left of your screen.
+    /// Notes:
+    /// - This projection also flips the Y axis, so that (0,0) is at the
+    ///   top-left of your screen.
+    /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3 {
         let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
             1.0 / self.size.x,
             1.0 / self.size.y,
         ));
-        let shift = na::Matrix3::new_translation(&-Vector2::new(-0.5, -0.5));
+        let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
 
         scale_and_flip_y * shift * scale_to_unit
