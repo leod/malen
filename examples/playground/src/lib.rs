@@ -10,7 +10,7 @@ pub fn main() {
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Hi, starting the example");
 
-    let mut ctx = webglee::Context::from_canvas_id("canvas").unwrap();
+    let ctx = webglee::Context::from_canvas_id("canvas").unwrap();
     log::info!("Initialized webglee context");
 
     let mut sprite_pass = SpritePass::new(ctx.golem_context()).unwrap();
@@ -22,8 +22,8 @@ pub fn main() {
     .into();
     let sprite_batch = SpriteBatch::from_list(ctx.golem_context(), &sprite_list).unwrap();
 
-    webglee::main_loop(move |dt, _running| {
-        while let Some(event) = ctx.input_mut().pop_event() {
+    ctx.main_loop(move |ctx, _dt, events, _running| {
+        for event in events {
             match event {
                 Focused => {
                     log::info!("got focus");
@@ -55,5 +55,6 @@ pub fn main() {
                 &sprite_batch,
             )
             .unwrap();
-    });
+    })
+    .unwrap();
 }

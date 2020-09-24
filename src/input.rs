@@ -46,7 +46,7 @@ impl InputState {
 
 #[derive(Default, Debug, Clone)]
 struct State {
-    events: VecDeque<Event>,
+    events: Vec<Event>,
 }
 
 pub struct EventHandlers {
@@ -69,7 +69,7 @@ impl EventHandlers {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.events.push_back(Event::Focused);
+                state.events.push(Event::Focused);
             }
         });
 
@@ -77,7 +77,7 @@ impl EventHandlers {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.events.push_back(Event::Unfocused);
+                state.events.push(Event::Unfocused);
             }
         });
 
@@ -85,7 +85,7 @@ impl EventHandlers {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push_back(Event::KeyPressed(key));
+                    state.borrow_mut().events.push(Event::KeyPressed(key));
                 }
             }
         });
@@ -94,7 +94,7 @@ impl EventHandlers {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push_back(Event::KeyReleased(key));
+                    state.borrow_mut().events.push(Event::KeyReleased(key));
                 }
             }
         });
@@ -108,7 +108,7 @@ impl EventHandlers {
                     state
                         .borrow_mut()
                         .events
-                        .push_back(Event::WindowResized(na::Vector2::new(*width, *height)));
+                        .push(Event::WindowResized(na::Vector2::new(*width, *height)));
                 } else {
                     log::warn!(
                         "Failed to read innerWidth/innerHeight from window. Got: {:?}, {:?}",
@@ -130,8 +130,8 @@ impl EventHandlers {
         })
     }
 
-    pub fn pop_event(&mut self) -> Option<Event> {
-        self.state.borrow_mut().events.pop_front()
+    pub fn take_events(&mut self) -> Vec<Event> {
+        std::mem::replace(&mut self.state.borrow_mut().events, Vec::new())
     }
 }
 
