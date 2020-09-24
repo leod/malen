@@ -24,3 +24,8 @@ features = [
     "Event",
     "FocusEvent",
 ]
+
+[workspace]
+members = [
+    "examples/playground",
+]
