@@ -23,11 +23,11 @@ pub enum Event {
 type EventHandler<T> = Closure<dyn FnMut(T)>;
 
 #[derive(Debug, Clone, Default)]
-pub struct KeysState {
+pub struct InputState {
     pressed_keys: BTreeSet<VirtualKeyCode>,
 }
 
-impl KeysState {
+impl InputState {
     pub fn on_event(&mut self, event: &Event) {
         match event {
             Event::Unfocused => {

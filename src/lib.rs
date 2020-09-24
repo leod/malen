@@ -13,7 +13,7 @@ pub use golem::glow;
 pub use nalgebra as na;
 
 pub use context::Context;
-pub use input::{Event, KeysState, VirtualKeyCode};
+pub use input::{Event, InputState, VirtualKeyCode};
 pub use main_loop::main_loop;
 
 pub use geom::{Camera, Matrix2, Matrix3, Point2, Point3, Vector2, Vector3};
