@@ -46,11 +46,11 @@ impl KeysState {
 
 #[derive(Default, Debug, Clone)]
 struct State {
-    is_focused: bool,
     events: VecDeque<Event>,
 }
 
-pub struct Input {
+pub struct EventHandlers {
+    canvas: HtmlCanvasElement,
     state: Rc<RefCell<State>>,
     _on_focus: EventHandler<FocusEvent>,
     _on_blur: EventHandler<FocusEvent>,
@@ -59,8 +59,8 @@ pub struct Input {
     _on_resize: EventHandler<web_sys::Event>,
 }
 
-impl Input {
-    pub fn new(_canvas: &HtmlCanvasElement) -> Result<Self, Error> {
+impl EventHandlers {
+    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, Error> {
         let state = Rc::new(RefCell::new(State::default()));
 
         let window = web_sys::window().ok_or(Error::NoWindow)?;
@@ -69,7 +69,6 @@ impl Input {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.is_focused = true;
                 state.events.push_back(Event::Focused);
             }
         });
@@ -78,7 +77,6 @@ impl Input {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.is_focused = false;
                 state.events.push_back(Event::Unfocused);
             }
         });
@@ -122,6 +120,7 @@ impl Input {
         });
 
         Ok(Self {
+            canvas,
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,

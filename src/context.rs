@@ -4,7 +4,8 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 use golem::{glow, GolemError};
 use nalgebra as na;
 
-use crate::{Error, Input, Matrix3, Vector2, Vector3};
+use crate::input::EventHandlers;
+use crate::{Error, Matrix3, Vector2, Vector3};
 
 #[derive(Debug, Clone)]
 pub struct Screen {
@@ -36,7 +37,7 @@ impl Screen {
 
 pub struct Context {
     canvas: HtmlCanvasElement,
-    input: Input,
+    event_handlers: EventHandlers,
     golem_context: golem::Context,
 }
 
@@ -55,7 +56,7 @@ impl Context {
     }
 
     pub fn from_canvas_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
-        let input = Input::new(&canvas)?;
+        let event_handlers = EventHandlers::new(canvas.clone())?;
         let webgl_context = canvas
             .get_context("webgl")
             .map_err(Error::GetContext)?
@@ -67,17 +68,17 @@ impl Context {
 
         Ok(Context {
             canvas,
-            input,
+            event_handlers,
             golem_context,
         })
     }
 
-    pub fn input(&self) -> &Input {
-        &self.input
+    pub fn input(&self) -> &EventHandlers {
+        &self.event_handlers
     }
 
-    pub fn input_mut(&mut self) -> &mut Input {
-        &mut self.input
+    pub fn input_mut(&mut self) -> &mut EventHandlers {
+        &mut self.event_handlers
     }
 
     pub fn screen(&self) -> Screen {
