@@ -15,10 +15,15 @@ pub fn main() {
 
     let mut color_pass = ColorPass::new(&ctx).unwrap();
     let mut tri_batch = Batch::<ColorVertex>::new_triangles(&ctx).unwrap();
+    let mut line_batch = Batch::<ColorVertex>::new_lines(&ctx).unwrap();
 
     tri_batch.push_quad(
         &Quad::axis_aligned(Point3::new(320.0, 240.0, 0.5), Vector2::new(100.0, 100.0)),
         Color::new(1.0, 0.0, 0.0, 1.0),
+    );
+    line_batch.push_quad_outline(
+        &Quad::axis_aligned(Point3::new(320.0, 240.0, 0.5), Vector2::new(100.0, 100.0)),
+        Color::new(0.0, 0.0, 0.0, 1.0),
     );
 
     ctx.main_loop(move |ctx, _dt, events, _running| {
@@ -52,6 +57,13 @@ pub fn main() {
                 &screen.orthographic_projection(),
                 &Matrix3::identity(),
                 &mut tri_batch,
+            )
+            .unwrap();
+        color_pass
+            .draw_batch(
+                &screen.orthographic_projection(),
+                &Matrix3::identity(),
+                &mut line_batch,
             )
             .unwrap();
     })

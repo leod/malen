@@ -25,7 +25,7 @@ impl<V: Vertex> Batch<V> {
     }
 
     pub fn new_lines(ctx: &Context) -> Result<Self, Error> {
-        Self::new(ctx, GeometryMode::Triangles)
+        Self::new(ctx, GeometryMode::Lines)
     }
 
     pub fn new(ctx: &Context, geometry_mode: GeometryMode) -> Result<Self, Error> {
@@ -102,6 +102,30 @@ impl Batch<ColorVertex> {
             first_idx + 1,
             first_idx + 2,
             first_idx + 2,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+
+    pub fn push_quad_outline(&mut self, quad: &Quad, color: Color) {
+        assert!(self.geometry_mode == GeometryMode::Lines);
+
+        let first_idx = self.num_elements() as u32;
+
+        for corner in &quad.corners {
+            self.push_vertex(&ColorVertex {
+                world_pos: Point3::new(corner.x, corner.y, quad.z),
+                color,
+            });
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
             first_idx + 3,
             first_idx + 0,
         ]);
