@@ -8,8 +8,8 @@ use golem::{
 };
 
 use crate::{
-    geom::{matrix3_to_flat_array, scale_translate3},
-    Color, Error, Matrix3, Point3, Vector2, Vector3,
+    geom::matrix3_to_flat_array,
+    Color, Error, Matrix3, Point2, Point3, Vector2,
 };
 
 pub trait Sprite {
@@ -18,15 +18,62 @@ pub trait Sprite {
 }
 
 #[derive(Debug, Clone)]
+pub struct Quad {
+    pub corners: [Point2; 4],
+    pub z: f32,
+}
+
+impl Quad {
+    pub fn new(transform: &Matrix3) -> Self {
+        // We apply the model transformation on CPU. This seems to be the
+        // easiest way to render moderate amounts of sprites in a somewhat 
+        // performant way with WebGL 1: We don't have an easy way to send the
+        // per-sprite data to GPU, since we don't have access to UBOs and SSBOs.
+        Self {
+            corners: [
+                (transform * Point3::new(-0.5, -0.5, 1.0)).xy(),
+                (transform * Point3::new(-0.5, 0.5, 1.0)).xy(),
+                (transform * Point3::new(0.5, 0.5, 1.0)).xy(),
+                (transform * Point3::new(0.5, -0.5, 1.0)).xy(),
+            ],
+            z: transform[(2, 2)],
+        }
+    }
+
+    pub fn axis_aligned(pos: Point3, size: Vector2) -> Self {
+        Self {
+            corners: [
+                // Top left
+                pos.xy() + Vector2::new(-0.5, -0.5).component_mul(&size),
+                // Bottom left
+                pos.xy() + Vector2::new(-0.5, 0.5).component_mul(&size),
+                // Bottom right
+                pos.xy() + Vector2::new(0.5, 0.5).component_mul(&size),
+                // Top right
+                pos.xy() + Vector2::new(0.5, -0.5).component_mul(&size),
+            ],
+            z: pos.z,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ColorSprite {
-    pub transform: Matrix3,
+    pub quad: Quad,
     pub color: Color,
 }
 
 impl ColorSprite {
-    pub fn new_axis_aligned(pos: Point3, size: Vector2, color: Color) -> Self {
+    pub fn new(transform: &Matrix3, color: Color) -> Self {
         Self {
-            transform: scale_translate3(size, pos.coords),
+            quad: Quad::new(transform),
+            color,
+        }
+    }
+
+    pub fn axis_aligned(pos: Point3, size: Vector2, color: Color) -> Self {
+        Self {
+            quad: Quad::axis_aligned(pos, size),
             color,
         }
     }
@@ -41,30 +88,15 @@ impl Sprite for ColorSprite {
     }
 
     fn write_vertices(&self, out: &mut Vec<f32>) {
+        out.reserve(4 * (3 + 4));
+
         // Quad corners in counter-clockwise order. Order is important here
         // because of backface culling.
-        let corners = [
-            // Top left
-            Vector2::new(-0.5, -0.5),
-            // Bottom left
-            Vector2::new(-0.5, 0.5),
-            // Bottom right
-            Vector2::new(0.5, 0.5),
-            // Top right
-            Vector2::new(0.5, -0.5),
-        ];
-
-        // Apply the model transformation on CPU. This seems to be the easiest
-        // way to render moderate amounts of sprites in a somewhat performant
-        // way with WebGL 1: We don't have an easy way to send the per-sprite
-        // data to GPU, since we don't have access to UBOs and SSBOs.
-        for corner in &corners {
-            let corner_world = self.transform * Vector3::new(corner.x, corner.y, 1.0);
-
+        for corner in &self.quad.corners {
             out.extend_from_slice(&[
-                corner_world.x,
-                corner_world.y,
-                corner_world.z,
+                corner.x,
+                corner.y,
+                self.quad.z,
                 self.color.x,
                 self.color.y,
                 self.color.z,
@@ -103,20 +135,20 @@ where
     }
 }
 
-impl<S> SpriteList<S> {
+impl<S: Sprite> SpriteList<S> {
     pub fn new() -> Self {
         Default::default()
     }
-}
 
-impl<S: Sprite> SpriteList<S> {
-    pub fn push(&mut self, sprite: S) {
+    pub fn push(&mut self, sprite: &S) {
         let first_idx = self.vertices.len() as u32;
 
         sprite.write_vertices(&mut self.vertices);
 
         // Add two triangles, again being careful about the order because of
         // backface culling.
+        self.elements.reserve(6);
+
         for &offset in &[0, 1, 2, 2, 3, 0] {
             self.elements.push(first_idx + offset);
         }
@@ -125,7 +157,7 @@ impl<S: Sprite> SpriteList<S> {
     pub fn extend<T: IntoIterator<Item = S>>(&mut self, iter: T) {
         // TODO: Use size hint in SpriteBuffer::extend?
         for sprite in iter {
-            self.push(sprite);
+            self.push(&sprite);
         }
     }
 

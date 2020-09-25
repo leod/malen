@@ -14,7 +14,7 @@ pub fn main() {
     log::info!("Initialized webglee context");
 
     let mut sprite_pass = SpritePass::new(ctx.golem_context()).unwrap();
-    let sprite_list = vec![ColorSprite::new_axis_aligned(
+    let sprite_list = vec![ColorSprite::axis_aligned(
         Point3::new(320.0, 240.0, 0.5),
         Vector2::new(100.0, 100.0),
         Color::new(1.0, 0.0, 0.0, 1.0),
