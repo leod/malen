@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::{BTreeSet, VecDeque},
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::BTreeSet, rc::Rc};
 
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
@@ -50,7 +46,7 @@ struct State {
 }
 
 pub struct EventHandlers {
-    canvas: HtmlCanvasElement,
+    _canvas: HtmlCanvasElement,
     state: Rc<RefCell<State>>,
     _on_focus: EventHandler<FocusEvent>,
     _on_blur: EventHandler<FocusEvent>,
@@ -120,7 +116,7 @@ impl EventHandlers {
         });
 
         Ok(Self {
-            canvas,
+            _canvas: canvas,
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,
