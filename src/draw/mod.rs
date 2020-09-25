@@ -1,4 +1,7 @@
-mod sprite;
-mod line;
+mod batch;
+mod pass;
+mod primitive;
 
-pub use sprite::{ColorSprite, Sprite, SpriteBatch, SpriteList, SpritePass, Quad};
+pub use batch::{Batch, Buffers};
+pub use pass::ColorPass;
+pub use primitive::{ColorVertex, GeometryMode, Quad, Vertex};

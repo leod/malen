@@ -7,7 +7,7 @@ use golem::{glow, GolemError};
 use nalgebra as na;
 
 use crate::input::EventHandlers;
-use crate::{Error, Matrix3, Vector2, Vector3, Event};
+use crate::{Error, Event, Matrix3, Vector2};
 
 #[derive(Debug, Clone)]
 pub struct Screen {
