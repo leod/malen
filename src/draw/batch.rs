@@ -12,6 +12,7 @@ pub struct Batch<V> {
 
     vertices: Vec<f32>,
     elements: Vec<u32>,
+    num_vertices: usize,
 
     buffers: Buffers<V>,
     is_dirty: bool,
@@ -35,6 +36,7 @@ impl<V: Vertex> Batch<V> {
             geometry_mode,
             vertices: Vec::new(),
             elements: Vec::new(),
+            num_vertices: 0,
             buffers,
             is_dirty: false,
             _phantom: PhantomData,
@@ -46,7 +48,7 @@ impl<V: Vertex> Batch<V> {
     }
 
     pub fn num_vertices(&self) -> usize {
-        self.vertices.len()
+        self.num_vertices
     }
 
     pub fn num_elements(&self) -> usize {
@@ -54,8 +56,9 @@ impl<V: Vertex> Batch<V> {
     }
 
     pub fn clear(&mut self) {
+        self.vertices.clear();
         self.elements.clear();
-        self.elements.clear();
+        self.num_vertices = 0;
         self.is_dirty = true;
     }
 
@@ -66,6 +69,7 @@ impl<V: Vertex> Batch<V> {
 
     pub fn push_vertex(&mut self, vertex: &V) {
         vertex.append(&mut self.vertices);
+        self.num_vertices += 1;
         self.is_dirty = true;
     }
 
@@ -88,7 +92,7 @@ impl Batch<ColorVertex> {
     pub fn push_quad(&mut self, quad: &Quad, color: Color) {
         assert!(self.geometry_mode == GeometryMode::Triangles);
 
-        let first_idx = self.num_elements() as u32;
+        let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
             self.push_vertex(&ColorVertex {
@@ -110,7 +114,7 @@ impl Batch<ColorVertex> {
     pub fn push_quad_outline(&mut self, quad: &Quad, color: Color) {
         assert!(self.geometry_mode == GeometryMode::Lines);
 
-        let first_idx = self.num_elements() as u32;
+        let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
             self.push_vertex(&ColorVertex {
