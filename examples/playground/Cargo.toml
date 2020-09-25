@@ -14,3 +14,10 @@ webglee = { path = "../../" }
 wasm-bindgen = "0.2"
 console_log = "0.2"
 log = "0.4"
+console_error_panic_hook = "0.1"
+
+rand = "0.7"
+rand_distr = "0.3"
+
+# This is necessary so that thread_rng() does not panic on wasm targets
+getrandom = { version = "0.1", features = ["wasm-bindgen"] }
