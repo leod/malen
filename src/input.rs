@@ -38,6 +38,10 @@ impl InputState {
             _ => (),
         }
     }
+
+    pub fn is_key_pressed(&self, key: VirtualKeyCode) -> bool {
+        self.pressed_keys.contains(&key)
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -86,7 +90,7 @@ impl EventHandlers {
             }
         });
 
-        let on_key_release = set_handler(&window, "keyrelease", {
+        let on_key_release = set_handler(&window, "keyup", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = VirtualKeyCode::from_keyboard_event(&event) {

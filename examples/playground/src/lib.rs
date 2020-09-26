@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -5,7 +7,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use webglee::Event::*;
 use webglee::{
     draw::{Batch, ColorPass, ColorVertex, Quad},
-    Color, Context, Error, Matrix3, Point2, Point3, Vector2,
+    Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
 struct Wall {
@@ -19,6 +21,7 @@ struct Game {
     line_batch: Batch<ColorVertex>,
 
     walls: Vec<Wall>,
+    player_pos: Point2,
 }
 
 impl Game {
@@ -29,9 +32,10 @@ impl Game {
 
         let mut rng = rand::thread_rng();
         let normal = Normal::new(150.0, 50.0).unwrap();
-        let walls = (0..2)
+        let walls = (0..100)
             .map(|_| {
-                let center = Point2::new(rng.gen(), rng.gen()) * 320.0;
+                let center =
+                    Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
                 let size = Vector2::new(normal.sample(&mut rng), normal.sample(&mut rng));
 
                 Wall { center, size }
@@ -43,6 +47,7 @@ impl Game {
             tri_batch,
             line_batch,
             walls,
+            player_pos: Point2::origin(),
         })
     }
 
@@ -52,6 +57,28 @@ impl Game {
         self.tri_batch.push_quad(&quad, color);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
+    }
+
+    pub fn update(&mut self, dt: Duration, input_state: &InputState) {
+        let dt_secs = dt.as_secs_f32();
+
+        let mut player_dir = Vector2::zeros();
+        if input_state.is_key_pressed(VirtualKeyCode::W) {
+            player_dir.y -= 1.0;
+        }
+        if input_state.is_key_pressed(VirtualKeyCode::S) {
+            player_dir.y += 1.0;
+        }
+        if input_state.is_key_pressed(VirtualKeyCode::A) {
+            player_dir.x -= 1.0;
+        }
+        if input_state.is_key_pressed(VirtualKeyCode::D) {
+            player_dir.x += 1.0;
+        }
+        if player_dir.norm_squared() > 0.0 {
+            let player_dir = player_dir.normalize();
+            self.player_pos += dt_secs * 300.0 * player_dir;
+        }
     }
 
     pub fn draw(&mut self, ctx: &Context) {
@@ -65,12 +92,6 @@ impl Game {
         self.tri_batch.clear();
         self.line_batch.clear();
 
-        self.render_quad_with_outline(
-            Point2::new(320.0, 240.0),
-            Vector2::new(100.0, 100.0),
-            Color::new(1.0, 0.0, 0.0, 1.0),
-        );
-
         for i in 0..self.walls.len() {
             self.render_quad_with_outline(
                 self.walls[i].center,
@@ -79,17 +100,30 @@ impl Game {
             )
         }
 
+        self.render_quad_with_outline(
+            self.player_pos,
+            Vector2::new(30.0, 30.0),
+            Color::new(1.0, 0.0, 0.0, 1.0),
+        );
+
+        let view = Camera {
+            center: self.player_pos,
+            zoom: 0.4,
+            angle: 0.0,
+        }
+        .to_matrix(&screen);
+
         self.color_pass
             .draw_batch(
                 &screen.orthographic_projection(),
-                &Matrix3::identity(),
+                &view,
                 &mut self.tri_batch,
             )
             .unwrap();
         self.color_pass
             .draw_batch(
                 &screen.orthographic_projection(),
-                &Matrix3::identity(),
+                &view,
                 &mut self.line_batch,
             )
             .unwrap();
@@ -107,7 +141,7 @@ pub fn main() {
 
     let mut game = Game::new(&ctx).unwrap();
 
-    ctx.main_loop(move |ctx, _dt, events, _running| {
+    ctx.main_loop(move |ctx, dt, events, _running| {
         for event in events {
             match event {
                 Focused => {
@@ -116,16 +150,11 @@ pub fn main() {
                 Unfocused => {
                     log::info!("lost focus");
                 }
-                KeyPressed(key) => {
-                    log::info!("key pressed: {:?}", key);
-                }
-                WindowResized(size) => {
-                    log::info!("window resized to: {:?}", size);
-                }
                 _ => (),
             }
         }
 
+        game.update(dt, ctx.input_state());
         game.draw(&ctx);
     })
     .unwrap();

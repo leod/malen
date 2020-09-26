@@ -61,6 +61,34 @@ pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Ma
 }
 
 #[derive(Debug, Clone)]
+pub struct Screen {
+    /// The screen size in pixels.
+    pub size: Vector2,
+}
+
+impl Screen {
+    /// Returns an orthographic projection matrix.
+    ///
+    /// The returned matrix maps `[0..width] x [0..height]` to
+    /// `[-1..1] x [-1..1]` (i.e. the OpenGL normalized device coordinates).
+    ///
+    /// Notes:
+    /// - This projection also flips the Y axis, so that (0,0) is at the
+    ///   top-left of your screen.
+    /// - We assume the Z coordinate of the input vector to be set to 1.
+    pub fn orthographic_projection(&self) -> Matrix3 {
+        let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
+            1.0 / self.size.x,
+            1.0 / self.size.y,
+        ));
+        let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
+        let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
+
+        scale_and_flip_y * shift * scale_to_unit
+    }
+}
+
+#[derive(Debug, Clone)]
 /// Parameters that define a two-dimensional camera transformation.
 pub struct Camera {
     /// The center position of the camera.
@@ -79,7 +107,7 @@ pub struct Camera {
 impl Camera {
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
     /// transformation from world space to camera space.
-    pub fn to_matrix(&self) -> Matrix3 {
+    pub fn to_matrix(&self, screen: &Screen) -> Matrix3 {
         // It's a bit easier to first consider the camera space -> world space
         // transformation C2W and then take the inverse to get W2C. For C2W, we
         // first need to scale with S / rotate with R (order shouldn't matter
@@ -93,10 +121,11 @@ impl Camera {
         //        R(x)^-1 = R(-x),
         //        T(x)^-1 = T(-x).)
 
-        translate_rotate_scale(
-            -self.center.coords,
-            -self.angle,
-            na::Vector2::new(self.zoom, self.zoom),
-        )
+        na::Matrix3::new_translation(&Vector2::new(screen.size.x / 2.0, screen.size.y / 2.0))
+            * translate_rotate_scale(
+                -self.center.coords,
+                -self.angle,
+                na::Vector2::new(self.zoom, self.zoom),
+            )
     }
 }

@@ -4,42 +4,14 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError};
-use nalgebra as na;
 
 use crate::input::EventHandlers;
-use crate::{Error, Event, Matrix3, Vector2};
-
-#[derive(Debug, Clone)]
-pub struct Screen {
-    /// The screen size in pixels.
-    pub size: Vector2,
-}
-
-impl Screen {
-    /// Returns an orthographic projection matrix.
-    ///
-    /// The returned matrix maps `[0..width] x [0..height]` to
-    /// `[-1..1] x [-1..1]` (i.e. the OpenGL normalized device coordinates).
-    ///
-    /// Notes:
-    /// - This projection also flips the Y axis, so that (0,0) is at the
-    ///   top-left of your screen.
-    /// - We assume the Z coordinate of the input vector to be set to 1.
-    pub fn orthographic_projection(&self) -> Matrix3 {
-        let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
-            1.0 / self.size.x,
-            1.0 / self.size.y,
-        ));
-        let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
-        let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
-
-        scale_and_flip_y * shift * scale_to_unit
-    }
-}
+use crate::{Error, Event, InputState, Screen, Vector2};
 
 pub struct Context {
     canvas: HtmlCanvasElement,
     event_handlers: EventHandlers,
+    input_state: InputState,
     golem_context: golem::Context,
 }
 
@@ -59,6 +31,7 @@ impl Context {
 
     pub fn from_canvas_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
         let event_handlers = EventHandlers::new(canvas.clone())?;
+        let input_state = InputState::default();
         let webgl_context = canvas
             .get_context("webgl")
             .map_err(Error::GetContext)?
@@ -71,6 +44,7 @@ impl Context {
         Ok(Context {
             canvas,
             event_handlers,
+            input_state,
             golem_context,
         })
     }
@@ -83,6 +57,10 @@ impl Context {
 
     pub fn golem_context(&self) -> &golem::Context {
         &self.golem_context
+    }
+
+    pub fn input_state(&self) -> &InputState {
+        &self.input_state
     }
 
     /// Run the `webglee` main loop.
@@ -137,11 +115,18 @@ impl Context {
                 last_timestamp = Some(timestamp);
 
                 let events = context.event_handlers.take_events();
+
+                for event in &events {
+                    context.input_state.on_event(event);
+                }
+
                 callback(&mut context, dt, &events, &mut running);
+
                 if !running {
                     let _ = f.borrow_mut().take();
                     return;
                 }
+
                 request_animation_frame(f.borrow().as_ref().unwrap());
             }
         }) as Box<dyn FnMut(f64)>));
