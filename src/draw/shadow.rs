@@ -1,5 +1,5 @@
 use golem::{
-    depth::{DepthTestFunction, DepthTestMode},
+    blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation},
     Attribute, AttributeType, ColorFormat, Dimension, GeometryMode, NumberType, ShaderDescription,
     ShaderProgram, Surface, Texture, TextureFilter, TextureWrap, Uniform, UniformType,
     UniformValue,
@@ -59,7 +59,7 @@ impl ShadowMap {
             None,
             resolution as u32,
             max_num_lights as u32,
-            ColorFormat::RGB,
+            ColorFormat::RGBA,
         );
         shadow_texture.set_magnification(TextureFilter::Nearest)?;
         shadow_texture.set_minification(TextureFilter::Nearest)?;
@@ -125,12 +125,12 @@ impl ShadowMap {
                 void main() {
                     float t = line_segment_intersection(
                         light_world_pos,
-                        light_world_pos + vec2(cos(v_angle) * 1000.0, sin(v_angle) * 1000.0),
+                        light_world_pos + vec2(cos(v_angle) * 500.0, sin(v_angle) * 500.0),
                         v_edge.xy,
                         v_edge.zw
-                    );
+                    ) / 500.0;
 
-                    gl_FragColor = vec4(t, t, t, t) / 1000.0;
+                    gl_FragColor = vec4(t, t, t, t);
                 }
                 "#,
             },
@@ -158,14 +158,22 @@ impl ShadowMap {
             self.max_num_lights,
         );
 
-        ctx.golem_context()
-            .set_depth_test_mode(Some(Default::default()));
-
         batch.flush();
+
+        ctx.golem_context().set_blend_mode(Some(BlendMode {
+            equation: BlendEquation::Same(BlendOperation::Min),
+            function: BlendFunction::Same {
+                source: BlendFactor::One,
+                destination: BlendFactor::One,
+            },
+            ..Default::default()
+        }));
 
         self.shadow_surface.bind();
         ctx.golem_context()
             .set_viewport(0, 0, self.resolution as u32, self.max_num_lights as u32);
+        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_context().clear();
 
         for (light_idx, light) in lights.iter().enumerate() {
             self.shadow_shader.bind();
@@ -185,7 +193,7 @@ impl ShadowMap {
         }
 
         Surface::unbind(ctx.golem_context());
-        ctx.golem_context().set_depth_test_mode(None);
+        ctx.golem_context().set_blend_mode(None);
 
         Ok(())
     }
@@ -235,8 +243,8 @@ impl ShadowedColorPass {
                 void main() {
                     float angle = angle_to_light(v_world_pos);
                     vec2 tex_coords = vec2((angle / 3.141592) + 1.0, 0.0);
-                    float shadow_dist = texture(shadow_map, tex_coords).r * 100.0;
-                    float shadow_val = (shadow_dist < length(v_world_pos - light_world_pos)) ? 1.0 : 0.0;
+                    float shadow_dist = texture(shadow_map, tex_coords).r * 500.0;
+                    float shadow_val = (shadow_dist < length(v_world_pos - light_world_pos)) ? 0.0 : 1.0;
                     gl_FragColor = vec4(v_color.rgb * shadow_val, v_color.a);
                 }
                 "#,
