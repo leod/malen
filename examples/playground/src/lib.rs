@@ -8,7 +8,7 @@ use webglee::Event::*;
 use webglee::{
     draw::{
         shadow::{Light, LineSegment},
-        Batch, ColorPass, ColorVertex, Quad, ShadowMap,
+        Batch, ColorPass, ColorVertex, Quad, ShadowMap, ShadowedColorPass,
     },
     Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
 };
@@ -21,6 +21,7 @@ struct Wall {
 struct Game {
     shadow_map: ShadowMap,
     occluder_batch: Batch<LineSegment>,
+    shadowed_color_pass: ShadowedColorPass,
 
     color_pass: ColorPass,
     tri_batch: Batch<ColorVertex>,
@@ -34,6 +35,7 @@ impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
         let shadow_map = ShadowMap::new(ctx, 1024, 1)?;
         let occluder_batch = Batch::new_lines(ctx)?;
+        let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
 
         let color_pass = ColorPass::new(ctx)?;
         let tri_batch = Batch::new_triangles(ctx)?;
@@ -54,6 +56,7 @@ impl Game {
         Ok(Game {
             shadow_map,
             occluder_batch,
+            shadowed_color_pass,
             color_pass,
             tri_batch,
             line_batch,
@@ -106,6 +109,11 @@ impl Game {
         self.line_batch.clear();
         self.occluder_batch.clear();
 
+        self.tri_batch.push_quad(
+            &Quad::axis_aligned(Point3::new(0.0, 0.0, 0.0), Vector2::new(4096.0, 4096.0)),
+            Color::new(0.9, 0.9, 0.9, 1.0),
+        );
+
         for i in 0..self.walls.len() {
             self.render_quad_with_occluder(
                 self.walls[i].center,
@@ -138,9 +146,11 @@ impl Game {
         ctx.golem_context().set_clear_color(1.0, 1.0, 0.0, 1.0);
         ctx.golem_context().clear();
 
-        self.color_pass.draw_batch(
+        self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
             &view,
+            &lights,
+            &self.shadow_map,
             &mut self.tri_batch,
         )?;
         self.color_pass.draw_batch(

@@ -1,12 +1,14 @@
 use golem::{
+    depth::{DepthTestFunction, DepthTestMode},
     Attribute, AttributeType, ColorFormat, Dimension, GeometryMode, NumberType, ShaderDescription,
     ShaderProgram, Surface, Texture, TextureFilter, TextureWrap, Uniform, UniformType,
     UniformValue,
 };
 
 use crate::{
-    draw::{Batch, Vertex},
-    Context, Error, Point2,
+    draw::{Batch, ColorVertex, Vertex},
+    geom::matrix3_to_flat_array,
+    Context, Error, Matrix3, Point2,
 };
 
 pub struct LineSegment {
@@ -44,6 +46,7 @@ pub struct Light {
 }
 
 pub struct ShadowMap {
+    resolution: usize,
     max_num_lights: usize,
     shadow_surface: Surface,
     shadow_shader: ShaderProgram,
@@ -100,14 +103,41 @@ impl ShadowMap {
                 }
                 "#,
                 fragment_shader: r#"
+                float line_segment_intersection(
+                    vec2 line_one_p,
+                    vec2 line_one_q,
+                    vec2 line_two_p,
+                    vec2 line_two_q
+                ) {
+                    vec2 line_two_perp = vec2(
+                        line_two_q.y - line_two_p.y,
+                        line_two_p.x - line_two_q.y
+                    );
+                    float line_one_proj = dot(line_one_q - line_one_p, line_two_perp);
+
+                    if (abs(line_one_proj) < 0.0001) {
+                        return 0.0;
+                    }
+
+                    return dot(line_two_p - line_one_q, line_two_perp) / line_one_proj;
+                }
+
                 void main() {
-                    gl_FragColor = vec4(v_angle, v_angle, v_angle, v_angle);
+                    float t = line_segment_intersection(
+                        light_world_pos,
+                        light_world_pos + vec2(cos(v_angle) * 1000.0, sin(v_angle) * 1000.0),
+                        v_edge.xy,
+                        v_edge.zw
+                    );
+
+                    gl_FragColor = vec4(t, t, t, t) / 1000.0;
                 }
                 "#,
             },
         )?;
 
         Ok(Self {
+            resolution,
             max_num_lights,
             shadow_surface,
             shadow_shader,
@@ -128,9 +158,14 @@ impl ShadowMap {
             self.max_num_lights,
         );
 
+        ctx.golem_context()
+            .set_depth_test_mode(Some(Default::default()));
+
         batch.flush();
 
         self.shadow_surface.bind();
+        ctx.golem_context()
+            .set_viewport(0, 0, self.resolution as u32, self.max_num_lights as u32);
 
         for (light_idx, light) in lights.iter().enumerate() {
             self.shadow_shader.bind();
@@ -150,6 +185,107 @@ impl ShadowMap {
         }
 
         Surface::unbind(ctx.golem_context());
+        ctx.golem_context().set_depth_test_mode(None);
+
+        Ok(())
+    }
+}
+
+pub struct ShadowedColorPass {
+    shader: ShaderProgram,
+}
+
+impl ShadowedColorPass {
+    pub fn new(ctx: &Context) -> Result<Self, Error> {
+        let shader = ShaderProgram::new(
+            ctx.golem_context(),
+            ShaderDescription {
+                vertex_input: &ColorVertex::attributes(),
+                fragment_input: &[
+                    Attribute::new("v_color", AttributeType::Vector(Dimension::D4)),
+                    Attribute::new("v_world_pos", AttributeType::Vector(Dimension::D2)),
+                ],
+                uniforms: &[
+                    Uniform::new("mat_projection_view", UniformType::Matrix(Dimension::D3)),
+                    Uniform::new("shadow_map", UniformType::Sampler2D),
+                    Uniform::new(
+                        "light_world_pos",
+                        UniformType::Vector(NumberType::Float, Dimension::D2),
+                    ),
+                    Uniform::new(
+                        "shadow_map_resolution",
+                        UniformType::Scalar(NumberType::Float),
+                    ),
+                ],
+                vertex_shader: r#"
+                void main() {
+                    vec3 p = mat_projection_view * vec3(a_world_pos.xy, 1.0);
+                    gl_Position = vec4(p.xy, a_world_pos.z, 1.0);
+
+                    v_world_pos = a_world_pos.xy;
+                    v_color = a_color;
+                }
+                "#,
+                fragment_shader: r#"
+                float angle_to_light(vec2 world_pos) {
+                    vec2 delta = world_pos - light_world_pos;
+                    return atan(delta.y, delta.x);
+                }
+                
+                void main() {
+                    float angle = angle_to_light(v_world_pos);
+                    vec2 tex_coords = vec2((angle / 3.141592) + 1.0, 0.0);
+                    float shadow_dist = texture(shadow_map, tex_coords).r * 100.0;
+                    float shadow_val = (shadow_dist < length(v_world_pos - light_world_pos)) ? 1.0 : 0.0;
+                    gl_FragColor = vec4(v_color.rgb * shadow_val, v_color.a);
+                }
+                "#,
+            },
+        )?;
+
+        Ok(Self { shader })
+    }
+
+    pub fn draw_batch(
+        &mut self,
+        projection: &Matrix3,
+        view: &Matrix3,
+        lights: &[Light],
+        shadow_map: &ShadowMap,
+        batch: &mut Batch<ColorVertex>,
+    ) -> Result<(), Error> {
+        batch.flush();
+
+        let projection_view = projection * view;
+
+        unsafe {
+            shadow_map
+                .shadow_surface
+                .borrow_texture()
+                .unwrap()
+                .set_active(std::num::NonZeroU32::new(1).unwrap());
+        }
+
+        self.shader.bind();
+        self.shader.set_uniform(
+            "mat_projection_view",
+            UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
+        )?;
+        self.shader.set_uniform(
+            "light_world_pos",
+            UniformValue::Vector2(lights[0].world_pos.coords.into()),
+        )?;
+
+        unsafe {
+            self.shader.draw(
+                &batch.buffers().vertices,
+                &batch.buffers().elements,
+                0..batch.num_elements(),
+                batch.geometry_mode(),
+            )?;
+        }
+
+        // FIXME: Unbind shadow map
 
         Ok(())
     }
