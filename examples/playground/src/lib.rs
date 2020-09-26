@@ -6,7 +6,10 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use webglee::Event::*;
 use webglee::{
-    draw::{Batch, ColorPass, ColorVertex, Quad},
+    draw::{
+        shadow::{Light, LineSegment},
+        Batch, ColorPass, ColorVertex, Quad, ShadowMap,
+    },
     Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
@@ -16,6 +19,9 @@ struct Wall {
 }
 
 struct Game {
+    shadow_map: ShadowMap,
+    occluder_batch: Batch<LineSegment>,
+
     color_pass: ColorPass,
     tri_batch: Batch<ColorVertex>,
     line_batch: Batch<ColorVertex>,
@@ -26,9 +32,12 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
+        let shadow_map = ShadowMap::new(ctx, 1024, 1)?;
+        let occluder_batch = Batch::new_lines(ctx)?;
+
         let color_pass = ColorPass::new(ctx)?;
-        let tri_batch = Batch::<ColorVertex>::new_triangles(ctx)?;
-        let line_batch = Batch::<ColorVertex>::new_lines(ctx)?;
+        let tri_batch = Batch::new_triangles(ctx)?;
+        let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
         let normal = Normal::new(150.0, 50.0).unwrap();
@@ -43,6 +52,8 @@ impl Game {
             .collect();
 
         Ok(Game {
+            shadow_map,
+            occluder_batch,
             color_pass,
             tri_batch,
             line_batch,
@@ -57,6 +68,13 @@ impl Game {
         self.tri_batch.push_quad(&quad, color);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
+    }
+
+    pub fn render_quad_with_occluder(&mut self, center: Point2, size: Vector2, color: Color) {
+        let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
+
+        self.tri_batch.push_quad(&quad, color);
+        self.occluder_batch.push_occluder_quad(&quad);
     }
 
     pub fn update(&mut self, dt: Duration, input_state: &InputState) {
@@ -81,19 +99,15 @@ impl Game {
         }
     }
 
-    pub fn draw(&mut self, ctx: &Context) {
+    pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
         let screen = ctx.screen();
-        let golem_ctx = ctx.golem_context();
-
-        golem_ctx.set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        golem_ctx.set_clear_color(1.0, 1.0, 0.0, 1.0);
-        golem_ctx.clear();
 
         self.tri_batch.clear();
         self.line_batch.clear();
+        self.occluder_batch.clear();
 
         for i in 0..self.walls.len() {
-            self.render_quad_with_outline(
+            self.render_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
                 Color::new(0.8, 0.8, 0.8, 1.0),
@@ -113,20 +127,29 @@ impl Game {
         }
         .to_matrix(&screen);
 
-        self.color_pass
-            .draw_batch(
-                &screen.orthographic_projection(),
-                &view,
-                &mut self.tri_batch,
-            )
-            .unwrap();
-        self.color_pass
-            .draw_batch(
-                &screen.orthographic_projection(),
-                &view,
-                &mut self.line_batch,
-            )
-            .unwrap();
+        let lights = vec![Light {
+            world_pos: self.player_pos,
+        }];
+        self.shadow_map
+            .draw_occluder_batch(ctx, &mut self.occluder_batch, &lights)?;
+
+        ctx.golem_context()
+            .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
+        ctx.golem_context().set_clear_color(1.0, 1.0, 0.0, 1.0);
+        ctx.golem_context().clear();
+
+        self.color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            &mut self.tri_batch,
+        )?;
+        self.color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            &mut self.line_batch,
+        )?;
+
+        Ok(())
     }
 }
 
@@ -155,7 +178,7 @@ pub fn main() {
         }
 
         game.update(dt, ctx.input_state());
-        game.draw(&ctx);
+        game.draw(&ctx).unwrap();
     })
     .unwrap();
 }
