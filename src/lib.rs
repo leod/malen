@@ -14,7 +14,7 @@ pub use nalgebra as na;
 pub use context::Context;
 pub use input::{Event, InputState, VirtualKeyCode};
 
-pub use geom::{Camera, Matrix2, Matrix3, Point2, Point3, Vector2, Vector3};
+pub use geom::{Camera, Matrix2, Matrix3, Point2, Point3, Screen, Vector2, Vector3};
 
 pub type Color = nalgebra::Point4<f32>;
 
