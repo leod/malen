@@ -42,8 +42,8 @@ impl Game {
         let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
-        let normal = Normal::new(150.0, 50.0).unwrap();
-        let walls = (0..100)
+        let normal = Normal::new(550.0, 50.0).unwrap();
+        let walls = (0..1)
             .map(|_| {
                 let center =
                     Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
