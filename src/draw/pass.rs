@@ -42,7 +42,7 @@ impl ColorPass {
             },
         )?;
 
-        Ok(ColorPass { shader })
+        Ok(Self { shader })
     }
 
     pub fn draw_batch(
