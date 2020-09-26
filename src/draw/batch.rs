@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use golem::{ElementBuffer, GeometryMode, VertexBuffer};
 
 use crate::{
-    draw::{ColorVertex, Quad, Vertex},
-    Color, Context, Error, Point3,
+    draw::{shadow, ColorVertex, Quad, Vertex},
+    Color, Context, Error, Point2, Point3,
 };
 
 pub struct Batch<V> {
@@ -133,6 +133,49 @@ impl Batch<ColorVertex> {
             first_idx + 3,
             first_idx + 0,
         ]);
+    }
+}
+
+impl Batch<shadow::LineSegment> {
+    pub fn push_occluder_line(&mut self, line_p: Point2, line_q: Point2) {
+        assert!(self.geometry_mode == GeometryMode::Lines);
+
+        let first_idx = self.num_vertices() as u32;
+
+        self.push_vertex(&shadow::LineSegment {
+            world_pos_p: line_p,
+            world_pos_q: line_q,
+            order: -1.0,
+        });
+        self.push_vertex(&shadow::LineSegment {
+            world_pos_p: line_q,
+            world_pos_q: line_p,
+            order: -1.0,
+        });
+        self.push_vertex(&shadow::LineSegment {
+            world_pos_p: line_p,
+            world_pos_q: line_q,
+            order: 1.0,
+        });
+        self.push_vertex(&shadow::LineSegment {
+            world_pos_p: line_q,
+            world_pos_q: line_p,
+            order: 1.0,
+        });
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 3,
+        ]);
+    }
+
+    pub fn push_occluder_quad(&mut self, quad: &Quad) {
+        self.push_occluder_line(quad.corners[0], quad.corners[1]);
+        self.push_occluder_line(quad.corners[1], quad.corners[2]);
+        self.push_occluder_line(quad.corners[2], quad.corners[3]);
+        self.push_occluder_line(quad.corners[3], quad.corners[0]);
     }
 }
 
