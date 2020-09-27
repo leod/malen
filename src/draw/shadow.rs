@@ -86,16 +86,31 @@ impl ShadowMap {
                     return atan(delta.y, delta.x);
                 }
 
+                const float PI = 3.141592;
+
                 void main() {
                     float angle_p = angle_to_light(a_world_pos_p);
                     float angle_q = angle_to_light(a_world_pos_q);
 
                     v_edge = vec4(a_world_pos_p, a_world_pos_q);
                     v_edge = mix(v_edge, v_edge.zwxy, step(angle_p, angle_q));
+
                     v_angle = angle_p;
 
+                    if (abs(angle_p - angle_q) > PI) {
+                        if (a_order == 0.0) {
+                            v_angle = -PI;
+                        } else if (a_order == 1.0) {
+                            v_angle = min(angle_p, angle_q);
+                        } else if (a_order == 2.0) {
+                            v_angle = max(angle_p, angle_q);
+                        } else {
+                            v_angle = PI;
+                        }
+                    }
+
                     gl_Position = vec4(
-                        angle_p / 3.141592,
+                        v_angle / PI,
                         0.0,
                         0.0,
                         1.0
@@ -125,7 +140,7 @@ impl ShadowMap {
                 void main() {
                     float t = line_segment_intersection(
                         light_world_pos,
-                        light_world_pos + vec2(cos(v_angle) * 500.0, sin(v_angle) * 500.0),
+                        light_world_pos + vec2(cos(v_angle) * 1024.0, sin(v_angle) * 1024.0),
                         v_edge.xy,
                         v_edge.zw
                     );
@@ -243,7 +258,7 @@ impl ShadowedColorPass {
                 void main() {
                     float angle = angle_to_light(v_world_pos);
                     vec2 tex_coords = vec2((angle / (2.0*3.141592)) + 0.5, 0.0);
-                    float shadow_dist = texture(shadow_map, tex_coords).r * 500.0;
+                    float shadow_dist = texture(shadow_map, tex_coords).r * 1024.0;
                     float shadow_val = (shadow_dist < length(v_world_pos - light_world_pos)) ? 0.5 : 1.0;
                     if (gl_FragCoord.y < 10.0) {
                         gl_FragColor = vec4(texture(shadow_map, vec2(gl_FragCoord.x / 1024.0, 0.0)).rgb, 1.0);

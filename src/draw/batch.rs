@@ -145,29 +145,30 @@ impl Batch<shadow::LineSegment> {
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_p,
             world_pos_q: line_q,
-            order: -1.0,
+            order: 0.0,
         });
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_q,
             world_pos_q: line_p,
-            order: -1.0,
+            order: 1.0,
         });
-        /*self.push_vertex(&shadow::LineSegment {
+
+        self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_p,
             world_pos_q: line_q,
-            order: 1.0,
+            order: 2.0,
         });
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_q,
             world_pos_q: line_p,
-            order: 1.0,
-        });*/
+            order: 3.0,
+        });
 
         self.elements.extend_from_slice(&[
             first_idx + 0,
             first_idx + 1,
-            //first_idx + 2,
-            //first_idx + 3,
+            first_idx + 2,
+            first_idx + 3,
         ]);
     }
 
