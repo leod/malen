@@ -118,7 +118,7 @@ impl Game {
             self.render_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
-                Color::new(0.8, 0.8, 0.8, 1.0),
+                Color::new(0.2, 0.2, 0.8, 1.0),
             )
         }
 

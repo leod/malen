@@ -256,13 +256,24 @@ impl ShadowedColorPass {
                 }
                 
                 void main() {
-                    float angle = angle_to_light(v_world_pos);
-                    vec2 tex_coords = vec2((angle / (2.0*3.141592)) + 0.5, 0.0);
-                    float shadow_dist = texture(shadow_map, tex_coords).r * 1024.0;
-                    float shadow_val = (shadow_dist < length(v_world_pos - light_world_pos)) ? 0.5 : 1.0;
                     if (gl_FragCoord.y < 10.0) {
                         gl_FragColor = vec4(texture(shadow_map, vec2(gl_FragCoord.x / 1024.0, 0.0)).rgb, 1.0);
                     } else {
+                        float angle = angle_to_light(v_world_pos);
+                        float dist = length(v_world_pos - light_world_pos);
+                        vec2 tex_coords = vec2((angle / (2.0*3.141592)) + 0.5, 0.0);
+
+                        float shadow_val = 0.0;
+                        shadow_val += step(dist, texture(shadow_map, tex_coords).r * 1024.0) * 0.5;
+                        shadow_val += step(dist, texture(shadow_map, tex_coords - vec2(2.0 / 1024.0, 0.0)).r * 1024.0) * 0.25;
+                        shadow_val += step(dist, texture(shadow_map, tex_coords + vec2(2.0 / 1024.0, 0.0)).r * 1024.0) * 0.25;
+                        //shadow_val /= 3.0;
+
+                        /*if (shadow_val < 0.1 && dist > 500.0)
+                            shadow_val = 1.0;*/
+
+                        shadow_val = max(shadow_val, 0.5);
+
                         gl_FragColor = vec4(v_color.rgb * shadow_val, v_color.a);
                     }
                 }
