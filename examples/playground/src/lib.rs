@@ -98,7 +98,7 @@ impl Game {
         }
         if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player_pos += dt_secs * 300.0 * player_dir;
+            self.player_pos += dt_secs * 1000.0 * player_dir;
         }
     }
 
