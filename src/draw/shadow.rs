@@ -111,15 +111,15 @@ impl ShadowMap {
                 ) {
                     vec2 line_two_perp = vec2(
                         line_two_q.y - line_two_p.y,
-                        line_two_p.x - line_two_q.y
+                        line_two_p.x - line_two_q.x
                     );
                     float line_one_proj = dot(line_one_q - line_one_p, line_two_perp);
 
                     if (abs(line_one_proj) < 0.0001) {
-                        return 0.0;
+                        return 1.0;
                     }
 
-                    return dot(line_two_p - line_one_q, line_two_perp) / line_one_proj;
+                    return dot(line_two_p - line_one_p, line_two_perp) / line_one_proj;
                 }
 
                 void main() {
@@ -128,7 +128,7 @@ impl ShadowMap {
                         light_world_pos + vec2(cos(v_angle) * 500.0, sin(v_angle) * 500.0),
                         v_edge.xy,
                         v_edge.zw
-                    ) / 500.0;
+                    );
 
                     gl_FragColor = vec4(t, t, t, t);
                 }
