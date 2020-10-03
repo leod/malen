@@ -137,9 +137,14 @@ impl Game {
 
         let lights = vec![Light {
             world_pos: self.player_pos,
+            radius: 1024.0,
+            angle: 0.0,
+            angle_size: std::f32::consts::PI * 2.0,
         }];
         self.shadow_map
-            .draw_occluder_batch(ctx, &mut self.occluder_batch, &lights)?;
+            .build(ctx, &lights)?
+            .draw_occluder_batch(&mut self.occluder_batch)?
+            .finish()?;
 
         ctx.golem_context()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
