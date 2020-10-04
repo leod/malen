@@ -53,7 +53,7 @@ impl Game {
         let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
-        let normal = Normal::new(100.0, 20.0).unwrap();
+        let normal = Normal::new(200.0, 100.0).unwrap();
         let walls = (0..100)
             .map(|_| {
                 let center =
@@ -147,7 +147,7 @@ impl Game {
             radius: 1024.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
-            color: Color::new(1.0, 1.0, 1.0, 1.0),
+            color: Color::new(0.5, 0.5, 0.5, 1.0),
         }];
 
         for i in 0..self.walls.len() {
@@ -170,7 +170,7 @@ impl Game {
                 radius: 256.0,
                 angle: self.thingies[i].angle,
                 angle_size: 0.25 * std::f32::consts::PI,
-                color: Color::new(1.0, 0.5, 1.0, 1.0),
+                color: Color::new(0.2, 0.4, 0.2, 1.0),
             });
         }
 
@@ -200,7 +200,7 @@ impl Game {
         self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
             &view,
-            Color::new(0.5, 0.5, 0.5, 1.0),
+            Color::new(0.1, 0.1, 0.1, 1.0),
             &self.shadow_map,
             &mut self.tri_batch_shadowed,
         )?;
