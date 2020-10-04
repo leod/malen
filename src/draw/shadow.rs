@@ -293,7 +293,11 @@ impl ShadowMap {
                         + step(dist_to_light, dist2) * 0.25
                         + step(dist_to_light, dist3) * 0.25;
 
-                    gl_FragColor = vec4(v_light_color.rgb * visibility, v_light_color.a);
+                    visibility *= pow(1.0 - dist_to_light / light_radius, 2.0);
+
+                    vec3 color = v_light_color.rgb * visibility;
+
+                    gl_FragColor = vec4(color, v_light_color.a);
                 }
                 "#,
             },
@@ -528,8 +532,10 @@ impl ShadowedColorPass {
                 "#,
                 fragment_shader: r#"
                 void main() {
+                    vec3 light = texture(light_surface, v_tex_coords).rgb;
+                    vec3 reflect = ambient_light.rgb + light * v_color.rgb;
                     gl_FragColor = vec4(
-                        ambient_light.rgb + texture(light_surface, v_tex_coords).rgb * v_color.rgb,
+                        pow(reflect, vec3(1.0/2.2)),
                         v_color.a
                     );
                 }
