@@ -6,9 +6,9 @@ use golem::{
 };
 
 use crate::{
-    draw::{Batch, ColorVertex, Vertex},
+    draw::{Batch, ColorVertex, Vertex, Quad},
     geom::matrix3_to_flat_array,
-    Context, Error, Matrix3, Point2, Vector3,
+    Context, Error, Matrix3, Point2, Point3, Vector2, Vector3, Color,
 };
 
 pub struct LineSegment {
@@ -41,19 +41,76 @@ impl Vertex for LineSegment {
     }
 }
 
+pub struct LightAreaVertex {
+    pub world_pos: Point2,
+    pub light: Light,
+}
+
+impl Vertex for LightAreaVertex {
+    fn attributes() -> Vec<Attribute> {
+        vec![
+            Attribute::new("a_world_pos", AttributeType::Vector(Dimension::D2)),
+            Attribute::new("a_light_world_pos", AttributeType::Vector(Dimension::D2)),
+            Attribute::new("a_light_params", AttributeType::Vector(Dimension::D3)),
+            Attribute::new("a_light_color", AttributeType::Vector(Dimension::D4)),
+        ]
+    }
+
+    fn num_values() -> usize {
+        2 + 2 + 3
+    }
+
+    fn append(&self, out: &mut Vec<f32>) {
+        out.extend_from_slice(&[
+            self.world_pos.x,
+            self.world_pos.y,
+            self.light.world_pos.x,
+            self.light.world_pos.y,
+            self.light.radius,
+            self.light.angle,
+            self.light.angle_size,
+            self.light.color.x,
+            self.light.color.y,
+            self.light.color.z,
+            self.light.color.w,
+        ])
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Light {
     pub world_pos: Point2,
     pub radius: f32,
     pub angle: f32,
     pub angle_size: f32,
+    pub color: Color,
+}
+
+impl Light {
+    pub fn params(&self) -> Vector3 {
+        Vector3::new(self.radius, self.angle, self.angle_size)
+    }
+
+    /// Returns a quad that contains the maximal area that the light can reach.
+    pub fn quad(&self) -> Quad {
+        // TODO: Use angles to return quads that are tighter fits.
+        Quad::axis_aligned(
+            Point3::new(self.world_pos.x, self.world_pos.y, 0.0),
+            2.0 * self.radius * Vector2::new(1.0, 1.0),
+        )
+    }
 }
 
 pub struct ShadowMap {
     resolution: usize,
     max_num_lights: usize,
+
     shadow_map: Surface,
-    light_surface: Surface,
     shadow_map_shader: ShaderProgram,
+
+    light_surface: Surface,
+    light_surface_shader: ShaderProgram,
+    light_area_batch: Batch<LightAreaVertex>,
 }
 
 impl ShadowMap {
@@ -78,6 +135,8 @@ impl ShadowMap {
     }
 
     fn new_light_surface(ctx: &Context) -> Result<Surface, Error> {
+        log::info!("Creating new light surface for screen {:?}", ctx.screen());
+
         let mut light_texture = Texture::new(ctx.golem_context())?;
         // TODO: Make screen resolution u32
         light_texture.set_image(
@@ -97,18 +156,6 @@ impl ShadowMap {
     pub fn new(ctx: &Context, resolution: usize, max_num_lights: usize) -> Result<Self, Error> {
         let shadow_map = Self::new_shadow_map(ctx, resolution, max_num_lights)?;
         let light_surface = Self::new_light_surface(ctx)?;
-
-        let mut screen_light_texture = Texture::new(ctx.golem_context())?;
-        screen_light_texture.set_image(
-            None,
-            resolution as u32,
-            max_num_lights as u32,
-            ColorFormat::RGBA,
-        );
-        screen_light_texture.set_magnification(TextureFilter::Linear)?;
-        screen_light_texture.set_minification(TextureFilter::Linear)?;
-        screen_light_texture.set_wrap_h(TextureWrap::ClampToEdge)?;
-        screen_light_texture.set_wrap_v(TextureWrap::ClampToEdge)?;
 
         let shadow_map_shader = ShaderProgram::new(
             ctx.golem_context(),
@@ -196,18 +243,95 @@ impl ShadowMap {
             },
         )?;
 
+        let light_surface_shader = ShaderProgram::new(
+            ctx.golem_context(),
+            ShaderDescription {
+                vertex_input: &LightAreaVertex::attributes(),
+                fragment_input: &[
+                    Attribute::new("v_delta", AttributeType::Vector(Dimension::D2)),
+                    Attribute::new("v_light_params", AttributeType::Vector(Dimension::D3)),
+                    Attribute::new("v_light_color", AttributeType::Vector(Dimension::D4)),
+                ],
+                uniforms: &[
+                    Uniform::new("mat_projection_view", UniformType::Matrix(Dimension::D3)),
+                    Uniform::new("shadow_map", UniformType::Sampler2D),
+                    Uniform::new(
+                        "shadow_map_resolution",
+                        UniformType::Scalar(NumberType::Float),
+                    ),
+                ],
+                vertex_shader: r#"
+                void main() {
+                    vec3 p = mat_projection_view * vec3(a_world_pos, 1.0);
+                    gl_Position = vec4(p.xy, 0.0, 1.0);
+                    v_delta = a_world_pos.xy - a_light_world_pos;
+                    v_light_params = a_light_params;
+                    v_light_color = a_light_color;
+                }
+                "#,
+                fragment_shader: r#"
+                void main() {
+                    float angle = atan(v_delta.y, v_delta.x);
+                    float dist_to_light = length(v_delta);
+
+                    float light_radius = v_light_params.x;
+
+                    vec2 tex_coords = vec2(angle / (2.0 * 3.141592) + 0.5, 0.0);
+                    vec2 texel = vec2(1.0 / shadow_map_resolution, 0.0);
+
+                    float dist1 = texture(shadow_map, tex_coords).r * light_radius;
+                    float dist2 = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
+                    float dist3 = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
+
+                    float visibility = step(dist_to_light, dist1) * 0.5
+                        + step(dist_to_light, dist2) * 0.25
+                        + step(dist_to_light, dist3) * 0.25;
+
+                    gl_FragColor = vec4(v_light_color.rgb * visibility, v_light_color.a);
+                }
+                "#,
+            },
+        )?;
+
+        let light_area_batch = Batch::new(ctx, GeometryMode::Triangles)?;
+
         Ok(Self {
             resolution,
             max_num_lights,
             shadow_map,
-            light_surface,
             shadow_map_shader,
+            light_surface,
+            light_surface_shader,
+            light_area_batch,
         })
+    }
+
+    fn fill_light_area_batch(&mut self, lights: &[Light]) {
+        self.light_area_batch.clear();
+
+        for (i, light) in lights.iter().enumerate() {
+            let quad = light.quad();
+
+            for corner in &quad.corners {
+                self.light_area_batch.push_vertex(&LightAreaVertex {
+                    world_pos: Point2::new(corner.x, corner.y),
+                    light: light.clone(),
+                });
+            }
+
+            for offset in Quad::TRIANGLE_INDICES {
+                self.light_area_batch.push_element(i as u32 * 4 + offset);
+            }
+        }
+
+        self.light_area_batch.flush();
     }
 
     pub fn build<'a>(
         &'a mut self,
         ctx: &'a Context,
+        projection: &Matrix3,
+        view: &Matrix3,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
         if ctx.screen().size.x as u32 != self.light_surface.width().unwrap()
@@ -218,6 +342,11 @@ impl ShadowMap {
             self.light_surface = Self::new_light_surface(ctx)?;
         }
 
+        // Already upload the light area data to the GPU. This will be used for
+        // rendering the lights in screen space.
+        self.fill_light_area_batch(lights);
+
+        // Clear the shadow map to maximal distance, i.e. 1.
         self.shadow_map.bind();
         ctx.golem_context()
             .set_viewport(0, 0, self.resolution as u32, self.max_num_lights as u32);
@@ -228,6 +357,8 @@ impl ShadowMap {
             this: self,
             ctx,
             lights,
+            projection: *projection,
+            view: *view,
         })
     }
 }
@@ -237,6 +368,8 @@ pub struct BuildShadowMap<'a> {
     this: &'a mut ShadowMap,
     ctx: &'a Context,
     lights: &'a [Light],
+    projection: Matrix3,
+    view: Matrix3,
 }
 
 impl<'a> BuildShadowMap<'a> {
@@ -289,6 +422,60 @@ impl<'a> BuildShadowMap<'a> {
     }
 
     pub fn finish(self) -> Result<(), Error> {
+        let golem_ctx = self.ctx.golem_context();
+
+        //Surface::unbind(self.ctx.golem_context());
+        self.this.light_surface.bind();
+
+        golem_ctx
+            .set_viewport(0, 0, self.this.light_surface.width().unwrap(), self.this.light_surface.height().unwrap());
+        golem_ctx.set_clear_color(0.0, 0.0, 0.0, 1.0);
+        golem_ctx.clear();
+        
+        self.ctx.golem_context().set_blend_mode(Some(BlendMode {
+            equation: BlendEquation::Same(BlendOperation::Add),
+            function: BlendFunction::Same {
+                source: BlendFactor::One,
+                destination: BlendFactor::One,
+            },
+            ..Default::default()
+        }));
+
+        let projection_view = self.projection * self.view;
+
+        unsafe {
+            self.this
+                .shadow_map
+                .borrow_texture()
+                .unwrap()
+                .set_active(std::num::NonZeroU32::new(1).unwrap());
+        }
+
+        self.this.light_surface_shader.bind();
+        self.this.light_surface_shader.set_uniform(
+            "mat_projection_view",
+            UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
+        )?;
+        self.this.light_surface_shader.set_uniform(
+            "shadow_map",
+            UniformValue::Int(1),
+        )?;
+        self.this.light_surface_shader.set_uniform(
+            "shadow_map_resolution",
+            UniformValue::Float(self.this.resolution as f32),
+        )?;
+
+        unsafe {
+            self.this.light_surface_shader.draw(
+                &self.this.light_area_batch.buffers().vertices,
+                &self.this.light_area_batch.buffers().elements,
+                0..self.this.light_area_batch.buffers().num_elements,
+                GeometryMode::Triangles,
+            )?;
+        }
+
+        self.ctx.golem_context().set_blend_mode(None);
+
         Surface::unbind(self.ctx.golem_context());
 
         Ok(())
@@ -306,65 +493,28 @@ impl ShadowedColorPass {
             ShaderDescription {
                 vertex_input: &ColorVertex::attributes(),
                 fragment_input: &[
+                    Attribute::new("v_tex_coords", AttributeType::Vector(Dimension::D2)),
                     Attribute::new("v_color", AttributeType::Vector(Dimension::D4)),
-                    Attribute::new("v_world_pos", AttributeType::Vector(Dimension::D2)),
                 ],
                 uniforms: &[
                     Uniform::new("mat_projection_view", UniformType::Matrix(Dimension::D3)),
-                    Uniform::new("shadow_map", UniformType::Sampler2D),
-                    Uniform::new(
-                        "light_world_pos",
-                        UniformType::Vector(NumberType::Float, Dimension::D2),
-                    ),
-                    Uniform::new(
-                        "light_radius",
-                        UniformType::Vector(NumberType::Float, Dimension::D2),
-                    ),
-                    Uniform::new(
-                        "shadow_map_resolution",
-                        UniformType::Scalar(NumberType::Float),
-                    ),
+                    Uniform::new("light_surface", UniformType::Sampler2D),
+                    Uniform::new("ambient_light", UniformType::Vector(NumberType::Float, Dimension::D4)),
                 ],
                 vertex_shader: r#"
                 void main() {
                     vec3 p = mat_projection_view * vec3(a_world_pos.xy, 1.0);
                     gl_Position = vec4(p.xy, a_world_pos.z, 1.0);
-
-                    v_world_pos = a_world_pos.xy;
                     v_color = a_color;
+                    v_tex_coords = (gl_Position.xy + vec2(1.0, 1.0)) / 2.0;
                 }
                 "#,
                 fragment_shader: r#"
-                float angle_to_light(vec2 world_pos) {
-                    vec2 delta = world_pos - light_world_pos;
-                    return atan(delta.y, delta.x);
-                }
-                
                 void main() {
-                    /*
-                    // Debugging the shadow map
-                    if (gl_FragCoord.y < 10.0) {
-                        gl_FragColor = vec4(texture(shadow_map, vec2(gl_FragCoord.x / 1024.0, 0.0)).rgb, 1.0);
-                        return;
-                    }
-                    */
-
-                    float angle = angle_to_light(v_world_pos);
-                    float dist = length(v_world_pos - light_world_pos);
-                    vec2 tex_coords = vec2((angle / (2.0*3.141592)) + 0.5, 0.0);
-
-                    float shadow_val = 0.0;
-                    shadow_val += step(dist, texture(shadow_map, tex_coords).r * 1024.0) * 0.5;
-                    shadow_val += step(dist, texture(shadow_map, tex_coords - vec2(2.0 / 1024.0, 0.0)).r * 1024.0) * 0.25;
-                    shadow_val += step(dist, texture(shadow_map, tex_coords + vec2(2.0 / 1024.0, 0.0)).r * 1024.0) * 0.25;
-                    //shadow_val /= 3.0;
-
-                    /*if (shadow_val < 0.1 && dist > 500.0)
-                        shadow_val = 1.0;*/
-
-                    shadow_val = max(shadow_val, 0.5);
-
-                    gl_FragColor = vec4(v_color.rgb * shadow_val, v_color.a);
+                    gl_FragColor = vec4(
+                        ambient_light.rgb + texture(light_surface, v_tex_coords).rgb * v_color.rgb,
+                        v_color.a
+                    );
                 }
                 "#,
             },
@@ -377,7 +527,7 @@ impl ShadowedColorPass {
         &mut self,
         projection: &Matrix3,
         view: &Matrix3,
-        lights: &[Light],
+        ambient_light: Color,
         shadow_map: &ShadowMap,
         batch: &mut Batch<ColorVertex>,
     ) -> Result<(), Error> {
@@ -387,7 +537,7 @@ impl ShadowedColorPass {
 
         unsafe {
             shadow_map
-                .shadow_map
+                .light_surface
                 .borrow_texture()
                 .unwrap()
                 .set_active(std::num::NonZeroU32::new(1).unwrap());
@@ -399,11 +549,11 @@ impl ShadowedColorPass {
             UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
         )?;
         self.shader.set_uniform(
-            "light_world_pos",
-            UniformValue::Vector2(lights[0].world_pos.coords.into()),
+            "ambient_light",
+            UniformValue::Vector4(ambient_light.coords.into()),
         )?;
         self.shader.set_uniform(
-            "shadow_map",
+            "light_surface",
             UniformValue::Int(1),
         )?;
 
@@ -416,7 +566,7 @@ impl ShadowedColorPass {
             )?;
         }
 
-        // FIXME: Unbind shadow map
+        // FIXME: Unbind light surface
 
         Ok(())
     }

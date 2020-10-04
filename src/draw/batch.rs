@@ -73,6 +73,20 @@ impl<V: Vertex> Batch<V> {
         self.is_dirty = true;
     }
 
+    pub fn push_triangle(&mut self, a: &V, b: &V, c: &V) {
+        assert!(self.geometry_mode() == GeometryMode::Triangles);
+
+        let first_idx = self.num_vertices() as u32;
+
+        self.push_vertex(a);
+        self.push_vertex(b);
+        self.push_vertex(c);
+
+        self.push_element(first_idx + 0);
+        self.push_element(first_idx + 1);
+        self.push_element(first_idx + 2);
+    }
+
     pub fn flush(&mut self) {
         if self.is_dirty {
             self.buffers.vertices.set_data(&self.vertices);
