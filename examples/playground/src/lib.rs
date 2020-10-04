@@ -11,7 +11,7 @@ use webglee::{
         Batch, ColorPass, ColorVertex, Quad, ShadowMap, ShadowedColorPass,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
-    Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
+    Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
 struct Wall {
@@ -211,7 +211,7 @@ impl Game {
         self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
             &view,
-            Color::new(0.1, 0.1, 0.1, 1.0),
+            Color::new(0.025, 0.025, 0.025, 1.0),
             &self.shadow_map,
             &mut self.tri_batch_shadowed,
         )?;

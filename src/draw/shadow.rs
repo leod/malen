@@ -1,3 +1,8 @@
+//! 2D shadow mapping for multiple light sources.
+//!
+//! The implementation follows https://www.gamasutra.com/blogs/RobWare/20180226/313491/Fast_2D_shadows_in_Unity_using_1D_shadow_mapping.php
+//! with some modifications.
+
 use golem::{
     blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation},
     Attribute, AttributeType, ColorFormat, Dimension, GeometryMode, NumberType, ShaderDescription,
