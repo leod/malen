@@ -295,6 +295,12 @@ impl ShadowMap {
 
                     visibility *= pow(1.0 - dist_to_light / light_radius, 2.0);
 
+                    float angle_diff = mod(abs(angle - v_light_params.y), 2.0 * 3.141592);
+                    if (angle_diff > 3.141592)
+                        angle_diff = 2.0 * 3.141592 - angle_diff;
+
+                    visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.5); //step(angle_diff, v_light_params.z);
+
                     vec3 color = v_light_color.rgb * visibility;
 
                     gl_FragColor = vec4(color, v_light_color.a);
@@ -542,7 +548,6 @@ impl ShadowedColorPass {
                 "#,
             },
         )?;
-
         Ok(Self { shader })
     }
 
