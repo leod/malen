@@ -10,6 +10,7 @@ use webglee::{
         shadow::{Light, LineSegment},
         Batch, ColorPass, ColorVertex, Quad, ShadowMap, ShadowedColorPass,
     },
+    golem::depth::{DepthTestFunction, DepthTestMode},
     Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
@@ -42,7 +43,7 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
-        let num_thingies = 16;
+        let num_thingies = 32;
         let shadow_map = ShadowMap::new(ctx, 1024, 1 + num_thingies)?;
         let occluder_batch = Batch::new_lines(ctx)?;
         let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
@@ -53,8 +54,8 @@ impl Game {
         let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
-        let normal = Normal::new(200.0, 100.0).unwrap();
-        let walls = (0..100)
+        let normal = Normal::new(200.0, 150.0).unwrap();
+        let walls = (0..50)
             .map(|_| {
                 let center =
                     Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
@@ -93,7 +94,7 @@ impl Game {
     pub fn render_quad_with_outline(&mut self, center: Point2, size: Vector2, color: Color) {
         let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
 
-        self.tri_batch_shadowed.push_quad(&quad, color);
+        self.tri_batch_plain.push_quad(&quad, color);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
@@ -127,6 +128,14 @@ impl Game {
             let player_dir = player_dir.normalize();
             self.player_pos += dt_secs * 1000.0 * player_dir;
         }
+
+        for (i, thingy) in self.thingies.iter_mut().enumerate() {
+            let mut delta = 0.2 * std::f32::consts::PI * dt_secs;
+            if i % 2 == 0 {
+                delta *= -1.0;
+            }
+            thingy.angle += delta;
+        }
     }
 
     pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
@@ -147,7 +156,7 @@ impl Game {
             radius: 1024.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
-            color: Color::new(0.5, 0.5, 0.5, 1.0),
+            color: Color::new(0.6, 0.6, 0.6, 1.0),
         }];
 
         for i in 0..self.walls.len() {
@@ -167,17 +176,17 @@ impl Game {
 
             lights.push(Light {
                 world_pos: self.thingies[i].center,
-                radius: 256.0,
+                radius: 2048.0,
                 angle: self.thingies[i].angle,
-                angle_size: 0.25 * std::f32::consts::PI,
-                color: Color::new(0.2, 0.4, 0.2, 1.0),
+                angle_size: 0.2 * std::f32::consts::PI,
+                color: Color::new(0.2, 0.3, 0.2, 1.0),
             });
         }
 
         self.render_quad_with_outline(
             self.player_pos,
             Vector2::new(30.0, 30.0),
-            Color::new(1.0, 0.0, 0.0, 1.0),
+            Color::new(0.7, 0.2, 0.2, 1.0),
         );
 
         let view = Camera {
@@ -194,7 +203,7 @@ impl Game {
 
         ctx.golem_context()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_context().set_clear_color(1.0, 1.0, 0.0, 1.0);
+        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
         ctx.golem_context().clear();
 
         self.shadowed_color_pass.draw_batch(
@@ -204,6 +213,11 @@ impl Game {
             &self.shadow_map,
             &mut self.tri_batch_shadowed,
         )?;
+
+        ctx.golem_context().set_depth_test_mode(Some(DepthTestMode {
+            function: DepthTestFunction::Less,
+            ..Default::default()
+        }));
         self.color_pass.draw_batch(
             &screen.orthographic_projection(),
             &view,
@@ -214,6 +228,7 @@ impl Game {
             &view,
             &mut self.line_batch,
         )?;
+        ctx.golem_context().set_depth_test_mode(None);
 
         Ok(())
     }
