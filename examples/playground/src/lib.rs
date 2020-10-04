@@ -18,6 +18,11 @@ struct Wall {
     size: Vector2,
 }
 
+struct Thingy {
+    center: Point2,
+    angle: f32,
+}
+
 struct Game {
     shadow_map: ShadowMap,
     occluder_batch: Batch<LineSegment>,
@@ -29,12 +34,16 @@ struct Game {
     line_batch: Batch<ColorVertex>,
 
     walls: Vec<Wall>,
+
+    thingies: Vec<Thingy>,
+
     player_pos: Point2,
 }
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
-        let shadow_map = ShadowMap::new(ctx, 1024, 1)?;
+        let num_thingies = 16;
+        let shadow_map = ShadowMap::new(ctx, 1024, 1 + num_thingies)?;
         let occluder_batch = Batch::new_lines(ctx)?;
         let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
 
@@ -55,6 +64,18 @@ impl Game {
             })
             .collect();
 
+        let thingies = (0..num_thingies)
+            .map(|_| {
+                let center =
+                    Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
+
+                Thingy {
+                    center,
+                    angle: rng.gen::<f32>() * std::f32::consts::PI,
+                }
+            })
+            .collect();
+
         Ok(Game {
             shadow_map,
             occluder_batch,
@@ -64,6 +85,7 @@ impl Game {
             tri_batch_plain,
             line_batch,
             walls,
+            thingies,
             player_pos: Point2::origin(),
         })
     }
@@ -120,12 +142,36 @@ impl Game {
             Color::new(0.4, 0.9, 0.9, 1.0),
         );
 
+        let mut lights = vec![Light {
+            world_pos: self.player_pos,
+            radius: 1024.0,
+            angle: 0.0,
+            angle_size: std::f32::consts::PI * 2.0,
+            color: Color::new(1.0, 1.0, 1.0, 1.0),
+        }];
+
         for i in 0..self.walls.len() {
             self.render_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
                 Color::new(0.2, 0.2, 0.8, 1.0),
             )
+        }
+
+        for i in 0..self.thingies.len() {
+            self.render_quad_with_outline(
+                self.thingies[i].center,
+                Vector2::new(30.0, 30.0),
+                Color::new(0.2, 0.8, 0.2, 1.0),
+            );
+
+            lights.push(Light {
+                world_pos: self.thingies[i].center,
+                radius: 256.0,
+                angle: self.thingies[i].angle,
+                angle_size: 0.25 * std::f32::consts::PI,
+                color: Color::new(1.0, 0.5, 1.0, 1.0),
+            });
         }
 
         self.render_quad_with_outline(
@@ -141,13 +187,6 @@ impl Game {
         }
         .to_matrix(&screen);
 
-        let lights = vec![Light {
-            world_pos: self.player_pos,
-            radius: 1024.0,
-            angle: 0.0,
-            angle_size: std::f32::consts::PI * 2.0,
-            color: Color::new(1.0, 0.5, 0.5, 1.0),
-        }];
         self.shadow_map
             .build(ctx, &screen.orthographic_projection(), &view, &lights)?
             .draw_occluder_batch(&mut self.occluder_batch)?
