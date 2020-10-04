@@ -24,7 +24,8 @@ struct Game {
     shadowed_color_pass: ShadowedColorPass,
 
     color_pass: ColorPass,
-    tri_batch: Batch<ColorVertex>,
+    tri_batch_shadowed: Batch<ColorVertex>,
+    tri_batch_plain: Batch<ColorVertex>,
     line_batch: Batch<ColorVertex>,
 
     walls: Vec<Wall>,
@@ -38,7 +39,8 @@ impl Game {
         let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
 
         let color_pass = ColorPass::new(ctx)?;
-        let tri_batch = Batch::new_triangles(ctx)?;
+        let tri_batch_shadowed = Batch::new_triangles(ctx)?;
+        let tri_batch_plain = Batch::new_triangles(ctx)?;
         let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
@@ -58,7 +60,8 @@ impl Game {
             occluder_batch,
             shadowed_color_pass,
             color_pass,
-            tri_batch,
+            tri_batch_shadowed,
+            tri_batch_plain,
             line_batch,
             walls,
             player_pos: Point2::origin(),
@@ -68,7 +71,7 @@ impl Game {
     pub fn render_quad_with_outline(&mut self, center: Point2, size: Vector2, color: Color) {
         let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
 
-        self.tri_batch.push_quad(&quad, color);
+        self.tri_batch_shadowed.push_quad(&quad, color);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
@@ -76,8 +79,10 @@ impl Game {
     pub fn render_quad_with_occluder(&mut self, center: Point2, size: Vector2, color: Color) {
         let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
 
-        self.tri_batch.push_quad(&quad, color);
+        self.tri_batch_plain.push_quad(&quad, color);
         self.occluder_batch.push_occluder_quad(&quad);
+        self.line_batch
+            .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
 
     pub fn update(&mut self, dt: Duration, input_state: &InputState) {
@@ -105,13 +110,14 @@ impl Game {
     pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
         let screen = ctx.screen();
 
-        self.tri_batch.clear();
+        self.tri_batch_shadowed.clear();
+        self.tri_batch_plain.clear();
         self.line_batch.clear();
         self.occluder_batch.clear();
 
-        self.tri_batch.push_quad(
+        self.tri_batch_shadowed.push_quad(
             &Quad::axis_aligned(Point3::new(0.0, 0.0, 0.0), Vector2::new(4096.0, 4096.0)),
-            Color::new(0.9, 0.9, 0.9, 1.0),
+            Color::new(0.4, 0.9, 0.9, 1.0),
         );
 
         for i in 0..self.walls.len() {
@@ -140,9 +146,10 @@ impl Game {
             radius: 1024.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
+            color: Color::new(1.0, 0.5, 0.5, 1.0),
         }];
         self.shadow_map
-            .build(ctx, &lights)?
+            .build(ctx, &screen.orthographic_projection(), &view, &lights)?
             .draw_occluder_batch(&mut self.occluder_batch)?
             .finish()?;
 
@@ -154,9 +161,14 @@ impl Game {
         self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
             &view,
-            &lights,
+            Color::new(0.5, 0.5, 0.5, 1.0),
             &self.shadow_map,
-            &mut self.tri_batch,
+            &mut self.tri_batch_shadowed,
+        )?;
+        self.color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            &mut self.tri_batch_plain,
         )?;
         self.color_pass.draw_batch(
             &screen.orthographic_projection(),
