@@ -6,8 +6,12 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use webglee::Event::*;
 use webglee::{
-    draw::{Batch, ColorPass, ColorVertex, Quad},
-    Camera, Color, Context, Error, InputState, Matrix3, Point2, Point3, Vector2, VirtualKeyCode,
+    draw::{
+        shadow::{Light, LineSegment},
+        Batch, ColorPass, ColorVertex, Quad, ShadowMap, ShadowedColorPass,
+    },
+    golem::depth::{DepthTestFunction, DepthTestMode},
+    Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
 struct Wall {
@@ -15,24 +19,43 @@ struct Wall {
     size: Vector2,
 }
 
+struct Thingy {
+    center: Point2,
+    angle: f32,
+}
+
 struct Game {
+    shadow_map: ShadowMap,
+    occluder_batch: Batch<LineSegment>,
+    shadowed_color_pass: ShadowedColorPass,
+
     color_pass: ColorPass,
-    tri_batch: Batch<ColorVertex>,
+    tri_batch_shadowed: Batch<ColorVertex>,
+    tri_batch_plain: Batch<ColorVertex>,
     line_batch: Batch<ColorVertex>,
 
     walls: Vec<Wall>,
+
+    thingies: Vec<Thingy>,
+
     player_pos: Point2,
 }
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
+        let num_thingies = 32;
+        let shadow_map = ShadowMap::new(ctx, 1024, 1 + num_thingies)?;
+        let occluder_batch = Batch::new_lines(ctx)?;
+        let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
+
         let color_pass = ColorPass::new(ctx)?;
-        let tri_batch = Batch::<ColorVertex>::new_triangles(ctx)?;
-        let line_batch = Batch::<ColorVertex>::new_lines(ctx)?;
+        let tri_batch_shadowed = Batch::new_triangles(ctx)?;
+        let tri_batch_plain = Batch::new_triangles(ctx)?;
+        let line_batch = Batch::new_lines(ctx)?;
 
         let mut rng = rand::thread_rng();
-        let normal = Normal::new(150.0, 50.0).unwrap();
-        let walls = (0..100)
+        let normal = Normal::new(200.0, 150.0).unwrap();
+        let walls = (0..50)
             .map(|_| {
                 let center =
                     Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
@@ -42,19 +65,44 @@ impl Game {
             })
             .collect();
 
+        let thingies = (0..num_thingies)
+            .map(|_| {
+                let center =
+                    Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
+
+                Thingy {
+                    center,
+                    angle: rng.gen::<f32>() * std::f32::consts::PI,
+                }
+            })
+            .collect();
+
         Ok(Game {
+            shadow_map,
+            occluder_batch,
+            shadowed_color_pass,
             color_pass,
-            tri_batch,
+            tri_batch_shadowed,
+            tri_batch_plain,
             line_batch,
             walls,
+            thingies,
             player_pos: Point2::origin(),
         })
     }
 
-    pub fn render_quad_with_outline(&mut self, center: Point2, size: Vector2, color: Color) {
+    pub fn render_quad_with_occluder(
+        &mut self,
+        center: Point2,
+        size: Vector2,
+        color: Color,
+        ignore_light_offset: Option<f32>,
+    ) {
         let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
 
-        self.tri_batch.push_quad(&quad, color);
+        self.tri_batch_plain.push_quad(&quad, color);
+        self.occluder_batch
+            .push_occluder_quad(&quad, ignore_light_offset);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
@@ -77,33 +125,70 @@ impl Game {
         }
         if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player_pos += dt_secs * 300.0 * player_dir;
+            self.player_pos += dt_secs * 1000.0 * player_dir;
+        }
+
+        for (i, thingy) in self.thingies.iter_mut().enumerate() {
+            let mut delta = 0.2 * std::f32::consts::PI * dt_secs;
+            if i % 2 == 0 {
+                delta *= -1.0;
+            }
+            thingy.angle += delta;
         }
     }
 
-    pub fn draw(&mut self, ctx: &Context) {
+    pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
         let screen = ctx.screen();
-        let golem_ctx = ctx.golem_context();
 
-        golem_ctx.set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        golem_ctx.set_clear_color(1.0, 1.0, 0.0, 1.0);
-        golem_ctx.clear();
-
-        self.tri_batch.clear();
+        self.tri_batch_shadowed.clear();
+        self.tri_batch_plain.clear();
         self.line_batch.clear();
+        self.occluder_batch.clear();
+
+        self.tri_batch_shadowed.push_quad(
+            &Quad::axis_aligned(Point3::new(0.0, 0.0, 0.0), Vector2::new(4096.0, 4096.0)),
+            Color::new(0.4, 0.9, 0.9, 1.0),
+        );
+
+        let mut lights = vec![Light {
+            world_pos: self.player_pos,
+            radius: 1024.0,
+            angle: 0.0,
+            angle_size: std::f32::consts::PI * 2.0,
+            color: Color::new(0.6, 0.6, 0.6, 1.0),
+        }];
 
         for i in 0..self.walls.len() {
-            self.render_quad_with_outline(
+            self.render_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
-                Color::new(0.8, 0.8, 0.8, 1.0),
+                Color::new(0.2, 0.2, 0.8, 1.0),
+                None,
             )
         }
 
-        self.render_quad_with_outline(
+        for i in 0..self.thingies.len() {
+            self.render_quad_with_occluder(
+                self.thingies[i].center,
+                Vector2::new(30.0, 30.0),
+                Color::new(0.2, 0.8, 0.2, 1.0),
+                Some(self.shadow_map.light_offset(i + 1)),
+            );
+
+            lights.push(Light {
+                world_pos: self.thingies[i].center,
+                radius: 2048.0,
+                angle: self.thingies[i].angle,
+                angle_size: 0.2 * std::f32::consts::PI,
+                color: Color::new(0.1, 0.25, 0.1, 1.0),
+            });
+        }
+
+        self.render_quad_with_occluder(
             self.player_pos,
             Vector2::new(30.0, 30.0),
-            Color::new(1.0, 0.0, 0.0, 1.0),
+            Color::new(0.7, 0.2, 0.2, 1.0),
+            Some(self.shadow_map.light_offset(0)),
         );
 
         let view = Camera {
@@ -113,20 +198,41 @@ impl Game {
         }
         .to_matrix(&screen);
 
-        self.color_pass
-            .draw_batch(
-                &screen.orthographic_projection(),
-                &view,
-                &mut self.tri_batch,
-            )
-            .unwrap();
-        self.color_pass
-            .draw_batch(
-                &screen.orthographic_projection(),
-                &view,
-                &mut self.line_batch,
-            )
-            .unwrap();
+        self.shadow_map
+            .build(ctx, &screen.orthographic_projection(), &view, &lights)?
+            .draw_occluder_batch(&mut self.occluder_batch)?
+            .finish()?;
+
+        ctx.golem_context()
+            .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
+        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_context().clear();
+
+        self.shadowed_color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            Color::new(0.025, 0.025, 0.025, 1.0),
+            &self.shadow_map,
+            &mut self.tri_batch_shadowed,
+        )?;
+
+        ctx.golem_context().set_depth_test_mode(Some(DepthTestMode {
+            function: DepthTestFunction::Less,
+            ..Default::default()
+        }));
+        self.color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            &mut self.tri_batch_plain,
+        )?;
+        self.color_pass.draw_batch(
+            &screen.orthographic_projection(),
+            &view,
+            &mut self.line_batch,
+        )?;
+        ctx.golem_context().set_depth_test_mode(None);
+
+        Ok(())
     }
 }
 
@@ -155,7 +261,7 @@ pub fn main() {
         }
 
         game.update(dt, ctx.input_state());
-        game.draw(&ctx);
+        game.draw(&ctx).unwrap();
     })
     .unwrap();
 }

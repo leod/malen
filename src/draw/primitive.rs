@@ -53,6 +53,8 @@ pub struct Quad {
 }
 
 impl Quad {
+    pub const TRIANGLE_INDICES: &'static [u32] = &[0, 1, 2, 2, 3, 0];
+
     pub fn new(transform: &Matrix3) -> Self {
         Self {
             corners: [
