@@ -151,31 +151,42 @@ impl Batch<ColorVertex> {
 }
 
 impl Batch<shadow::LineSegment> {
-    pub fn push_occluder_line(&mut self, line_p: Point2, line_q: Point2) {
+    pub fn push_occluder_line(
+        &mut self,
+        line_p: Point2,
+        line_q: Point2,
+        ignore_light_offset: Option<f32>,
+    ) {
         assert!(self.geometry_mode == GeometryMode::Lines);
 
         let first_idx = self.num_vertices() as u32;
+
+        let ignore_light_offset = ignore_light_offset.unwrap_or(-1.0);
 
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_p,
             world_pos_q: line_q,
             order: 0.0,
+            ignore_light_offset,
         });
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_q,
             world_pos_q: line_p,
             order: 1.0,
+            ignore_light_offset,
         });
 
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_p,
             world_pos_q: line_q,
             order: 2.0,
+            ignore_light_offset,
         });
         self.push_vertex(&shadow::LineSegment {
             world_pos_p: line_q,
             world_pos_q: line_p,
             order: 3.0,
+            ignore_light_offset,
         });
 
         self.elements.extend_from_slice(&[
@@ -186,11 +197,11 @@ impl Batch<shadow::LineSegment> {
         ]);
     }
 
-    pub fn push_occluder_quad(&mut self, quad: &Quad) {
-        self.push_occluder_line(quad.corners[0], quad.corners[1]);
-        self.push_occluder_line(quad.corners[1], quad.corners[2]);
-        self.push_occluder_line(quad.corners[2], quad.corners[3]);
-        self.push_occluder_line(quad.corners[3], quad.corners[0]);
+    pub fn push_occluder_quad(&mut self, quad: &Quad, ignore_light_offset: Option<f32>) {
+        self.push_occluder_line(quad.corners[0], quad.corners[1], ignore_light_offset);
+        self.push_occluder_line(quad.corners[1], quad.corners[2], ignore_light_offset);
+        self.push_occluder_line(quad.corners[2], quad.corners[3], ignore_light_offset);
+        self.push_occluder_line(quad.corners[3], quad.corners[0], ignore_light_offset);
     }
 }
 

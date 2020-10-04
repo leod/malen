@@ -15,6 +15,7 @@ pub struct LineSegment {
     pub world_pos_p: Point2,
     pub world_pos_q: Point2,
     pub order: f32,
+    pub ignore_light_offset: f32,
 }
 
 impl Vertex for LineSegment {
@@ -23,11 +24,12 @@ impl Vertex for LineSegment {
             Attribute::new("a_world_pos_p", AttributeType::Vector(Dimension::D2)),
             Attribute::new("a_world_pos_q", AttributeType::Vector(Dimension::D2)),
             Attribute::new("a_order", AttributeType::Scalar),
+            Attribute::new("a_ignore_light_offset", AttributeType::Scalar),
         ]
     }
 
     fn num_values() -> usize {
-        2 * 2 + 1
+        2 * 2 + 1 + 1
     }
 
     fn append(&self, out: &mut Vec<f32>) {
@@ -37,6 +39,7 @@ impl Vertex for LineSegment {
             self.world_pos_q.x,
             self.world_pos_q.y,
             self.order,
+            self.ignore_light_offset,
         ])
     }
 }
@@ -185,6 +188,11 @@ impl ShadowMap {
                 const float PI = 3.141592;
 
                 void main() {
+                    if (light_offset == a_ignore_light_offset) {
+                        gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
+                        return;
+                    }
+
                     float angle_p = angle_to_light(a_world_pos_p);
                     float angle_q = angle_to_light(a_world_pos_q);
 
@@ -332,7 +340,7 @@ impl ShadowMap {
                 self.light_area_batch.push_vertex(&LightAreaVertex {
                     world_pos: Point2::new(corner.x, corner.y),
                     light: light.clone(),
-                    light_offset: (light_idx as f32 + 0.5) / lights.len() as f32,
+                    light_offset: self.light_offset(light_idx),
                 });
             }
 
@@ -379,6 +387,10 @@ impl ShadowMap {
             view: *view,
         })
     }
+
+    pub fn light_offset(&self, index: usize) -> f32 {
+        (index as f32 + 0.5) / self.max_num_lights as f32
+    }
 }
 
 #[must_use]
@@ -424,7 +436,7 @@ impl<'a> BuildShadowMap<'a> {
                 .set_uniform("light_radius", UniformValue::Float(light.radius))?;
             self.this.shadow_map_shader.set_uniform(
                 "light_offset",
-                UniformValue::Float((light_idx as f32 + 0.5) / self.lights.len() as f32),
+                UniformValue::Float(self.this.light_offset(light_idx)),
             )?;
 
             unsafe {

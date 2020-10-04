@@ -91,19 +91,18 @@ impl Game {
         })
     }
 
-    pub fn render_quad_with_outline(&mut self, center: Point2, size: Vector2, color: Color) {
+    pub fn render_quad_with_occluder(
+        &mut self,
+        center: Point2,
+        size: Vector2,
+        color: Color,
+        ignore_light_offset: Option<f32>,
+    ) {
         let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
 
         self.tri_batch_plain.push_quad(&quad, color);
-        self.line_batch
-            .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
-    }
-
-    pub fn render_quad_with_occluder(&mut self, center: Point2, size: Vector2, color: Color) {
-        let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
-
-        self.tri_batch_plain.push_quad(&quad, color);
-        self.occluder_batch.push_occluder_quad(&quad);
+        self.occluder_batch
+            .push_occluder_quad(&quad, ignore_light_offset);
         self.line_batch
             .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
@@ -164,14 +163,16 @@ impl Game {
                 self.walls[i].center,
                 self.walls[i].size,
                 Color::new(0.2, 0.2, 0.8, 1.0),
+                None,
             )
         }
 
         for i in 0..self.thingies.len() {
-            self.render_quad_with_outline(
+            self.render_quad_with_occluder(
                 self.thingies[i].center,
                 Vector2::new(30.0, 30.0),
                 Color::new(0.2, 0.8, 0.2, 1.0),
+                Some(self.shadow_map.light_offset(i + 1)),
             );
 
             lights.push(Light {
@@ -179,14 +180,15 @@ impl Game {
                 radius: 2048.0,
                 angle: self.thingies[i].angle,
                 angle_size: 0.2 * std::f32::consts::PI,
-                color: Color::new(0.2, 0.3, 0.2, 1.0),
+                color: Color::new(0.1, 0.25, 0.1, 1.0),
             });
         }
 
-        self.render_quad_with_outline(
+        self.render_quad_with_occluder(
             self.player_pos,
             Vector2::new(30.0, 30.0),
             Color::new(0.7, 0.2, 0.2, 1.0),
+            Some(self.shadow_map.light_offset(0)),
         );
 
         let view = Camera {
