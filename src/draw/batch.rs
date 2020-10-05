@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use golem::{ElementBuffer, GeometryMode, VertexBuffer};
 
 use crate::{
-    draw::{shadow, ColorVertex, Quad, Vertex},
-    Color, Context, Error, Point2, Point3,
+    draw::{shadow, ColorVertex, TexVertex, Quad, Vertex},
+    Color, Context, Error, Point2, Point3, Vector2,
 };
 
 pub struct Batch<V> {
@@ -113,6 +113,54 @@ impl Batch<ColorVertex> {
                 world_pos: Point3::new(corner.x, corner.y, quad.z),
                 color,
             });
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+
+    pub fn push_quad_outline(&mut self, quad: &Quad, color: Color) {
+        assert!(self.geometry_mode == GeometryMode::Lines);
+
+        let first_idx = self.num_vertices() as u32;
+
+        for corner in &quad.corners {
+            self.push_vertex(&ColorVertex {
+                world_pos: Point3::new(corner.x, corner.y, quad.z),
+                color,
+            });
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+}
+
+impl Batch<TexVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, tex_start: Point2, tex_size: Vector2) {
+        assert!(self.geometry_mode == GeometryMode::Triangles);
+
+        let first_idx = self.num_vertices() as u32;
+
+        for corner_idx in 0..4 {
+            self.push_vertex(&TexVertex {
+                world_pos: Point3::new(quad.corners[corner_idx].x, quad.corners[corner_idx].y, quad.z),
+                tex_coords: Quad::corners()[corner_idx] + Vector2::new(0.5, 0.5),
+            })
         }
 
         self.elements.extend_from_slice(&[
