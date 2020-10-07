@@ -104,25 +104,23 @@ impl ShelfPacker {
             let position = (best_shelf.next_x, best_shelf.top_y);
             best_shelf.next_x += space_width;
             Some(position)
+        } else if self.next_y + space_height < texture_height {
+            // Create a new shelf
+            let position = (0, self.next_y);
+
+            self.shelves.push(Shelf {
+                next_x: space_width,
+                top_y: self.next_y,
+                width: texture_width,
+                height: space_height,
+            });
+
+            self.next_y += texture_height;
+
+            Some(position)
         } else {
-            if self.next_y + space_height < texture_height {
-                // Create a new shelf
-                let position = (0, self.next_y);
-
-                self.shelves.push(Shelf {
-                    next_x: space_width,
-                    top_y: self.next_y,
-                    width: texture_width,
-                    height: space_height,
-                });
-
-                self.next_y += texture_height;
-
-                Some(position)
-            } else {
-                // We ran out of space
-                None
-            }
+            // We ran out of space
+            None
         }
     }
 }

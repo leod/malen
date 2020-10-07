@@ -20,7 +20,7 @@ pub struct BuffersSlice<'a, V> {
 }
 
 pub trait AsBuffersSlice<V> {
-    fn as_buffers_slice<'a>(&'a self) -> BuffersSlice<'a, V>;
+    fn as_buffers_slice(&self) -> BuffersSlice<'_, V>;
 }
 
 impl<V> Buffers<V> {
@@ -68,7 +68,7 @@ impl<V> Buffers<V> {
 }
 
 impl<V> AsBuffersSlice<V> for Buffers<V> {
-    fn as_buffers_slice<'a>(&'a self) -> BuffersSlice<'a, V> {
+    fn as_buffers_slice(&self) -> BuffersSlice<'_, V> {
         BuffersSlice {
             vertices: &self.vertices,
             elements: &self.elements,

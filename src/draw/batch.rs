@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use golem::{ElementBuffer, GeometryMode, VertexBuffer};
+use golem::GeometryMode;
 
 use crate::{
-    draw::{shadow, AsBuffersSlice, Buffers, ColorVertex, Quad, TexVertex, Vertex},
+    draw::{shadow, Buffers, ColorVertex, Quad, TexVertex, Vertex},
     Color, Context, Error, Point2, Point3, Vector2,
 };
 
@@ -158,6 +158,8 @@ impl Batch<TexVertex> {
 
         let first_idx = self.num_vertices() as u32;
 
+        let tex_center = tex_start + tex_size / 2.0;
+
         for corner_idx in 0..4 {
             self.push_vertex(&TexVertex {
                 world_pos: Point3::new(
@@ -165,7 +167,7 @@ impl Batch<TexVertex> {
                     quad.corners[corner_idx].y,
                     quad.z,
                 ),
-                tex_coords: Point2::from(Quad::corners()[corner_idx]) + Vector2::new(0.5, 0.5),
+                tex_coords: tex_center + Quad::corners()[corner_idx].component_mul(&tex_size),
             })
         }
 
