@@ -11,7 +11,7 @@ use golem::{
 };
 
 use crate::{
-    draw::{Batch, ColorVertex, Quad, Vertex},
+    draw::{AsBuffersSlice, Batch, BuffersSlice, ColorVertex, Quad, Vertex},
     geom::matrix3_to_flat_array,
     Color, Context, Error, Matrix3, Point2, Point3, Vector2, Vector3,
 };
@@ -578,15 +578,39 @@ impl ShadowedColorPass {
     ) -> Result<(), Error> {
         batch.flush();
 
+        // TODO: I believe this is safe, because Batch in its construction
+        // (see Batch::push_element) makes sure that each element points to
+        // a valid index in the vertex buffer. We need to verify this though.
+        // We also need to verify if golem::ShaderProgram::draw has any
+        // additional requirements for safety.
+        unsafe {
+            self.draw_buffers(
+                projection,
+                view,
+                ambient_light,
+                shadow_map,
+                batch.buffers().as_buffers_slice(),
+                batch.geometry_mode(),
+            )
+        }
+    }
+
+    pub unsafe fn draw_buffers(
+        &mut self,
+        projection: &Matrix3,
+        view: &Matrix3,
+        ambient_light: Color,
+        shadow_map: &ShadowMap,
+        buffers: BuffersSlice<ColorVertex>,
+        geometry_mode: GeometryMode,
+    ) -> Result<(), Error> {
         let projection_view = projection * view;
 
-        unsafe {
-            shadow_map
-                .light_surface
-                .borrow_texture()
-                .unwrap()
-                .set_active(std::num::NonZeroU32::new(1).unwrap());
-        }
+        shadow_map
+            .light_surface
+            .borrow_texture()
+            .unwrap()
+            .set_active(std::num::NonZeroU32::new(1).unwrap());
 
         self.shader.bind();
         self.shader.set_uniform(
@@ -600,14 +624,12 @@ impl ShadowedColorPass {
         self.shader
             .set_uniform("light_surface", UniformValue::Int(1))?;
 
-        unsafe {
-            self.shader.draw(
-                &batch.buffers().vertices,
-                &batch.buffers().elements,
-                0..batch.num_elements(),
-                batch.geometry_mode(),
-            )?;
-        }
+        self.shader.draw(
+            buffers.vertices,
+            buffers.elements,
+            0..buffers.num_elements,
+            geometry_mode,
+        )?;
 
         // FIXME: Unbind light surface
 

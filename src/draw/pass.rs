@@ -1,10 +1,10 @@
 use golem::{
-    Attribute, AttributeType, Dimension, ElementBuffer, GeometryMode, ShaderDescription,
-    ShaderProgram, Uniform, UniformType, UniformValue, VertexBuffer,
+    Attribute, AttributeType, Dimension, GeometryMode, ShaderDescription, ShaderProgram, Uniform,
+    UniformType, UniformValue,
 };
 
 use crate::{
-    draw::{Batch, ColorVertex, Vertex},
+    draw::{AsBuffersSlice, Batch, BuffersSlice, ColorVertex, Vertex},
     geom::matrix3_to_flat_array,
     Context, Error, Matrix3,
 };
@@ -53,23 +53,26 @@ impl ColorPass {
     ) -> Result<(), Error> {
         batch.flush();
 
-        self.draw_buffers_unchecked(
-            projection,
-            view,
-            &batch.buffers().vertices,
-            &batch.buffers().elements,
-            batch.buffers().num_elements,
-            batch.geometry_mode(),
-        )
+        // TODO: I believe this is safe, because Batch in its construction
+        // (see Batch::push_element) makes sure that each element points to
+        // a valid index in the vertex buffer. We need to verify this though.
+        // We also need to verify if golem::ShaderProgram::draw has any
+        // additional requirements for safety.
+        unsafe {
+            self.draw_buffers(
+                projection,
+                view,
+                batch.buffers().as_buffers_slice(),
+                batch.geometry_mode(),
+            )
+        }
     }
 
-    pub fn draw_buffers_unchecked(
+    pub unsafe fn draw_buffers(
         &mut self,
         projection: &Matrix3,
         view: &Matrix3,
-        vertices: &VertexBuffer,
-        elements: &ElementBuffer,
-        num_elements: usize,
+        buffers: BuffersSlice<ColorVertex>,
         geometry_mode: GeometryMode,
     ) -> Result<(), Error> {
         let projection_view = projection * view;
@@ -80,10 +83,7 @@ impl ColorPass {
             UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
         )?;
 
-        unsafe {
-            self.shader
-                .draw(vertices, elements, 0..num_elements, geometry_mode)?;
-        }
+        buffers.draw(&self.shader, geometry_mode)?;
 
         Ok(())
     }

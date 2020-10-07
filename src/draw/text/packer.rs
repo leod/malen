@@ -1,9 +1,9 @@
 //! Packing cached glyphs into a texture atlas.
-//! 
+//!
 //! Heavily inspired by this:
 //! https://github.com/17cupsofcoffee/tetra/blob/main/src/graphics/text/packer.rs
 
-use golem::{Texture, ColorFormat, TextureFilter};
+use golem::{ColorFormat, Texture, TextureFilter};
 
 use crate::{Context, Error};
 
@@ -49,12 +49,7 @@ pub struct ShelfPacker {
 impl ShelfPacker {
     pub fn new(ctx: &Context, width: usize, height: usize) -> Result<ShelfPacker, Error> {
         let mut texture = Texture::new(ctx.golem_context())?;
-        texture.set_image(
-            None,
-            width as u32,
-            height as u32,
-            ColorFormat::RGBA,
-        );
+        texture.set_image(None, width as u32, height as u32, ColorFormat::RGBA);
         texture.set_magnification(TextureFilter::Nearest)?;
         texture.set_minification(TextureFilter::Nearest)?;
 
@@ -86,14 +81,22 @@ impl ShelfPacker {
         space
     }
 
-    fn allocate_space(&mut self, space_width: usize, space_height: usize) -> Option<(usize, usize)> {
+    fn allocate_space(
+        &mut self,
+        space_width: usize,
+        space_height: usize,
+    ) -> Option<(usize, usize)> {
         let texture_width = self.texture.width() as usize;
         let texture_height = self.texture.height() as usize;
 
         let best_shelf = self
             .shelves
             .iter_mut()
-            .filter_map(|shelf| shelf.allocation_costs(space_width, space_height).map(|costs| (costs, shelf)))
+            .filter_map(|shelf| {
+                shelf
+                    .allocation_costs(space_width, space_height)
+                    .map(|costs| (costs, shelf))
+            })
             .min_by_key(|(costs, _)| *costs);
 
         if let Some((_, best_shelf)) = best_shelf {
