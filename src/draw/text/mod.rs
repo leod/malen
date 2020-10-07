@@ -2,6 +2,4 @@ mod packer;
 
 use packer::ShelfPacker;
 
-struct Font {
-
-}
+struct Font {}

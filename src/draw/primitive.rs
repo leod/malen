@@ -83,7 +83,7 @@ pub struct Quad {
 
 impl Quad {
     pub const TRIANGLE_INDICES: &'static [u32] = &[0, 1, 2, 2, 3, 0];
-    
+
     pub fn corners() -> [Vector2; 4] {
         [
             Vector2::new(-0.5, -0.5),
