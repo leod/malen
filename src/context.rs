@@ -6,7 +6,7 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 use golem::{glow, GolemError};
 
 use crate::input::EventHandlers;
-use crate::{Draw, Error, Event, InputState, Screen, Vector2};
+use crate::{Draw, Error, Event, InputState};
 
 pub struct Context {
     event_handlers: EventHandlers,
