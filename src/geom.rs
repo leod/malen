@@ -9,6 +9,28 @@ pub type Vector4 = na::Vector4<f32>;
 pub type Matrix2 = na::Matrix2<f32>;
 pub type Matrix3 = na::Matrix3<f32>;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Rect {
+    pub center: Point2,
+    pub size: Vector2,
+}
+
+impl Rect {
+    pub fn from_top_left(top_left: Point2, size: Vector2) -> Self {
+        Self {
+            center: top_left + size / 2.0,
+            size,
+        }
+    }
+
+    pub fn from_bottom_left(top_left: Point2, size: Vector2) -> Self {
+        Self {
+            center: top_left + Vector2::new(size.x, -size.y) / 2.0,
+            size,
+        }
+    }
+}
+
 pub fn matrix3_to_flat_array(m: &Matrix3) -> [f32; 9] {
     [
         m[(0, 0)],
@@ -62,7 +84,7 @@ pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Ma
         * na::Matrix3::new_nonuniform_scaling(&scale)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Screen {
     /// The screen size in pixels.
     pub size: na::Vector2<u32>,

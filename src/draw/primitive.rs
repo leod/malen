@@ -10,7 +10,7 @@ pub trait Vertex {
     fn append(&self, out: &mut Vec<f32>);
 }
 
-pub struct ColorVertex {
+pub struct ColVertex {
     /// The vertex position in world coordinates.
     ///
     /// We apply the model transformation on CPU. This seems to be the
@@ -21,7 +21,7 @@ pub struct ColorVertex {
     pub color: Color,
 }
 
-impl Vertex for ColorVertex {
+impl Vertex for ColVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
             Attribute::new("a_world_pos", AttributeType::Vector(Dimension::D3)),
@@ -71,6 +71,41 @@ impl Vertex for TexVertex {
             self.world_pos.z,
             self.tex_coords.x,
             self.tex_coords.y,
+        ]);
+    }
+}
+
+pub struct TexColVertex {
+    /// The vertex position in world coordinates.
+    pub world_pos: Point3,
+    pub tex_coords: Point2,
+    pub color: Color,
+}
+
+impl Vertex for TexColVertex {
+    fn attributes() -> Vec<Attribute> {
+        vec![
+            Attribute::new("a_world_pos", AttributeType::Vector(Dimension::D3)),
+            Attribute::new("a_tex_coords", AttributeType::Vector(Dimension::D2)),
+            Attribute::new("a_color", AttributeType::Vector(Dimension::D4)),
+        ]
+    }
+
+    fn num_values() -> usize {
+        3 + 2 + 4
+    }
+
+    fn append(&self, out: &mut Vec<f32>) {
+        out.extend_from_slice(&[
+            self.world_pos.x,
+            self.world_pos.y,
+            self.world_pos.z,
+            self.tex_coords.x,
+            self.tex_coords.y,
+            self.color.x,
+            self.color.y,
+            self.color.z,
+            self.color.w,
         ]);
     }
 }
