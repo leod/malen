@@ -25,8 +25,8 @@ pub trait AsBuffersSlice<V> {
 
 impl<V> Buffers<V> {
     pub fn new(ctx: &Context) -> Result<Self, Error> {
-        let vertices = VertexBuffer::new(ctx.golem_context())?;
-        let elements = ElementBuffer::new(ctx.golem_context())?;
+        let vertices = VertexBuffer::new(ctx.golem_ctx())?;
+        let elements = ElementBuffer::new(ctx.golem_ctx())?;
 
         Ok(Self {
             vertices,

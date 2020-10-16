@@ -12,6 +12,7 @@ pub use golem::glow;
 pub use nalgebra as na;
 
 pub use context::Context;
+pub use draw::Draw;
 pub use input::{Event, InputState, VirtualKeyCode};
 
 pub use geom::{

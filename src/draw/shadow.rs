@@ -130,7 +130,7 @@ impl ShadowMap {
         resolution: usize,
         max_num_lights: usize,
     ) -> Result<Surface, Error> {
-        let mut shadow_map_texture = Texture::new(ctx.golem_context())?;
+        let mut shadow_map_texture = Texture::new(ctx.golem_ctx())?;
         shadow_map_texture.set_image(
             None,
             resolution as u32,
@@ -142,18 +142,21 @@ impl ShadowMap {
         shadow_map_texture.set_wrap_h(TextureWrap::ClampToEdge)?;
         shadow_map_texture.set_wrap_v(TextureWrap::ClampToEdge)?;
 
-        Ok(Surface::new(ctx.golem_context(), shadow_map_texture)?)
+        Ok(Surface::new(ctx.golem_ctx(), shadow_map_texture)?)
     }
 
     fn new_light_surface(ctx: &Context) -> Result<Surface, Error> {
-        log::info!("Creating new light surface for screen {:?}", ctx.screen());
+        log::info!(
+            "Creating new light surface for screen {:?}",
+            ctx.draw().screen()
+        );
 
-        let mut light_texture = Texture::new(ctx.golem_context())?;
+        let mut light_texture = Texture::new(ctx.golem_ctx())?;
         // TODO: Make screen resolution u32
         light_texture.set_image(
             None,
-            ctx.screen().size.x as u32,
-            ctx.screen().size.y as u32,
+            ctx.draw().screen().size.x as u32,
+            ctx.draw().screen().size.y as u32,
             ColorFormat::RGBA,
         );
         light_texture.set_magnification(TextureFilter::Nearest)?;
@@ -161,7 +164,7 @@ impl ShadowMap {
         light_texture.set_wrap_h(TextureWrap::ClampToEdge)?;
         light_texture.set_wrap_v(TextureWrap::ClampToEdge)?;
 
-        Ok(Surface::new(ctx.golem_context(), light_texture)?)
+        Ok(Surface::new(ctx.golem_ctx(), light_texture)?)
     }
 
     pub fn new(ctx: &Context, resolution: usize, max_num_lights: usize) -> Result<Self, Error> {
@@ -169,7 +172,7 @@ impl ShadowMap {
         let light_surface = Self::new_light_surface(ctx)?;
 
         let shadow_map_shader = ShaderProgram::new(
-            ctx.golem_context(),
+            ctx.golem_ctx(),
             ShaderDescription {
                 vertex_input: &LineSegment::attributes(),
                 fragment_input: &[
@@ -261,7 +264,7 @@ impl ShadowMap {
         )?;
 
         let light_surface_shader = ShaderProgram::new(
-            ctx.golem_context(),
+            ctx.golem_ctx(),
             ShaderDescription {
                 vertex_input: &LightAreaVertex::attributes(),
                 fragment_input: &[
@@ -365,8 +368,8 @@ impl ShadowMap {
         view: &Matrix3,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
-        if ctx.screen().size.x as u32 != self.light_surface.width().unwrap()
-            || ctx.screen().size.y as u32 != self.light_surface.height().unwrap()
+        if ctx.draw().screen().size.x as u32 != self.light_surface.width().unwrap()
+            || ctx.draw().screen().size.y as u32 != self.light_surface.height().unwrap()
         {
             // Screen surface has been resized, so we also need to recreate
             // the light surface.
@@ -379,10 +382,10 @@ impl ShadowMap {
 
         // Clear the shadow map to maximal distance, i.e. 1.
         self.shadow_map.bind();
-        ctx.golem_context()
+        ctx.golem_ctx()
             .set_viewport(0, 0, self.resolution as u32, self.max_num_lights as u32);
-        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
-        ctx.golem_context().clear();
+        ctx.golem_ctx().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_ctx().clear();
 
         Ok(BuildShadowMap {
             this: self,
@@ -419,7 +422,7 @@ impl<'a> BuildShadowMap<'a> {
 
         batch.flush();
 
-        self.ctx.golem_context().set_blend_mode(Some(BlendMode {
+        self.ctx.golem_ctx().set_blend_mode(Some(BlendMode {
             equation: BlendEquation::Same(BlendOperation::Min),
             function: BlendFunction::Same {
                 source: BlendFactor::One,
@@ -454,15 +457,15 @@ impl<'a> BuildShadowMap<'a> {
             }
         }
 
-        self.ctx.golem_context().set_blend_mode(None);
+        self.ctx.golem_ctx().set_blend_mode(None);
 
         Ok(self)
     }
 
     pub fn finish(self) -> Result<(), Error> {
-        let golem_ctx = self.ctx.golem_context();
+        let golem_ctx = self.ctx.golem_ctx();
 
-        //Surface::unbind(self.ctx.golem_context());
+        //Surface::unbind(self.ctx.golem_ctx());
         self.this.light_surface.bind();
 
         golem_ctx.set_viewport(
@@ -474,7 +477,7 @@ impl<'a> BuildShadowMap<'a> {
         golem_ctx.set_clear_color(0.0, 0.0, 0.0, 1.0);
         golem_ctx.clear();
 
-        self.ctx.golem_context().set_blend_mode(Some(BlendMode {
+        self.ctx.golem_ctx().set_blend_mode(Some(BlendMode {
             equation: BlendEquation::Same(BlendOperation::Add),
             function: BlendFunction::Same {
                 source: BlendFactor::One,
@@ -515,9 +518,9 @@ impl<'a> BuildShadowMap<'a> {
             )?;
         }
 
-        self.ctx.golem_context().set_blend_mode(None);
+        self.ctx.golem_ctx().set_blend_mode(None);
 
-        Surface::unbind(self.ctx.golem_context());
+        Surface::unbind(self.ctx.golem_ctx());
 
         Ok(())
     }
@@ -530,7 +533,7 @@ pub struct ShadowedColorPass {
 impl ShadowedColorPass {
     pub fn new(ctx: &Context) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
-            ctx.golem_context(),
+            ctx.golem_ctx(),
             ShaderDescription {
                 vertex_input: &ColorVertex::attributes(),
                 fragment_input: &[

@@ -48,7 +48,7 @@ pub struct ShelfPacker {
 
 impl ShelfPacker {
     pub fn new(ctx: &Context, width: usize, height: usize) -> Result<ShelfPacker, Error> {
-        let mut texture = Texture::new(ctx.golem_context())?;
+        let mut texture = Texture::new(ctx.golem_ctx())?;
         texture.set_image(None, width as u32, height as u32, ColorFormat::RGBA);
         texture.set_magnification(TextureFilter::Nearest)?;
         texture.set_minification(TextureFilter::Nearest)?;

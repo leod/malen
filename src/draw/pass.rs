@@ -16,7 +16,7 @@ pub struct ColorPass {
 impl ColorPass {
     pub fn new(ctx: &Context) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
-            ctx.golem_context(),
+            ctx.golem_ctx(),
             ShaderDescription {
                 vertex_input: &ColorVertex::attributes(),
                 fragment_input: &[Attribute::new(

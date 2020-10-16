@@ -6,13 +6,12 @@ use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 use golem::{glow, GolemError};
 
 use crate::input::EventHandlers;
-use crate::{Error, Event, InputState, Screen, Vector2};
+use crate::{Draw, Error, Event, InputState, Screen, Vector2};
 
 pub struct Context {
-    canvas: HtmlCanvasElement,
     event_handlers: EventHandlers,
     input_state: InputState,
-    golem_context: golem::Context,
+    draw: Draw,
 }
 
 impl Context {
@@ -40,27 +39,25 @@ impl Context {
             .map_err(|_| Error::InitializeWebGl)?;
         let glow_context = glow::Context::from_webgl1_context(webgl_context);
         let golem_context = golem::Context::from_glow(glow_context)?;
+        let draw = Draw::new(canvas, golem_context)?;
 
         Ok(Context {
-            canvas,
             event_handlers,
             input_state,
-            golem_context,
+            draw,
         })
-    }
-
-    pub fn screen(&self) -> Screen {
-        Screen {
-            size: Vector2::new(self.canvas.width() as f32, self.canvas.height() as f32),
-        }
-    }
-
-    pub fn golem_context(&self) -> &golem::Context {
-        &self.golem_context
     }
 
     pub fn input_state(&self) -> &InputState {
         &self.input_state
+    }
+
+    pub fn draw(&self) -> &Draw {
+        &self.draw
+    }
+
+    pub fn golem_ctx(&self) -> &golem::Context {
+        self.draw.golem_ctx()
     }
 
     /// Run the `webglee` main loop.

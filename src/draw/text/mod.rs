@@ -1,5 +1,2 @@
+mod font;
 mod packer;
-
-use packer::ShelfPacker;
-
-struct Font {}
