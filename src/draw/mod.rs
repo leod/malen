@@ -5,11 +5,10 @@ mod primitive;
 pub mod shadow;
 mod text;
 
-use crate::{
-    geom::{Screen, Vector2},
-    Error,
-};
+use nalgebra as na;
 use web_sys::HtmlCanvasElement;
+
+use crate::{geom::Screen, Error};
 
 pub use batch::Batch;
 pub use buffers::{AsBuffersSlice, Buffers, BuffersSlice};
@@ -26,9 +25,10 @@ impl Draw {
     pub fn new(canvas: HtmlCanvasElement, golem_ctx: golem::Context) -> Result<Self, Error> {
         Ok(Draw { canvas, golem_ctx })
     }
+
     pub fn screen(&self) -> Screen {
         Screen {
-            size: Vector2::new(self.canvas.width() as f32, self.canvas.height() as f32),
+            size: na::Vector2::new(self.canvas.width(), self.canvas.height()),
         }
     }
 

@@ -65,7 +65,7 @@ pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Ma
 #[derive(Debug, Clone)]
 pub struct Screen {
     /// The screen size in pixels.
-    pub size: Vector2,
+    pub size: na::Vector2<u32>,
 }
 
 impl Screen {
@@ -80,8 +80,8 @@ impl Screen {
     /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3 {
         let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
-            1.0 / self.size.x,
-            1.0 / self.size.y,
+            1.0 / self.size.x as f32,
+            1.0 / self.size.y as f32,
         ));
         let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
@@ -123,11 +123,13 @@ impl Camera {
         //        R(x)^-1 = R(-x),
         //        T(x)^-1 = T(-x).)
 
-        na::Matrix3::new_translation(&Vector2::new(screen.size.x / 2.0, screen.size.y / 2.0))
-            * translate_rotate_scale(
-                -self.center.coords,
-                -self.angle,
-                na::Vector2::new(self.zoom, self.zoom),
-            )
+        na::Matrix3::new_translation(&Vector2::new(
+            screen.size.x as f32 / 2.0,
+            screen.size.y as f32 / 2.0,
+        )) * translate_rotate_scale(
+            -self.center.coords,
+            -self.angle,
+            na::Vector2::new(self.zoom, self.zoom),
+        )
     }
 }
