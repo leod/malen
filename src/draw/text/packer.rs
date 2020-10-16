@@ -5,7 +5,7 @@
 
 use golem::{ColorFormat, Texture, TextureFilter};
 
-use crate::{Context, Error};
+use crate::{Context, Error, Point2, Rect, Vector2};
 
 /// A shelf has a fixed height and grows in width as more glyphs are added.
 #[derive(Clone, Debug)]
@@ -64,7 +64,7 @@ impl ShelfPacker {
         &self.texture
     }
 
-    pub fn insert(&mut self, data: &[u8], width: usize, height: usize) -> Option<(usize, usize)> {
+    pub fn insert(&mut self, data: &[u8], width: usize, height: usize) -> Option<Rect> {
         let space = self.allocate_space(width, height);
 
         if let Some((x, y)) = space {
@@ -75,10 +75,24 @@ impl ShelfPacker {
                 width as u32,
                 height as u32,
                 ColorFormat::RGBA,
-            )
-        }
+            );
 
-        space
+            log::info!("insert {}x{} at {},{}", width, height, x, y);
+
+            // Normalize from image coordinates to UV
+            let tex_width = self.texture().width() as f32;
+            let tex_height = self.texture().height() as f32;
+
+            Some(Rect::from_top_left(
+                Point2::new((x as f32 + 0.5) / tex_width, (y as f32 + 0.5) / tex_height),
+                Vector2::new(
+                    (width - 1) as f32 / tex_width,
+                    (height - 1) as f32 / tex_height,
+                ),
+            ))
+        } else {
+            None
+        }
     }
 
     fn allocate_space(
@@ -115,7 +129,7 @@ impl ShelfPacker {
                 height: space_height,
             });
 
-            self.next_y += texture_height;
+            self.next_y += space_height;
 
             Some(position)
         } else {

@@ -12,9 +12,10 @@ use crate::{geom::Screen, Error};
 
 pub use batch::Batch;
 pub use buffers::{AsBuffersSlice, Buffers, BuffersSlice};
-pub use pass::ColorPass;
-pub use primitive::{ColorVertex, GeometryMode, Quad, TexVertex, Vertex};
+pub use pass::{ColPass, TexColPass};
+pub use primitive::{ColVertex, GeometryMode, Quad, TexColVertex, TexVertex, Vertex};
 pub use shadow::{ShadowMap, ShadowedColorPass};
+pub use text::Font;
 
 pub struct Draw {
     canvas: HtmlCanvasElement,

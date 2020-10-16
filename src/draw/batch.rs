@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use golem::GeometryMode;
 
 use crate::{
-    draw::{shadow, Buffers, ColorVertex, Quad, TexVertex, Vertex},
-    Color, Context, Error, Point2, Point3, Vector2,
+    draw::{shadow, Buffers, ColVertex, Quad, TexColVertex, TexVertex, Vertex},
+    Color, Context, Error, Point2, Point3, Rect,
 };
 
 pub struct Batch<V> {
@@ -104,14 +104,14 @@ impl<V: Vertex> Batch<V> {
     }
 }
 
-impl Batch<ColorVertex> {
+impl Batch<ColVertex> {
     pub fn push_quad(&mut self, quad: &Quad, color: Color) {
         assert!(self.geometry_mode == GeometryMode::Triangles);
 
         let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
-            self.push_vertex(&ColorVertex {
+            self.push_vertex(&ColVertex {
                 world_pos: Point3::new(corner.x, corner.y, quad.z),
                 color,
             });
@@ -133,7 +133,7 @@ impl Batch<ColorVertex> {
         let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
-            self.push_vertex(&ColorVertex {
+            self.push_vertex(&ColVertex {
                 world_pos: Point3::new(corner.x, corner.y, quad.z),
                 color,
             });
@@ -153,12 +153,10 @@ impl Batch<ColorVertex> {
 }
 
 impl Batch<TexVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, tex_start: Point2, tex_size: Vector2) {
+    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect) {
         assert!(self.geometry_mode == GeometryMode::Triangles);
 
         let first_idx = self.num_vertices() as u32;
-
-        let tex_center = tex_start + tex_size / 2.0;
 
         for corner_idx in 0..4 {
             self.push_vertex(&TexVertex {
@@ -167,7 +165,38 @@ impl Batch<TexVertex> {
                     quad.corners[corner_idx].y,
                     quad.z,
                 ),
-                tex_coords: tex_center + Quad::corners()[corner_idx].component_mul(&tex_size),
+                tex_coords: uv_rect.center
+                    + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
+            })
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+}
+
+impl Batch<TexColVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect, color: Color) {
+        assert!(self.geometry_mode == GeometryMode::Triangles);
+
+        let first_idx = self.num_vertices() as u32;
+
+        for corner_idx in 0..4 {
+            self.push_vertex(&TexColVertex {
+                world_pos: Point3::new(
+                    quad.corners[corner_idx].x,
+                    quad.corners[corner_idx].y,
+                    quad.z,
+                ),
+                tex_coords: uv_rect.center
+                    + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
+                color,
             })
         }
 

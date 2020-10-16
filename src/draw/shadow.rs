@@ -11,7 +11,7 @@ use golem::{
 };
 
 use crate::{
-    draw::{AsBuffersSlice, Batch, BuffersSlice, ColorVertex, Quad, Vertex},
+    draw::{AsBuffersSlice, Batch, BuffersSlice, ColVertex, Quad, Vertex},
     geom::matrix3_to_flat_array,
     Color, Context, Error, Matrix3, Point2, Point3, Vector2, Vector3,
 };
@@ -535,7 +535,7 @@ impl ShadowedColorPass {
         let shader = ShaderProgram::new(
             ctx.golem_ctx(),
             ShaderDescription {
-                vertex_input: &ColorVertex::attributes(),
+                vertex_input: &ColVertex::attributes(),
                 fragment_input: &[
                     Attribute::new("v_tex_coords", AttributeType::Vector(Dimension::D2)),
                     Attribute::new("v_color", AttributeType::Vector(Dimension::D4)),
@@ -577,7 +577,7 @@ impl ShadowedColorPass {
         view: &Matrix3,
         ambient_light: Color,
         shadow_map: &ShadowMap,
-        batch: &mut Batch<ColorVertex>,
+        batch: &mut Batch<ColVertex>,
     ) -> Result<(), Error> {
         batch.flush();
 
@@ -604,7 +604,7 @@ impl ShadowedColorPass {
         view: &Matrix3,
         ambient_light: Color,
         shadow_map: &ShadowMap,
-        buffers: BuffersSlice<ColorVertex>,
+        buffers: BuffersSlice<ColVertex>,
         geometry_mode: GeometryMode,
     ) -> Result<(), Error> {
         let projection_view = projection * view;
