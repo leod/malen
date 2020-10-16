@@ -138,7 +138,7 @@ impl Game {
     }
 
     pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
-        let screen = ctx.screen();
+        let screen = ctx.draw().screen();
 
         self.tri_batch_shadowed.clear();
         self.tri_batch_plain.clear();
@@ -203,10 +203,10 @@ impl Game {
             .draw_occluder_batch(&mut self.occluder_batch)?
             .finish()?;
 
-        ctx.golem_context()
+        ctx.golem_ctx()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
-        ctx.golem_context().clear();
+        ctx.golem_ctx().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_ctx().clear();
 
         self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
@@ -216,7 +216,7 @@ impl Game {
             &mut self.tri_batch_shadowed,
         )?;
 
-        ctx.golem_context().set_depth_test_mode(Some(DepthTestMode {
+        ctx.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
             function: DepthTestFunction::Less,
             ..Default::default()
         }));
@@ -230,7 +230,7 @@ impl Game {
             &view,
             &mut self.line_batch,
         )?;
-        ctx.golem_context().set_depth_test_mode(None);
+        ctx.golem_ctx().set_depth_test_mode(None);
 
         Ok(())
     }
