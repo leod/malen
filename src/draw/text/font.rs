@@ -1,14 +1,14 @@
 use std::{collections::HashMap, ops::Deref};
 
 use fontdue::{
-    layout::{GlyphPosition, Layout, LayoutSettings, TextStyle},
-    FontSettings, Metrics,
+    layout::{CoordinateSystem, GlyphPosition, Layout, LayoutSettings, TextStyle},
+    FontSettings,
 };
 use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
 
 use crate::{
     draw::{text::packer::ShelfPacker, Batch, Quad, TexColPass, TexColVertex},
-    Color, Context, Error, Matrix3, Point3, Rect, Screen, Vector2,
+    Color, Context, Error, Matrix3, Point3, Rect, Vector2,
 };
 
 struct Glyph {
@@ -46,7 +46,7 @@ impl Font {
             fontdue::Font::from_bytes(data, settings).map_err(|msg| Error::Font(msg.into()))?;
 
         let packer = ShelfPacker::new(ctx, ATLAS_WIDTH, ATLAS_HEIGHT)?;
-        let layout = Layout::new();
+        let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         let pass = TexColPass::new(ctx)?;
 
@@ -74,6 +74,7 @@ impl Font {
         let settings = LayoutSettings {
             x: pos.x,
             y: pos.y,
+            max_width: None,
             ..Default::default()
         };
 
@@ -94,6 +95,7 @@ impl Font {
 
             let glyph = self.cache.entry(glyph_pos.key.c).or_insert_with(|| {
                 let (metrics, alpha_bitmap) = font.rasterize(glyph_pos.key.c, scale);
+
                 Self::alpha_to_rgba(&alpha_bitmap, bitmap_buffer);
 
                 let uv_rect = packer
@@ -103,15 +105,15 @@ impl Font {
                 Glyph { uv_rect }
             });
 
+            let rect_center = Point3::new(
+                glyph_pos.x + glyph_pos.width as f32 / 2.0,
+                glyph_pos.y + glyph_pos.height as f32 / 2.0,
+                pos.z,
+            );
+            let rect_size = Vector2::new(glyph_pos.width as f32, glyph_pos.height as f32);
+
             batch.push_quad(
-                &Quad::axis_aligned(
-                    Point3::new(
-                        glyph_pos.x + glyph_pos.width as f32 / 2.0,
-                        pos.y + (pos.y - glyph_pos.y) - glyph_pos.height as f32 / 2.0,
-                        pos.z,
-                    ),
-                    Vector2::new(glyph_pos.width as f32, glyph_pos.height as f32),
-                ),
+                &Quad::axis_aligned(rect_center, rect_size),
                 glyph.uv_rect,
                 color,
             );
@@ -147,7 +149,7 @@ impl Font {
         Ok(())
     }
 
-    fn alpha_to_rgba(bitmap: &Vec<u8>, output: &mut Vec<u8>) {
+    fn alpha_to_rgba(bitmap: &[u8], output: &mut Vec<u8>) {
         output.clear();
         for v in bitmap {
             let v = *v;

@@ -166,8 +166,8 @@ impl Game {
         self.font.write(
             &mut self.text_batch,
             Point3::new(150.0, 150.0, 0.0),
-            Color::new(1.0, 1.0, 1.0, 1.0),
-            "Hello world!",
+            Color::new(1.0, 0.0, 1.0, 1.0),
+            "Hello world! What's up?",
         );
 
         let mut lights = vec![Light {
