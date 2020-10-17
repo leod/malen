@@ -1,10 +1,10 @@
 use std::marker::PhantomData;
 
-use golem::{ElementBuffer, GeometryMode, VertexBuffer};
+use golem::GeometryMode;
 
 use crate::{
-    draw::{shadow, ColorVertex, Quad, Vertex},
-    Color, Context, Error, Point2, Point3,
+    draw::{shadow, Buffers, ColVertex, Quad, TexColVertex, TexVertex, Vertex},
+    Color, Context, Error, Point2, Point3, Rect,
 };
 
 pub struct Batch<V> {
@@ -63,6 +63,8 @@ impl<V: Vertex> Batch<V> {
     }
 
     pub fn push_element(&mut self, element: u32) {
+        assert!(element < self.vertices.len() as u32);
+
         self.elements.push(element);
         self.is_dirty = true;
     }
@@ -102,14 +104,14 @@ impl<V: Vertex> Batch<V> {
     }
 }
 
-impl Batch<ColorVertex> {
+impl Batch<ColVertex> {
     pub fn push_quad(&mut self, quad: &Quad, color: Color) {
         assert!(self.geometry_mode == GeometryMode::Triangles);
 
         let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
-            self.push_vertex(&ColorVertex {
+            self.push_vertex(&ColVertex {
                 world_pos: Point3::new(corner.x, corner.y, quad.z),
                 color,
             });
@@ -131,7 +133,7 @@ impl Batch<ColorVertex> {
         let first_idx = self.num_vertices() as u32;
 
         for corner in &quad.corners {
-            self.push_vertex(&ColorVertex {
+            self.push_vertex(&ColVertex {
                 world_pos: Point3::new(corner.x, corner.y, quad.z),
                 color,
             });
@@ -144,6 +146,65 @@ impl Batch<ColorVertex> {
             first_idx + 2,
             first_idx + 2,
             first_idx + 3,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+}
+
+impl Batch<TexVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect) {
+        assert!(self.geometry_mode == GeometryMode::Triangles);
+
+        let first_idx = self.num_vertices() as u32;
+
+        for corner_idx in 0..4 {
+            self.push_vertex(&TexVertex {
+                world_pos: Point3::new(
+                    quad.corners[corner_idx].x,
+                    quad.corners[corner_idx].y,
+                    quad.z,
+                ),
+                tex_coords: uv_rect.center
+                    + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
+            })
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
+    }
+}
+
+impl Batch<TexColVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect, color: Color) {
+        assert!(self.geometry_mode == GeometryMode::Triangles);
+
+        let first_idx = self.num_vertices() as u32;
+
+        for corner_idx in 0..4 {
+            self.push_vertex(&TexColVertex {
+                world_pos: Point3::new(
+                    quad.corners[corner_idx].x,
+                    quad.corners[corner_idx].y,
+                    quad.z,
+                ),
+                tex_coords: uv_rect.center
+                    + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
+                color,
+            })
+        }
+
+        self.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
             first_idx + 3,
             first_idx + 0,
         ]);
@@ -202,39 +263,5 @@ impl Batch<shadow::LineSegment> {
         self.push_occluder_line(quad.corners[1], quad.corners[2], ignore_light_offset);
         self.push_occluder_line(quad.corners[2], quad.corners[3], ignore_light_offset);
         self.push_occluder_line(quad.corners[3], quad.corners[0], ignore_light_offset);
-    }
-}
-
-pub struct Buffers<V> {
-    pub(crate) vertices: VertexBuffer,
-    pub(crate) elements: ElementBuffer,
-    pub(crate) num_elements: usize,
-    _phantom: PhantomData<V>,
-}
-
-impl<V> Buffers<V> {
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
-        let vertices = VertexBuffer::new(ctx.golem_context())?;
-        let elements = ElementBuffer::new(ctx.golem_context())?;
-
-        Ok(Self {
-            vertices,
-            elements,
-            num_elements: 0,
-            _phantom: PhantomData,
-        })
-    }
-
-    pub fn from_buffers_unchecked(
-        vertices: VertexBuffer,
-        elements: ElementBuffer,
-        num_elements: usize,
-    ) -> Self {
-        Self {
-            vertices,
-            elements,
-            num_elements,
-            _phantom: PhantomData,
-        }
     }
 }

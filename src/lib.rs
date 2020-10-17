@@ -12,10 +12,11 @@ pub use golem::glow;
 pub use nalgebra as na;
 
 pub use context::Context;
+pub use draw::Draw;
 pub use input::{Event, InputState, VirtualKeyCode};
 
 pub use geom::{
-    Camera, Matrix2, Matrix3, Point2, Point3, Point4, Screen, Vector2, Vector3, Vector4,
+    Camera, Matrix2, Matrix3, Point2, Point3, Point4, Rect, Screen, Vector2, Vector3, Vector4,
 };
 
 pub type Color = nalgebra::Point4<f32>;
@@ -46,4 +47,7 @@ pub enum Error {
 
     #[error("could not initialize WebGL1")]
     InitializeWebGl,
+
+    #[error("Failed to load font")]
+    Font(String),
 }

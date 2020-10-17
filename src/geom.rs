@@ -9,6 +9,28 @@ pub type Vector4 = na::Vector4<f32>;
 pub type Matrix2 = na::Matrix2<f32>;
 pub type Matrix3 = na::Matrix3<f32>;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Rect {
+    pub center: Point2,
+    pub size: Vector2,
+}
+
+impl Rect {
+    pub fn from_top_left(top_left: Point2, size: Vector2) -> Self {
+        Self {
+            center: top_left + size / 2.0,
+            size,
+        }
+    }
+
+    pub fn from_bottom_left(top_left: Point2, size: Vector2) -> Self {
+        Self {
+            center: top_left + Vector2::new(size.x, -size.y) / 2.0,
+            size,
+        }
+    }
+}
+
 pub fn matrix3_to_flat_array(m: &Matrix3) -> [f32; 9] {
     [
         m[(0, 0)],
@@ -62,10 +84,10 @@ pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Ma
         * na::Matrix3::new_nonuniform_scaling(&scale)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Screen {
     /// The screen size in pixels.
-    pub size: Vector2,
+    pub size: na::Vector2<u32>,
 }
 
 impl Screen {
@@ -80,8 +102,8 @@ impl Screen {
     /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3 {
         let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
-            1.0 / self.size.x,
-            1.0 / self.size.y,
+            1.0 / self.size.x as f32,
+            1.0 / self.size.y as f32,
         ));
         let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
@@ -123,11 +145,13 @@ impl Camera {
         //        R(x)^-1 = R(-x),
         //        T(x)^-1 = T(-x).)
 
-        na::Matrix3::new_translation(&Vector2::new(screen.size.x / 2.0, screen.size.y / 2.0))
-            * translate_rotate_scale(
-                -self.center.coords,
-                -self.angle,
-                na::Vector2::new(self.zoom, self.zoom),
-            )
+        na::Matrix3::new_translation(&Vector2::new(
+            screen.size.x as f32 / 2.0,
+            screen.size.y as f32 / 2.0,
+        )) * translate_rotate_scale(
+            -self.center.coords,
+            -self.angle,
+            na::Vector2::new(self.zoom, self.zoom),
+        )
     }
 }
