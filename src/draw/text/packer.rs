@@ -77,19 +77,25 @@ impl ShelfPacker {
                 ColorFormat::RGBA,
             );
 
-            log::info!("insert {}x{} at {},{}", width, height, x, y);
-
-            // Normalize from image coordinates to UV
+            // We'll normalize from image coordinates to UV.
             let tex_width = self.texture().width() as f32;
             let tex_height = self.texture().height() as f32;
 
-            Some(Rect::from_top_left(
-                Point2::new((x as f32 + 0.5) / tex_width, (y as f32 + 0.5) / tex_height),
-                Vector2::new(
-                    (width - 1) as f32 / tex_width,
-                    (height - 1) as f32 / tex_height,
-                ),
-            ))
+            // Shift by half a pixel, so that the coords are in the center of
+            // the texel.
+            let uv_top_left =
+                Point2::new((x as f32 + 0.5) / tex_width, (y as f32 + 0.5) / tex_height);
+
+            // I think we can think of the size as inclusive, so we need to
+            // subtract one here.
+            let uv_size = Vector2::new(
+                (width - 1) as f32 / tex_width,
+                (height - 1) as f32 / tex_height,
+            );
+
+            let uv_rect = Rect::from_top_left(uv_top_left, uv_size);
+
+            Some(uv_rect)
         } else {
             None
         }
