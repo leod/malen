@@ -8,7 +8,7 @@ use webglee::Event::*;
 use webglee::{
     draw::{
         shadow::{Light, LineSegment},
-        Batch, ColorPass, ColorVertex, Quad, ShadowMap, ShadowedColorPass,
+        Batch, ColPass, ColVertex, Font, Quad, ShadowMap, ShadowedColorPass, TexColVertex,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
     Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
@@ -29,10 +29,13 @@ struct Game {
     occluder_batch: Batch<LineSegment>,
     shadowed_color_pass: ShadowedColorPass,
 
-    color_pass: ColorPass,
-    tri_batch_shadowed: Batch<ColorVertex>,
-    tri_batch_plain: Batch<ColorVertex>,
-    line_batch: Batch<ColorVertex>,
+    color_pass: ColPass,
+    tri_batch_shadowed: Batch<ColVertex>,
+    tri_batch_plain: Batch<ColVertex>,
+    line_batch: Batch<ColVertex>,
+
+    font: Font,
+    text_batch: Batch<TexColVertex>,
 
     walls: Vec<Wall>,
 
@@ -48,10 +51,17 @@ impl Game {
         let occluder_batch = Batch::new_lines(ctx)?;
         let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
 
-        let color_pass = ColorPass::new(ctx)?;
+        let color_pass = ColPass::new(ctx)?;
         let tri_batch_shadowed = Batch::new_triangles(ctx)?;
         let tri_batch_plain = Batch::new_triangles(ctx)?;
         let line_batch = Batch::new_lines(ctx)?;
+
+        let font = Font::from_bytes(
+            ctx,
+            include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
+            40.0,
+        )?;
+        let text_batch = Batch::new_triangles(ctx)?;
 
         let mut rng = rand::thread_rng();
         let normal = Normal::new(200.0, 150.0).unwrap();
@@ -85,6 +95,8 @@ impl Game {
             tri_batch_shadowed,
             tri_batch_plain,
             line_batch,
+            font,
+            text_batch,
             walls,
             thingies,
             player_pos: Point2::origin(),
@@ -138,16 +150,24 @@ impl Game {
     }
 
     pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
-        let screen = ctx.screen();
+        let screen = ctx.draw().screen();
 
         self.tri_batch_shadowed.clear();
         self.tri_batch_plain.clear();
         self.line_batch.clear();
         self.occluder_batch.clear();
+        self.text_batch.clear();
 
         self.tri_batch_shadowed.push_quad(
             &Quad::axis_aligned(Point3::new(0.0, 0.0, 0.0), Vector2::new(4096.0, 4096.0)),
             Color::new(0.4, 0.9, 0.9, 1.0),
+        );
+
+        self.font.write(
+            &mut self.text_batch,
+            Point3::new(150.0, 150.0, 0.0),
+            Color::new(1.0, 0.0, 1.0, 1.0),
+            "Hello world! What's up?",
         );
 
         let mut lights = vec![Light {
@@ -203,10 +223,10 @@ impl Game {
             .draw_occluder_batch(&mut self.occluder_batch)?
             .finish()?;
 
-        ctx.golem_context()
+        ctx.golem_ctx()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_context().set_clear_color(1.0, 1.0, 1.0, 1.0);
-        ctx.golem_context().clear();
+        ctx.golem_ctx().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_ctx().clear();
 
         self.shadowed_color_pass.draw_batch(
             &screen.orthographic_projection(),
@@ -216,7 +236,7 @@ impl Game {
             &mut self.tri_batch_shadowed,
         )?;
 
-        ctx.golem_context().set_depth_test_mode(Some(DepthTestMode {
+        ctx.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
             function: DepthTestFunction::Less,
             ..Default::default()
         }));
@@ -230,7 +250,10 @@ impl Game {
             &view,
             &mut self.line_batch,
         )?;
-        ctx.golem_context().set_depth_test_mode(None);
+        ctx.golem_ctx().set_depth_test_mode(None);
+
+        self.font
+            .draw_batch(ctx, &screen.orthographic_projection(), &mut self.text_batch)?;
 
         Ok(())
     }
