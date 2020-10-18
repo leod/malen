@@ -1,10 +1,10 @@
 use golem::{
-    Attribute, AttributeType, Dimension, GeometryMode, ShaderDescription, ShaderProgram, Texture,
-    Uniform, UniformType, UniformValue,
+    Attribute, AttributeType, Dimension, ShaderDescription, ShaderProgram, Texture, Uniform,
+    UniformType, UniformValue,
 };
 
 use crate::{
-    draw::{AsBuffersSlice, Batch, BuffersSlice, ColVertex, TexColVertex, Vertex},
+    draw::{ColVertex, DrawUnit, TexColVertex, Vertex},
     geom::matrix3_to_flat_array,
     Context, Error, Matrix3,
 };
@@ -45,35 +45,11 @@ impl ColPass {
         Ok(Self { shader })
     }
 
-    pub fn draw_batch(
+    pub fn draw(
         &mut self,
         projection: &Matrix3,
         view: &Matrix3,
-        batch: &mut Batch<ColVertex>,
-    ) -> Result<(), Error> {
-        batch.flush();
-
-        // TODO: I believe this is safe, because Batch in its construction
-        // (see Batch::push_element) makes sure that each element points to
-        // a valid index in the vertex buffer. We need to verify this though.
-        // We also need to verify if golem::ShaderProgram::draw has any
-        // additional requirements for safety.
-        unsafe {
-            self.draw_buffers(
-                projection,
-                view,
-                batch.buffers().as_buffers_slice(),
-                batch.geometry_mode(),
-            )
-        }
-    }
-
-    pub unsafe fn draw_buffers(
-        &mut self,
-        projection: &Matrix3,
-        view: &Matrix3,
-        buffers: BuffersSlice<ColVertex>,
-        geometry_mode: GeometryMode,
+        draw_unit: &DrawUnit<ColVertex>,
     ) -> Result<(), Error> {
         let projection_view = projection * view;
 
@@ -83,9 +59,7 @@ impl ColPass {
             UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
         )?;
 
-        buffers.draw(&self.shader, geometry_mode)?;
-
-        Ok(())
+        draw_unit.draw(&self.shader)
     }
 }
 
@@ -126,38 +100,12 @@ impl TexColPass {
         Ok(Self { shader })
     }
 
-    pub fn draw_batch(
+    pub fn draw(
         &mut self,
         projection: &Matrix3,
         view: &Matrix3,
         texture: &Texture,
-        batch: &mut Batch<TexColVertex>,
-    ) -> Result<(), Error> {
-        batch.flush();
-
-        // TODO: I believe this is safe, because Batch in its construction
-        // (see Batch::push_element) makes sure that each element points to
-        // a valid index in the vertex buffer. We need to verify this though.
-        // We also need to verify if golem::ShaderProgram::draw has any
-        // additional requirements for safety.
-        unsafe {
-            self.draw_buffers(
-                projection,
-                view,
-                texture,
-                batch.buffers().as_buffers_slice(),
-                batch.geometry_mode(),
-            )
-        }
-    }
-
-    pub unsafe fn draw_buffers(
-        &mut self,
-        projection: &Matrix3,
-        view: &Matrix3,
-        texture: &Texture,
-        buffers: BuffersSlice<TexColVertex>,
-        geometry_mode: GeometryMode,
+        draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
         let projection_view = projection * view;
 
@@ -170,7 +118,7 @@ impl TexColPass {
         )?;
         self.shader.set_uniform("my_tex", UniformValue::Int(1))?;
 
-        buffers.draw(&self.shader, geometry_mode)?;
+        draw_unit.draw(&self.shader)?;
 
         // FIXME: Unbind texture
 
