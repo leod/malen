@@ -1,267 +1,250 @@
 use std::marker::PhantomData;
 
-use golem::GeometryMode;
+use golem::{ElementBuffer, GeometryMode, ShaderProgram, VertexBuffer};
 
 use crate::{
-    draw::{shadow, Buffers, ColVertex, Quad, TexColVertex, TexVertex, Vertex},
-    Color, Context, Error, Point2, Point3, Rect,
+    draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
+    Color, Context, Error, Point3, Rect,
 };
 
-pub struct Batch<V> {
+pub struct DrawUnit<'a, V> {
+    vertices: &'a VertexBuffer,
+    elements: &'a ElementBuffer,
+    first_element: usize,
+    num_elements: usize,
     geometry_mode: GeometryMode,
-
-    vertices: Vec<f32>,
-    elements: Vec<u32>,
-    num_vertices: usize,
-
-    buffers: Buffers<V>,
-    is_dirty: bool,
-
     _phantom: PhantomData<V>,
 }
 
-impl<V: Vertex> Batch<V> {
-    pub fn new_triangles(ctx: &Context) -> Result<Self, Error> {
-        Self::new(ctx, GeometryMode::Triangles)
-    }
-
-    pub fn new_lines(ctx: &Context) -> Result<Self, Error> {
-        Self::new(ctx, GeometryMode::Lines)
-    }
-
-    pub fn new(ctx: &Context, geometry_mode: GeometryMode) -> Result<Self, Error> {
-        let buffers = Buffers::new(ctx)?;
-
-        Ok(Self {
+impl<'a, V> DrawUnit<'a, V> {
+    pub unsafe fn from_buffers_unchecked(
+        vertices: &'a VertexBuffer,
+        elements: &'a ElementBuffer,
+        first_element: usize,
+        num_elements: usize,
+        geometry_mode: GeometryMode,
+    ) -> Self {
+        Self {
+            vertices,
+            elements,
+            first_element,
+            num_elements,
             geometry_mode,
-            vertices: Vec::new(),
-            elements: Vec::new(),
-            num_vertices: 0,
-            buffers,
-            is_dirty: false,
             _phantom: PhantomData,
-        })
+        }
+    }
+
+    pub fn draw(&self, shader: &ShaderProgram) -> Result<(), Error> {
+        // TODO: I believe this is safe, because Batch in its construction
+        // makes sure that each element points to a valid index in the vertex
+        // buffer. We need to verify this though. We also need to verify if
+        // golem::ShaderProgram::draw has any additional requirements for
+        // safety.
+        Ok(unsafe {
+            shader.draw(
+                self.vertices,
+                self.elements,
+                self.first_element..self.num_elements,
+                self.geometry_mode,
+            )
+        }?)
+    }
+
+    pub fn vertices(&self) -> &'a VertexBuffer {
+        self.vertices
+    }
+
+    pub fn elements(&self) -> &'a ElementBuffer {
+        self.elements
+    }
+
+    pub fn first_element(&self) -> usize {
+        self.first_element
+    }
+
+    pub fn num_elements(&self) -> usize {
+        self.num_elements
     }
 
     pub fn geometry_mode(&self) -> GeometryMode {
         self.geometry_mode
     }
+}
+
+#[derive(Default)]
+struct Scratch {
+    vertices: Vec<f32>,
+    elements: Vec<u32>,
+    num_vertices: usize,
+    dirty: bool,
+}
+
+pub struct Batch<G: Geometry> {
+    scratch: Scratch,
+
+    vertices: VertexBuffer,
+    elements: ElementBuffer,
+
+    _phantom: PhantomData<G>,
+}
+
+pub type TriBatch<V> = Batch<Triangle<V>>;
+pub type LineBatch<V> = Batch<Line<V>>;
+
+impl<G: Geometry> Batch<G> {
+    pub fn new(ctx: &Context) -> Result<Self, Error> {
+        Ok(Self {
+            scratch: Scratch::default(),
+            vertices: VertexBuffer::new(ctx.golem_ctx())?,
+            elements: ElementBuffer::new(ctx.golem_ctx())?,
+            _phantom: PhantomData,
+        })
+    }
+
+    pub fn vertices(&self) -> &VertexBuffer {
+        &self.vertices
+    }
+
+    pub fn elements(&self) -> &ElementBuffer {
+        &self.elements
+    }
 
     pub fn num_vertices(&self) -> usize {
-        self.num_vertices
+        self.scratch.vertices.len()
+    }
+
+    pub fn next_index(&self) -> u32 {
+        self.scratch.num_vertices as u32
     }
 
     pub fn num_elements(&self) -> usize {
-        self.elements.len()
-    }
-
-    pub fn clear(&mut self) {
-        self.vertices.clear();
-        self.elements.clear();
-        self.num_vertices = 0;
-        self.is_dirty = true;
+        self.scratch.num_vertices
     }
 
     pub fn push_element(&mut self, element: u32) {
-        assert!(element < self.vertices.len() as u32);
+        assert!(element < self.next_index());
 
-        self.elements.push(element);
-        self.is_dirty = true;
+        self.scratch.elements.push(element);
+        self.scratch.dirty = true;
     }
 
-    pub fn push_vertex(&mut self, vertex: &V) {
-        vertex.append(&mut self.vertices);
-        self.num_vertices += 1;
-        self.is_dirty = true;
+    pub fn push_vertex(&mut self, vertex: &G::Vertex) {
+        vertex.write(&mut self.scratch.vertices);
+        self.scratch.num_vertices += 1;
+        self.scratch.dirty = true;
     }
 
+    pub fn clear(&mut self) {
+        self.scratch.vertices.clear();
+        self.scratch.elements.clear();
+        self.scratch.num_vertices = 0;
+        self.scratch.dirty = true;
+    }
+
+    pub fn draw_unit(&mut self) -> DrawUnit<'_, G::Vertex> {
+        if self.scratch.dirty {
+            self.vertices.set_data(&self.scratch.vertices);
+            self.elements.set_data(&self.scratch.elements);
+            self.scratch.dirty = false;
+        }
+
+        unsafe {
+            DrawUnit::from_buffers_unchecked(
+                &self.vertices,
+                &self.elements,
+                0,
+                self.scratch.elements.len(),
+                G::mode(),
+            )
+        }
+    }
+
+    pub fn draw(&mut self, shader: &ShaderProgram) -> Result<(), Error> {
+        self.draw_unit().draw(shader)
+    }
+}
+
+impl<V: Vertex> Batch<Triangle<V>> {
     pub fn push_triangle(&mut self, a: &V, b: &V, c: &V) {
-        assert!(self.geometry_mode() == GeometryMode::Triangles);
-
-        let first_idx = self.num_vertices() as u32;
+        let first_idx = self.next_index();
 
         self.push_vertex(a);
         self.push_vertex(b);
         self.push_vertex(c);
 
-        self.push_element(first_idx + 0);
-        self.push_element(first_idx + 1);
-        self.push_element(first_idx + 2);
-    }
-
-    pub fn flush(&mut self) {
-        if self.is_dirty {
-            self.buffers.vertices.set_data(&self.vertices);
-            self.buffers.elements.set_data(&self.elements);
-            self.buffers.num_elements = self.elements.len();
-
-            self.is_dirty = false;
-        }
-    }
-
-    pub fn buffers(&self) -> &Buffers<V> {
-        &self.buffers
+        self.scratch
+            .elements
+            .extend_from_slice(&[first_idx + 0, first_idx + 1, first_idx + 2]);
     }
 }
 
-impl Batch<ColVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, color: Color) {
-        assert!(self.geometry_mode == GeometryMode::Triangles);
-
-        let first_idx = self.num_vertices() as u32;
+impl Batch<Triangle<ColVertex>> {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, color: Color) {
+        let first_idx = self.next_index();
 
         for corner in &quad.corners {
             self.push_vertex(&ColVertex {
-                world_pos: Point3::new(corner.x, corner.y, quad.z),
+                world_pos: Point3::new(corner.x, corner.y, z),
                 color,
             });
         }
 
-        self.elements.extend_from_slice(&[
-            first_idx + 0,
-            first_idx + 1,
-            first_idx + 2,
-            first_idx + 2,
-            first_idx + 3,
-            first_idx + 0,
-        ]);
+        self.scratch
+            .elements
+            .extend_from_slice(&Quad::triangle_indices(first_idx));
     }
+}
 
-    pub fn push_quad_outline(&mut self, quad: &Quad, color: Color) {
-        assert!(self.geometry_mode == GeometryMode::Lines);
-
-        let first_idx = self.num_vertices() as u32;
+impl Batch<Line<ColVertex>> {
+    pub fn push_quad_outline(&mut self, quad: &Quad, z: f32, color: Color) {
+        let first_idx = self.next_index();
 
         for corner in &quad.corners {
             self.push_vertex(&ColVertex {
-                world_pos: Point3::new(corner.x, corner.y, quad.z),
+                world_pos: Point3::new(corner.x, corner.y, z),
                 color,
             });
         }
 
-        self.elements.extend_from_slice(&[
-            first_idx + 0,
-            first_idx + 1,
-            first_idx + 1,
-            first_idx + 2,
-            first_idx + 2,
-            first_idx + 3,
-            first_idx + 3,
-            first_idx + 0,
-        ]);
+        self.scratch
+            .elements
+            .extend_from_slice(&Quad::triangle_indices(first_idx));
     }
 }
 
-impl Batch<TexVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect) {
-        assert!(self.geometry_mode == GeometryMode::Triangles);
-
-        let first_idx = self.num_vertices() as u32;
+impl TriBatch<TexVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect) {
+        let first_idx = self.next_index();
 
         for corner_idx in 0..4 {
             self.push_vertex(&TexVertex {
-                world_pos: Point3::new(
-                    quad.corners[corner_idx].x,
-                    quad.corners[corner_idx].y,
-                    quad.z,
-                ),
+                world_pos: Point3::new(quad.corners[corner_idx].x, quad.corners[corner_idx].y, z),
                 tex_coords: uv_rect.center
                     + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
             })
         }
 
-        self.elements.extend_from_slice(&[
-            first_idx + 0,
-            first_idx + 1,
-            first_idx + 2,
-            first_idx + 2,
-            first_idx + 3,
-            first_idx + 0,
-        ]);
+        self.scratch
+            .elements
+            .extend_from_slice(&Quad::triangle_indices(first_idx));
     }
 }
 
-impl Batch<TexColVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, uv_rect: Rect, color: Color) {
-        assert!(self.geometry_mode == GeometryMode::Triangles);
-
-        let first_idx = self.num_vertices() as u32;
+impl TriBatch<TexColVertex> {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect, color: Color) {
+        let first_idx = self.next_index();
 
         for corner_idx in 0..4 {
             self.push_vertex(&TexColVertex {
-                world_pos: Point3::new(
-                    quad.corners[corner_idx].x,
-                    quad.corners[corner_idx].y,
-                    quad.z,
-                ),
+                world_pos: Point3::new(quad.corners[corner_idx].x, quad.corners[corner_idx].y, z),
                 tex_coords: uv_rect.center
                     + Quad::corners()[corner_idx].component_mul(&uv_rect.size),
                 color,
             })
         }
 
-        self.elements.extend_from_slice(&[
-            first_idx + 0,
-            first_idx + 1,
-            first_idx + 2,
-            first_idx + 2,
-            first_idx + 3,
-            first_idx + 0,
-        ]);
-    }
-}
-
-impl Batch<shadow::LineSegment> {
-    pub fn push_occluder_line(
-        &mut self,
-        line_p: Point2,
-        line_q: Point2,
-        ignore_light_offset: Option<f32>,
-    ) {
-        assert!(self.geometry_mode == GeometryMode::Lines);
-
-        let first_idx = self.num_vertices() as u32;
-
-        let ignore_light_offset = ignore_light_offset.unwrap_or(-1.0);
-
-        self.push_vertex(&shadow::LineSegment {
-            world_pos_p: line_p,
-            world_pos_q: line_q,
-            order: 0.0,
-            ignore_light_offset,
-        });
-        self.push_vertex(&shadow::LineSegment {
-            world_pos_p: line_q,
-            world_pos_q: line_p,
-            order: 1.0,
-            ignore_light_offset,
-        });
-
-        self.push_vertex(&shadow::LineSegment {
-            world_pos_p: line_p,
-            world_pos_q: line_q,
-            order: 2.0,
-            ignore_light_offset,
-        });
-        self.push_vertex(&shadow::LineSegment {
-            world_pos_p: line_q,
-            world_pos_q: line_p,
-            order: 3.0,
-            ignore_light_offset,
-        });
-
-        self.elements.extend_from_slice(&[
-            first_idx + 0,
-            first_idx + 1,
-            first_idx + 2,
-            first_idx + 3,
-        ]);
-    }
-
-    pub fn push_occluder_quad(&mut self, quad: &Quad, ignore_light_offset: Option<f32>) {
-        self.push_occluder_line(quad.corners[0], quad.corners[1], ignore_light_offset);
-        self.push_occluder_line(quad.corners[1], quad.corners[2], ignore_light_offset);
-        self.push_occluder_line(quad.corners[2], quad.corners[3], ignore_light_offset);
-        self.push_occluder_line(quad.corners[3], quad.corners[0], ignore_light_offset);
+        self.scratch
+            .elements
+            .extend_from_slice(&Quad::triangle_indices(first_idx));
     }
 }

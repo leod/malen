@@ -7,8 +7,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use webglee::Event::*;
 use webglee::{
     draw::{
-        shadow::{Light, LineSegment},
-        Batch, ColPass, ColVertex, Font, Quad, ShadowMap, ShadowedColorPass, TexColVertex,
+        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowMap,
+        ShadowedColorPass, TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
     Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
@@ -25,22 +25,19 @@ struct Thingy {
 }
 
 struct Game {
+    occluder_batch: OccluderBatch,
+    tri_shadowed_batch: TriBatch<ColVertex>,
+    tri_plain_batch: TriBatch<ColVertex>,
+    line_batch: LineBatch<ColVertex>,
+    text_batch: TextBatch,
+
     shadow_map: ShadowMap,
-    occluder_batch: Batch<LineSegment>,
     shadowed_color_pass: ShadowedColorPass,
-
     color_pass: ColPass,
-    tri_batch_shadowed: Batch<ColVertex>,
-    tri_batch_plain: Batch<ColVertex>,
-    line_batch: Batch<ColVertex>,
-
     font: Font,
-    text_batch: Batch<TexColVertex>,
 
     walls: Vec<Wall>,
-
     thingies: Vec<Thingy>,
-
     player_pos: Point2,
 }
 
@@ -48,20 +45,12 @@ impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
         let num_thingies = 32;
         let shadow_map = ShadowMap::new(ctx, 1024, 1 + num_thingies)?;
-        let occluder_batch = Batch::new_lines(ctx)?;
-        let shadowed_color_pass = ShadowedColorPass::new(ctx)?;
-
-        let color_pass = ColPass::new(ctx)?;
-        let tri_batch_shadowed = Batch::new_triangles(ctx)?;
-        let tri_batch_plain = Batch::new_triangles(ctx)?;
-        let line_batch = Batch::new_lines(ctx)?;
 
         let font = Font::from_bytes(
             ctx,
             include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
             40.0,
         )?;
-        let text_batch = Batch::new_triangles(ctx)?;
 
         let mut rng = rand::thread_rng();
         let normal = Normal::new(200.0, 150.0).unwrap();
@@ -88,35 +77,19 @@ impl Game {
             .collect();
 
         Ok(Game {
+            occluder_batch: OccluderBatch::new(ctx)?,
+            tri_shadowed_batch: TriBatch::new(ctx)?,
+            tri_plain_batch: TriBatch::new(ctx)?,
+            line_batch: LineBatch::new(ctx)?,
+            text_batch: TextBatch::new(ctx)?,
             shadow_map,
-            occluder_batch,
-            shadowed_color_pass,
-            color_pass,
-            tri_batch_shadowed,
-            tri_batch_plain,
-            line_batch,
+            shadowed_color_pass: ShadowedColorPass::new(ctx)?,
+            color_pass: ColPass::new(ctx)?,
             font,
-            text_batch,
             walls,
             thingies,
             player_pos: Point2::origin(),
         })
-    }
-
-    pub fn render_quad_with_occluder(
-        &mut self,
-        center: Point2,
-        size: Vector2,
-        color: Color,
-        ignore_light_offset: Option<f32>,
-    ) {
-        let quad = Quad::axis_aligned(Point3::new(center.x, center.y, 0.5), size);
-
-        self.tri_batch_plain.push_quad(&quad, color);
-        self.occluder_batch
-            .push_occluder_quad(&quad, ignore_light_offset);
-        self.line_batch
-            .push_quad_outline(&quad, Color::new(0.0, 0.0, 0.0, 1.0));
     }
 
     pub fn update(&mut self, dt: Duration, input_state: &InputState) {
@@ -149,25 +122,44 @@ impl Game {
         }
     }
 
+    pub fn push_quad_with_occluder(
+        &mut self,
+        center: Point2,
+        size: Vector2,
+        color: Color,
+        ignore_light_offset: Option<f32>,
+    ) {
+        let quad = Quad::axis_aligned(center, size);
+
+        let z = 0.5;
+        self.tri_plain_batch.push_quad(&quad, z, color);
+        self.occluder_batch
+            .push_occluder_quad(&quad, ignore_light_offset);
+        self.line_batch
+            .push_quad_outline(&quad, z, Color::new(0.0, 0.0, 0.0, 1.0));
+    }
+
     pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
         let screen = ctx.draw().screen();
 
-        self.tri_batch_shadowed.clear();
-        self.tri_batch_plain.clear();
+        self.tri_plain_batch.clear();
+        self.tri_shadowed_batch.clear();
         self.line_batch.clear();
         self.occluder_batch.clear();
         self.text_batch.clear();
 
-        self.tri_batch_shadowed.push_quad(
-            &Quad::axis_aligned(Point3::new(0.0, 0.0, 0.0), Vector2::new(4096.0, 4096.0)),
+        // Floor
+        self.tri_shadowed_batch.push_quad(
+            &Quad::axis_aligned(Point2::new(0.0, 0.0), Vector2::new(4096.0, 4096.0)),
+            0.0,
             Color::new(0.4, 0.9, 0.9, 1.0),
         );
 
         self.font.write(
-            &mut self.text_batch,
             Point3::new(150.0, 150.0, 0.0),
             Color::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
+            &mut self.text_batch,
         );
 
         let mut lights = vec![Light {
@@ -179,7 +171,7 @@ impl Game {
         }];
 
         for i in 0..self.walls.len() {
-            self.render_quad_with_occluder(
+            self.push_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
                 Color::new(0.2, 0.2, 0.8, 1.0),
@@ -188,7 +180,7 @@ impl Game {
         }
 
         for i in 0..self.thingies.len() {
-            self.render_quad_with_occluder(
+            self.push_quad_with_occluder(
                 self.thingies[i].center,
                 Vector2::new(30.0, 30.0),
                 Color::new(0.2, 0.8, 0.2, 1.0),
@@ -204,7 +196,7 @@ impl Game {
             });
         }
 
-        self.render_quad_with_occluder(
+        self.push_quad_with_occluder(
             self.player_pos,
             Vector2::new(30.0, 30.0),
             Color::new(0.7, 0.2, 0.2, 1.0),
@@ -220,40 +212,43 @@ impl Game {
 
         self.shadow_map
             .build(ctx, &screen.orthographic_projection(), &view, &lights)?
-            .draw_occluder_batch(&mut self.occluder_batch)?
+            .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
         ctx.golem_ctx()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_ctx().set_clear_color(1.0, 1.0, 1.0, 1.0);
+        ctx.golem_ctx().set_clear_color(1.0, 0.0, 1.0, 1.0);
         ctx.golem_ctx().clear();
 
-        self.shadowed_color_pass.draw_batch(
+        self.shadowed_color_pass.draw(
             &screen.orthographic_projection(),
             &view,
             Color::new(0.025, 0.025, 0.025, 1.0),
             &self.shadow_map,
-            &mut self.tri_batch_shadowed,
+            &self.tri_shadowed_batch.draw_unit(),
         )?;
 
         ctx.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
             function: DepthTestFunction::Less,
             ..Default::default()
         }));
-        self.color_pass.draw_batch(
+        self.color_pass.draw(
             &screen.orthographic_projection(),
             &view,
-            &mut self.tri_batch_plain,
+            &self.tri_plain_batch.draw_unit(),
         )?;
-        self.color_pass.draw_batch(
+        self.color_pass.draw(
             &screen.orthographic_projection(),
             &view,
-            &mut self.line_batch,
+            &self.line_batch.draw_unit(),
         )?;
         ctx.golem_ctx().set_depth_test_mode(None);
 
-        self.font
-            .draw_batch(ctx, &screen.orthographic_projection(), &mut self.text_batch)?;
+        self.font.draw(
+            ctx,
+            &screen.orthographic_projection(),
+            &self.text_batch.draw_unit(),
+        )?;
 
         Ok(())
     }
