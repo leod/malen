@@ -43,13 +43,13 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
-        let num_thingies = 32;
-        let shadow_map = ShadowMap::new(ctx, 1024, 1 + num_thingies)?;
+        let num_thingies = 0;
+        let shadow_map = ShadowMap::new(ctx, 2048, 1 + num_thingies)?;
 
         let font = Font::from_bytes(
             ctx,
             include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
-            40.0,
+            20.0,
         )?;
 
         let mut rng = rand::thread_rng();
@@ -110,7 +110,7 @@ impl Game {
         }
         if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player_pos += dt_secs * 1000.0 * player_dir;
+            self.player_pos += dt_secs * 100.0 * player_dir;
         }
 
         for (i, thingy) in self.thingies.iter_mut().enumerate() {
@@ -159,6 +159,13 @@ impl Game {
             Point3::new(150.0, 150.0, 0.0),
             Color::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
+            &mut self.text_batch,
+        );
+
+        self.font.write(
+            Point3::new(10.0, 10.0, 0.0),
+            Color::new(1.0, 1.0, 1.0, 1.0),
+            &format!("Screen: {:?}", screen),
             &mut self.text_batch,
         );
 
@@ -217,7 +224,7 @@ impl Game {
 
         ctx.golem_ctx()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_ctx().set_clear_color(1.0, 0.0, 1.0, 1.0);
+        ctx.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
         ctx.golem_ctx().clear();
 
         self.shadowed_color_pass.draw(
