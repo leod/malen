@@ -89,7 +89,7 @@ pub struct Screen {
     /// The screen size in pixels.
     pub size: na::Vector2<u32>,
 
-    pub device_pixel_ratio: f64, 
+    pub device_pixel_ratio: f64,
 }
 
 impl Screen {

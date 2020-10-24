@@ -43,7 +43,7 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
-        let num_thingies = 0;
+        let num_thingies = 32;
         let shadow_map = ShadowMap::new(ctx, 2048, 1 + num_thingies)?;
 
         let font = Font::from_bytes(
