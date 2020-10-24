@@ -194,7 +194,7 @@ impl ShadowMap {
         max_num_lights: usize,
     ) -> Result<Surface, Error> {
         let mut shadow_map_texture = Texture::new(ctx.golem_ctx())?;
-        shadow_map_texture.set_image_f32(
+        shadow_map_texture.set_image(
             None,
             resolution as u32,
             max_num_lights as u32,
@@ -215,11 +215,10 @@ impl ShadowMap {
         );
 
         let mut light_texture = Texture::new(ctx.golem_ctx())?;
-        // TODO: Make screen resolution u32
-        light_texture.set_image_f32(
+        light_texture.set_image(
             None,
-            ctx.draw().screen().size.x as u32,
-            ctx.draw().screen().size.y as u32,
+            ctx.draw().screen().size.x,
+            ctx.draw().screen().size.y,
             ColorFormat::RGBA,
         );
         light_texture.set_magnification(TextureFilter::Nearest)?;
