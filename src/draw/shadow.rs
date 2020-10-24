@@ -6,9 +6,9 @@
 
 use golem::{
     blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation},
-    Attribute, AttributeType, ColorFormat, Dimension, GeometryMode, NumberType, ShaderDescription,
-    ShaderProgram, Surface, Texture, TextureFilter, TextureWrap, Uniform, UniformType,
-    UniformValue,
+    Attribute, AttributeType, ColorFormat, Dimension, GeometryMode, GolemError, NumberType,
+    ShaderDescription, ShaderProgram, Surface, Texture, TextureFilter, TextureWrap, Uniform,
+    UniformType, UniformValue,
 };
 
 use crate::{
@@ -194,7 +194,7 @@ impl ShadowMap {
         max_num_lights: usize,
     ) -> Result<Surface, Error> {
         let mut shadow_map_texture = Texture::new(ctx.golem_ctx())?;
-        shadow_map_texture.set_image(
+        shadow_map_texture.set_image_f32(
             None,
             resolution as u32,
             max_num_lights as u32,
@@ -216,7 +216,7 @@ impl ShadowMap {
 
         let mut light_texture = Texture::new(ctx.golem_ctx())?;
         // TODO: Make screen resolution u32
-        light_texture.set_image(
+        light_texture.set_image_f32(
             None,
             ctx.draw().screen().size.x as u32,
             ctx.draw().screen().size.y as u32,
@@ -293,29 +293,59 @@ impl ShadowMap {
                 }
                 "#,
                 fragment_shader: r#"
-                float line_segment_intersection(
-                    vec2 line_one_p,
-                    vec2 line_one_q,
-                    vec2 line_two_p,
-                    vec2 line_two_q
+                float ray_line_segment_intersection(
+                    vec2 o,
+                    vec2 d,
+                    vec2 p,
+                    vec2 q
                 ) {
-                    vec2 line_two_perp = vec2(
-                        line_two_q.y - line_two_p.y,
-                        line_two_p.x - line_two_q.x
-                    );
-                    float line_one_proj = dot(line_one_q - line_one_p, line_two_perp);
+                    /**
 
-                    if (abs(line_one_proj) < 0.0001) {
+                    ray(s) = o + d * s             (0 <= s)
+                    line(t) = p + (q - p) * t      (0 <= t <= 1)
+
+                    ray(s) = line(t)
+
+                    <=> o + d * s = p + (q - p) * t
+
+                    <=> d * s + (p - q) * t = p - o
+
+                    <=> M * [[s], [t]] = p - o
+                    where M = [[d.x, d.y], [p.x - q.x, p.y - q.y]] 
+
+                    <=> [[s], [t]] = M^-1 (p - o)   (if M is invertible)
+                    where M^-1 = 1.0 / det(M) * [[p.y - q.y, -d.y], [q.x - p.x, d.x]]
+
+                    **/
+
+                    float det = d.x * (p.y - q.y) + d.y * (q.x - p.x);
+
+                    if (abs(det) < 0.0000001)
+                        return 1.0;
+
+                    mat2 m_inv = mat2(
+                        p.y - q.y, 
+                        -d.y,
+                        q.x - p.x, 
+                        d.x
+                    );
+
+                    vec2 time = 1.0 / det * m_inv * (p - o);
+
+                    float s = time.x;
+                    float t = time.y;
+
+                    if (s >= 0.0 && s <= 1.0 && t >= 0.0 && t <= 1.0) {
+                        return s;
+                    } else {
                         return 1.0;
                     }
-
-                    return dot(line_two_p - line_one_p, line_two_perp) / line_one_proj;
                 }
 
                 void main() {
-                    float t = line_segment_intersection(
+                    float t = ray_line_segment_intersection(
                         light_world_pos,
-                        light_world_pos + vec2(cos(v_angle) * light_radius, sin(v_angle) * light_radius),
+                        vec2(cos(v_angle), sin(v_angle)) * light_radius,
                         v_edge.xy,
                         v_edge.zw
                     );
@@ -368,9 +398,10 @@ impl ShadowMap {
                     float dist2 = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
                     float dist3 = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
 
-                    float visibility = step(dist_to_light, dist1) * 0.5
-                        + step(dist_to_light, dist2) * 0.25
-                        + step(dist_to_light, dist3) * 0.25;
+                    float visibility = step(dist_to_light, dist1 + 0.5);
+                    /*visibility *= 0.5;
+                    visibility += step(dist_to_light, dist2) * 0.25
+                    visibility += step(dist_to_light, dist3) * 0.25;*/
 
                     visibility *= pow(1.0 - dist_to_light / light_radius, 2.0);
 
@@ -429,8 +460,8 @@ impl ShadowMap {
         view: &Matrix3,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
-        if ctx.draw().screen().size.x as u32 != self.light_surface.width().unwrap()
-            || ctx.draw().screen().size.y as u32 != self.light_surface.height().unwrap()
+        if ctx.draw().screen().size.x != self.light_surface.width().unwrap()
+            || ctx.draw().screen().size.y != self.light_surface.height().unwrap()
         {
             // Screen surface has been resized, so we also need to recreate
             // the light surface.
@@ -556,10 +587,12 @@ impl<'a> BuildShadowMap<'a> {
         self.this
             .light_surface_shader
             .set_uniform("shadow_map", UniformValue::Int(1))?;
-        self.this.light_surface_shader.set_uniform(
+        if let Err(GolemError::NoSuchUniform(_)) = self.this.light_surface_shader.set_uniform(
             "shadow_map_resolution",
             UniformValue::Float(self.this.resolution as f32),
-        )?;
+        ) {
+            // Ignore missing shadow_map_resolution error, if PCF is disabled.
+        }
 
         self.this
             .light_area_batch
