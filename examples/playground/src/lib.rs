@@ -110,7 +110,7 @@ impl Game {
         }
         if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player_pos += dt_secs * 100.0 * player_dir;
+            self.player_pos += dt_secs * 500.0 * player_dir;
         }
 
         for (i, thingy) in self.thingies.iter_mut().enumerate() {
