@@ -7,7 +7,37 @@ pub use golem::GeometryMode;
 pub trait Vertex {
     fn attributes() -> Vec<Attribute>;
     fn num_values() -> usize;
-    fn append(&self, out: &mut Vec<f32>);
+    fn write(&self, out: &mut Vec<f32>);
+}
+
+pub trait Geometry {
+    type Vertex: Vertex;
+
+    fn mode() -> GeometryMode;
+}
+
+pub struct Line<V> {
+    pub points: [V; 2],
+}
+
+pub struct Triangle<V> {
+    pub points: [V; 3],
+}
+
+impl<V: Vertex> Geometry for Line<V> {
+    type Vertex = V;
+
+    fn mode() -> GeometryMode {
+        GeometryMode::Lines
+    }
+}
+
+impl<V: Vertex> Geometry for Triangle<V> {
+    type Vertex = V;
+
+    fn mode() -> GeometryMode {
+        GeometryMode::Triangles
+    }
 }
 
 pub struct ColVertex {
@@ -33,7 +63,7 @@ impl Vertex for ColVertex {
         3 + 4
     }
 
-    fn append(&self, out: &mut Vec<f32>) {
+    fn write(&self, out: &mut Vec<f32>) {
         out.extend_from_slice(&[
             self.world_pos.x,
             self.world_pos.y,
@@ -64,7 +94,7 @@ impl Vertex for TexVertex {
         3 + 2
     }
 
-    fn append(&self, out: &mut Vec<f32>) {
+    fn write(&self, out: &mut Vec<f32>) {
         out.extend_from_slice(&[
             self.world_pos.x,
             self.world_pos.y,
@@ -95,7 +125,7 @@ impl Vertex for TexColVertex {
         3 + 2 + 4
     }
 
-    fn append(&self, out: &mut Vec<f32>) {
+    fn write(&self, out: &mut Vec<f32>) {
         out.extend_from_slice(&[
             self.world_pos.x,
             self.world_pos.y,
@@ -113,7 +143,6 @@ impl Vertex for TexColVertex {
 #[derive(Debug, Clone)]
 pub struct Quad {
     pub corners: [Point2; 4],
-    pub z: f32,
 }
 
 impl Quad {
@@ -136,23 +165,32 @@ impl Quad {
                 (transform * Point3::new(0.5, 0.5, 1.0)).xy(),
                 (transform * Point3::new(0.5, -0.5, 1.0)).xy(),
             ],
-            z: transform[(2, 2)],
         }
     }
 
-    pub fn axis_aligned(pos: Point3, size: Vector2) -> Self {
+    pub fn axis_aligned(pos: Point2, size: Vector2) -> Self {
         Self {
             corners: [
                 // Top left
-                pos.xy() + Self::corners()[0].component_mul(&size),
+                pos + Self::corners()[0].component_mul(&size),
                 // Bottom left
-                pos.xy() + Self::corners()[1].component_mul(&size),
+                pos + Self::corners()[1].component_mul(&size),
                 // Bottom right
-                pos.xy() + Self::corners()[2].component_mul(&size),
+                pos + Self::corners()[2].component_mul(&size),
                 // Top right
-                pos.xy() + Self::corners()[3].component_mul(&size),
+                pos + Self::corners()[3].component_mul(&size),
             ],
-            z: pos.z,
         }
+    }
+
+    pub fn triangle_indices(first_idx: u32) -> [u32; 6] {
+        [
+            first_idx + Self::TRIANGLE_INDICES[0],
+            first_idx + Self::TRIANGLE_INDICES[1],
+            first_idx + Self::TRIANGLE_INDICES[2],
+            first_idx + Self::TRIANGLE_INDICES[3],
+            first_idx + Self::TRIANGLE_INDICES[4],
+            first_idx + Self::TRIANGLE_INDICES[5],
+        ]
     }
 }

@@ -7,9 +7,11 @@ use fontdue::{
 use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
 
 use crate::{
-    draw::{text::packer::ShelfPacker, Batch, Quad, TexColPass, TexColVertex},
-    Color, Context, Error, Matrix3, Point3, Rect, Vector2,
+    draw::{text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, TriBatch},
+    Color, Context, Error, Matrix3, Point2, Point3, Rect, Vector2,
 };
+
+pub type TextBatch = TriBatch<TexColVertex>;
 
 struct Glyph {
     uv_rect: Rect,
@@ -62,13 +64,7 @@ impl Font {
         })
     }
 
-    pub fn write(
-        &mut self,
-        batch: &mut Batch<TexColVertex>,
-        pos: Point3,
-        color: Color,
-        text: &str,
-    ) {
+    pub fn write(&mut self, pos: Point3, color: Color, text: &str, batch: &mut TextBatch) {
         self.position_buffer.clear();
 
         let settings = LayoutSettings {
@@ -105,29 +101,27 @@ impl Font {
                 Glyph { uv_rect }
             });
 
-            let rect_center = Point3::new(
+            let rect_center = Point2::new(
                 glyph_pos.x + glyph_pos.width as f32 / 2.0,
                 glyph_pos.y + glyph_pos.height as f32 / 2.0,
-                pos.z,
             );
             let rect_size = Vector2::new(glyph_pos.width as f32, glyph_pos.height as f32);
 
             batch.push_quad(
                 &Quad::axis_aligned(rect_center, rect_size),
+                pos.z,
                 glyph.uv_rect,
                 color,
             );
         }
     }
 
-    pub fn draw_batch(
+    pub fn draw(
         &mut self,
         ctx: &Context,
         projection: &Matrix3,
-        batch: &mut Batch<TexColVertex>,
+        draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
-        batch.flush();
-
         ctx.golem_ctx().set_blend_mode(Some(BlendMode {
             equation: BlendEquation::Same(BlendOperation::Add),
             function: BlendFunction::Same {
@@ -137,11 +131,11 @@ impl Font {
             ..Default::default()
         }));
 
-        self.pass.draw_batch(
+        self.pass.draw(
             projection,
             &Matrix3::identity(),
             self.packer.texture(),
-            batch,
+            draw_unit,
         )?;
 
         ctx.golem_ctx().set_blend_mode(None);

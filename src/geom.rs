@@ -88,6 +88,8 @@ pub fn scale_rotate_translate(scale: Vector2, angle: f32, offset: Vector2) -> Ma
 pub struct Screen {
     /// The screen size in pixels.
     pub size: na::Vector2<u32>,
+
+    pub device_pixel_ratio: f64,
 }
 
 impl Screen {
@@ -101,9 +103,10 @@ impl Screen {
     ///   top-left of your screen.
     /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3 {
+        let ratio = self.device_pixel_ratio as f32;
         let scale_to_unit = na::Matrix3::new_nonuniform_scaling(&Vector2::new(
-            1.0 / self.size.x as f32,
-            1.0 / self.size.y as f32,
+            ratio / self.size.x as f32,
+            ratio / self.size.y as f32,
         ));
         let shift = na::Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = na::Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
@@ -146,8 +149,8 @@ impl Camera {
         //        T(x)^-1 = T(-x).)
 
         na::Matrix3::new_translation(&Vector2::new(
-            screen.size.x as f32 / 2.0,
-            screen.size.y as f32 / 2.0,
+            screen.size.x as f32 / (2.0 * screen.device_pixel_ratio as f32),
+            screen.size.y as f32 / (2.0 * screen.device_pixel_ratio as f32),
         )) * translate_rotate_scale(
             -self.center.coords,
             -self.angle,

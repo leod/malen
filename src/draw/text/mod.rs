@@ -1,4 +1,4 @@
 mod font;
 mod packer;
 
-pub use font::Font;
+pub use font::{Font, TextBatch};
