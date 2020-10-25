@@ -18,8 +18,8 @@ use crate::{
 };
 
 pub struct LineSegment {
-    pub world_pos_p: Point2,
-    pub world_pos_q: Point2,
+    pub world_pos_p: Point2<f32>,
+    pub world_pos_q: Point2<f32>,
     pub order: f32,
     pub ignore_light_offset: f32,
 }
@@ -63,8 +63,8 @@ pub type OccluderBatch = Batch<LineSegment>;
 impl Batch<LineSegment> {
     pub fn push_occluder_line(
         &mut self,
-        line_p: Point2,
-        line_q: Point2,
+        line_p: Point2<f32>,
+        line_q: Point2<f32>,
         ignore_light_offset: Option<f32>,
     ) {
         let first_idx = self.next_index() as u32;
@@ -112,7 +112,7 @@ impl Batch<LineSegment> {
 }
 
 pub struct LightAreaVertex {
-    pub world_pos: Point2,
+    pub world_pos: Point2<f32>,
     pub light: Light,
     pub light_offset: f32,
 }
@@ -152,7 +152,7 @@ impl Vertex for LightAreaVertex {
 
 #[derive(Debug, Clone)]
 pub struct Light {
-    pub world_pos: Point2,
+    pub world_pos: Point2<f32>,
     pub radius: f32,
     pub angle: f32,
     pub angle_size: f32,
@@ -160,7 +160,7 @@ pub struct Light {
 }
 
 impl Light {
-    pub fn params(&self) -> Vector3 {
+    pub fn params(&self) -> Vector3<f32> {
         Vector3::new(self.radius, self.angle, self.angle_size)
     }
 
@@ -455,7 +455,7 @@ impl ShadowMap {
     pub fn build<'a>(
         &'a mut self,
         ctx: &'a Context,
-        transform: &Matrix3,
+        transform: &Matrix3<f32>,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
         if ctx.draw().screen().size.x != self.light_surface.width().unwrap()
@@ -495,7 +495,7 @@ pub struct BuildShadowMap<'a> {
     this: &'a mut ShadowMap,
     ctx: &'a Context,
     lights: &'a [Light],
-    transform: Matrix3,
+    transform: Matrix3<f32>,
 }
 
 impl<'a> BuildShadowMap<'a> {
@@ -647,7 +647,7 @@ impl ShadowColPass {
 
     pub fn draw(
         &mut self,
-        transform: &Matrix3,
+        transform: &Matrix3<f32>,
         ambient_light: Color,
         shadow_map: &ShadowMap,
         draw_unit: &DrawUnit<ColVertex>,

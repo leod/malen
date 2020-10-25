@@ -6,20 +6,18 @@ mod input;
 
 pub mod draw;
 pub mod geom;
+pub mod prelude;
 
+// Re-export dependencies that occur in our public API.
 pub use golem;
 pub use golem::glow;
-pub use nalgebra as na;
+pub use nalgebra;
 
 pub use context::Context;
 pub use draw::Draw;
+pub use geom::{Camera, Rect, Screen};
 pub use input::{Event, InputState, VirtualKeyCode};
-
-pub use geom::{
-    Camera, Matrix2, Matrix3, Point2, Point3, Point4, Rect, Screen, Vector2, Vector3, Vector4,
-};
-
-pub type Color = nalgebra::Point4<f32>;
+pub use prelude::{Color, Matrix2, Matrix3, Point2, Point3, Vector2, Vector3};
 
 use golem::GolemError;
 use thiserror::Error;

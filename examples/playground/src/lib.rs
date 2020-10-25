@@ -15,12 +15,12 @@ use webglee::{
 };
 
 struct Wall {
-    center: Point2,
-    size: Vector2,
+    center: Point2<f32>,
+    size: Vector2<f32>,
 }
 
 struct Thingy {
-    center: Point2,
+    center: Point2<f32>,
     angle: f32,
 }
 
@@ -38,7 +38,7 @@ struct Game {
 
     walls: Vec<Wall>,
     thingies: Vec<Thingy>,
-    player_pos: Point2,
+    player_pos: Point2<f32>,
 }
 
 impl Game {
@@ -124,8 +124,8 @@ impl Game {
 
     pub fn push_quad_with_occluder(
         &mut self,
-        center: Point2,
-        size: Vector2,
+        center: Point2<f32>,
+        size: Vector2<f32>,
         color: Color,
         ignore_light_offset: Option<f32>,
     ) {
@@ -279,8 +279,6 @@ impl Game {
             &screen.orthographic_projection(),
             &self.text_batch.draw_unit(),
         )?;
-
-        ctx.debug_tex(Point2::new(400.0, 400.0), self.font.texture())?;
 
         Ok(())
     }
