@@ -47,7 +47,7 @@ impl ColPass {
 
     pub fn draw(
         &mut self,
-        transform: &Matrix3,
+        transform: &Matrix3<f32>,
         draw_unit: &DrawUnit<ColVertex>,
     ) -> Result<(), Error> {
         self.shader.bind();
@@ -103,7 +103,7 @@ impl TexColPass {
 
     pub fn draw(
         &mut self,
-        transform: &Matrix3,
+        transform: &Matrix3<f32>,
         tex: &Texture,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {

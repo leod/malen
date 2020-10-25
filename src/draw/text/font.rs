@@ -23,7 +23,6 @@ struct Glyph {
 
 pub struct Font {
     font: fontdue::Font,
-    scale: f32,
     layout: Layout,
 
     packer: ShelfPacker,
@@ -58,7 +57,6 @@ impl Font {
 
         Ok(Font {
             font,
-            scale,
             packer,
             layout,
             cache: HashMap::new(),
@@ -71,7 +69,7 @@ impl Font {
     pub fn write(
         &mut self,
         size: f32,
-        pos: Point3,
+        pos: Point3<f32>,
         color: Color,
         text: &str,
         batch: &mut TextBatch,
@@ -126,7 +124,7 @@ impl Font {
     pub fn draw(
         &mut self,
         ctx: &Context,
-        transform: &Matrix3,
+        transform: &Matrix3<f32>,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
         ctx.golem_ctx().set_blend_mode(Some(BlendMode {
@@ -138,11 +136,8 @@ impl Font {
             ..Default::default()
         }));
 
-        self.pass.draw(
-            transform,
-            self.packer.texture(),
-            draw_unit,
-        )?;
+        self.pass
+            .draw(transform, self.packer.texture(), draw_unit)?;
 
         ctx.golem_ctx().set_blend_mode(None);
 

@@ -47,7 +47,7 @@ pub struct ColVertex {
     /// easiest way to render moderate amounts of sprites in a somewhat
     /// performant way with WebGL 1: We don't have an easy way to send the
     /// per-sprite data to GPU, since we don't have access to UBOs and SSBOs.
-    pub world_pos: Point3,
+    pub world_pos: Point3<f32>,
     pub color: Color,
 }
 
@@ -78,8 +78,8 @@ impl Vertex for ColVertex {
 
 pub struct TexVertex {
     /// The vertex position in world coordinates.
-    pub world_pos: Point3,
-    pub tex_coords: Point2,
+    pub world_pos: Point3<f32>,
+    pub tex_coords: Point2<f32>,
 }
 
 impl Vertex for TexVertex {
@@ -107,8 +107,8 @@ impl Vertex for TexVertex {
 
 pub struct TexColVertex {
     /// The vertex position in world coordinates.
-    pub world_pos: Point3,
-    pub tex_coords: Point2,
+    pub world_pos: Point3<f32>,
+    pub tex_coords: Point2<f32>,
     pub color: Color,
 }
 
@@ -142,13 +142,13 @@ impl Vertex for TexColVertex {
 
 #[derive(Debug, Clone)]
 pub struct Quad {
-    pub corners: [Point2; 4],
+    pub corners: [Point2<f32>; 4],
 }
 
 impl Quad {
     pub const TRIANGLE_INDICES: &'static [u32] = &[0, 1, 2, 2, 3, 0];
 
-    pub fn corners() -> [Vector2; 4] {
+    pub fn corners() -> [Vector2<f32>; 4] {
         [
             Vector2::new(-0.5, -0.5),
             Vector2::new(-0.5, 0.5),
@@ -157,7 +157,7 @@ impl Quad {
         ]
     }
 
-    pub fn new(transform: &Matrix3) -> Self {
+    pub fn new(transform: &Matrix3<f32>) -> Self {
         Self {
             corners: [
                 (transform * Point3::new(-0.5, -0.5, 1.0)).xy(),
@@ -168,7 +168,7 @@ impl Quad {
         }
     }
 
-    pub fn axis_aligned(center: Point2, size: Vector2) -> Self {
+    pub fn axis_aligned(center: Point2<f32>, size: Vector2<f32>) -> Self {
         Self {
             corners: [
                 // Top left
