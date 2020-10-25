@@ -17,7 +17,7 @@ pub use pass::{ColPass, TexColPass};
 pub use primitive::{
     ColVertex, Geometry, GeometryMode, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex,
 };
-pub use shadow::{Light, OccluderBatch, ShadowMap, ShadowedColorPass};
+pub use shadow::{Light, OccluderBatch, ShadowMap, ShadowColPass};
 pub use text::{Font, TextBatch};
 
 pub struct Draw {
