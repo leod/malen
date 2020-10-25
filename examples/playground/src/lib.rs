@@ -244,7 +244,7 @@ impl Game {
         .to_matrix(&screen);
 
         self.shadow_map
-            .build(ctx, &screen.orthographic_projection(), &view, &lights)?
+            .build(ctx, &(screen.orthographic_projection() * view), &lights)?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
@@ -254,8 +254,7 @@ impl Game {
         ctx.golem_ctx().clear();
 
         self.shadowed_color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+            &(screen.orthographic_projection() * view),
             Color::new(0.025, 0.025, 0.025, 1.0),
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
@@ -266,13 +265,11 @@ impl Game {
             ..Default::default()
         }));
         self.color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+            &(screen.orthographic_projection() * view),
             &self.tri_plain_batch.draw_unit(),
         )?;
         self.color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+            &(screen.orthographic_projection() * view),
             &self.line_batch.draw_unit(),
         )?;
         ctx.golem_ctx().set_depth_test_mode(None);

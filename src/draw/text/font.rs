@@ -126,7 +126,7 @@ impl Font {
     pub fn draw(
         &mut self,
         ctx: &Context,
-        projection: &Matrix3,
+        transform: &Matrix3,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
         ctx.golem_ctx().set_blend_mode(Some(BlendMode {
@@ -139,8 +139,7 @@ impl Font {
         }));
 
         self.pass.draw(
-            projection,
-            &Matrix3::identity(),
+            transform,
             self.packer.texture(),
             draw_unit,
         )?;

@@ -8,7 +8,7 @@ use web_sys::HtmlCanvasElement;
 
 use nalgebra as na;
 
-use crate::{Color, Error, Matrix3, Point2, Rect, Screen, Vector2};
+use crate::{Color, Error, Point2, Rect, Screen, Vector2};
 
 pub use golem::Texture;
 
@@ -72,7 +72,6 @@ impl Draw {
         );
         debug_tex_pass.draw(
             &screen.orthographic_projection(),
-            &Matrix3::identity(),
             tex,
             &debug_tex_batch.draw_unit(),
         )?;
