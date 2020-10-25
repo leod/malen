@@ -7,8 +7,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use webglee::Event::*;
 use webglee::{
     draw::{
-        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowMap,
-        ShadowedColorPass, TextBatch, TriBatch,
+        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
+        TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
     Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
@@ -32,7 +32,7 @@ struct Game {
     text_batch: TextBatch,
 
     shadow_map: ShadowMap,
-    shadowed_color_pass: ShadowedColorPass,
+    shadow_col_pass: ShadowColPass,
     color_pass: ColPass,
     font: Font,
 
@@ -83,7 +83,7 @@ impl Game {
             line_batch: LineBatch::new(ctx)?,
             text_batch: TextBatch::new(ctx)?,
             shadow_map,
-            shadowed_color_pass: ShadowedColorPass::new(ctx)?,
+            shadow_col_pass: ShadowColPass::new(ctx)?,
             color_pass: ColPass::new(ctx)?,
             font,
             walls,
@@ -253,7 +253,7 @@ impl Game {
         ctx.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
         ctx.golem_ctx().clear();
 
-        self.shadowed_color_pass.draw(
+        self.shadow_col_pass.draw(
             &(screen.orthographic_projection() * view),
             Color::new(0.025, 0.025, 0.025, 1.0),
             &self.shadow_map,

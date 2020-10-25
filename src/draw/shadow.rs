@@ -600,11 +600,11 @@ impl<'a> BuildShadowMap<'a> {
     }
 }
 
-pub struct ShadowedColorPass {
+pub struct ShadowColPass {
     shader: ShaderProgram,
 }
 
-impl ShadowedColorPass {
+impl ShadowColPass {
     pub fn new(ctx: &Context) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
             ctx.golem_ctx(),
