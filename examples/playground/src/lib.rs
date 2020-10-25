@@ -44,12 +44,12 @@ struct Game {
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
         let num_thingies = 32;
-        let shadow_map = ShadowMap::new(ctx, 2048, 1 + num_thingies)?;
+        let shadow_map = ShadowMap::new(ctx, 512, 1 + num_thingies)?;
 
         let font = Font::from_bytes(
             ctx,
             include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
-            20.0,
+            60.0,
         )?;
 
         let mut rng = rand::thread_rng();
@@ -139,7 +139,7 @@ impl Game {
             .push_quad_outline(&quad, z, Color::new(0.0, 0.0, 0.0, 1.0));
     }
 
-    pub fn draw(&mut self, ctx: &Context) -> Result<(), Error> {
+    pub fn draw(&mut self, ctx: &mut Context) -> Result<(), Error> {
         let screen = ctx.draw().screen();
 
         self.tri_plain_batch.clear();
@@ -156,6 +156,7 @@ impl Game {
         );
 
         self.font.write(
+            30.0,
             Point3::new(150.0, 150.0, 0.0),
             Color::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
@@ -163,11 +164,36 @@ impl Game {
         );
 
         self.font.write(
+            20.0,
+            Point3::new(150.0, 300.0, 0.0),
+            Color::new(1.0, 0.0, 1.0, 1.0),
+            "Hello world! What's up?",
+            &mut self.text_batch,
+        );
+
+        self.font.write(
+            10.0,
+            Point3::new(150.0, 450.0, 0.0),
+            Color::new(1.0, 0.0, 1.0, 1.0),
+            "Hello world! What's up?",
+            &mut self.text_batch,
+        );
+
+        /*self.font.write(
+            30.0,
             Point3::new(10.0, 10.0, 0.0),
             Color::new(1.0, 1.0, 1.0, 1.0),
             &format!("Screen: {:?}", screen),
             &mut self.text_batch,
         );
+
+        self.font.write(
+            10.0,
+            Point3::new(10.0, 100.0, 0.0),
+            Color::new(1.0, 1.0, 1.0, 1.0),
+            &format!("This is a long blabla of text life: {:?}", screen),
+            &mut self.text_batch,
+        );*/
 
         let mut lights = vec![Light {
             world_pos: self.player_pos,
@@ -257,6 +283,8 @@ impl Game {
             &self.text_batch.draw_unit(),
         )?;
 
+        ctx.debug_tex(Point2::new(400.0, 400.0), self.font.texture())?;
+
         Ok(())
     }
 }
@@ -272,7 +300,7 @@ pub fn main() {
 
     let mut game = Game::new(&ctx).unwrap();
 
-    ctx.main_loop(move |ctx, dt, events, _running| {
+    ctx.main_loop(move |mut ctx, dt, events, _running| {
         for event in events {
             match event {
                 Focused => {
@@ -286,7 +314,7 @@ pub fn main() {
         }
 
         game.update(dt, ctx.input_state());
-        game.draw(&ctx).unwrap();
+        game.draw(&mut ctx).unwrap();
     })
     .unwrap();
 }

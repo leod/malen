@@ -3,10 +3,10 @@ use std::{cell::RefCell, rc::Rc, time::Duration};
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
-use golem::{glow, GolemError};
+use golem::{glow, GolemError, Texture};
 
 use crate::input::EventHandlers;
-use crate::{Draw, Error, Event, InputState};
+use crate::{Draw, Error, Event, InputState, Point2};
 
 pub struct Context {
     event_handlers: EventHandlers,
@@ -56,8 +56,16 @@ impl Context {
         &self.draw
     }
 
+    pub fn draw_mut(&mut self) -> &mut Draw {
+        &mut self.draw
+    }
+
     pub fn golem_ctx(&self) -> &golem::Context {
         self.draw.golem_ctx()
+    }
+
+    pub fn debug_tex(&mut self, pos: Point2, tex: &Texture) -> Result<(), Error> {
+        self.draw.debug_tex(pos, tex)
     }
 
     /// Run the `webglee` main loop.

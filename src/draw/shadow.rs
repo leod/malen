@@ -397,7 +397,7 @@ impl ShadowMap {
                     float dist2 = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
                     float dist3 = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
 
-                    float visibility = step(dist_to_light, dist1 + 0.5);
+                    float visibility = step(dist_to_light, dist1);
                     /*visibility *= 0.5;
                     visibility += step(dist_to_light, dist2) * 0.25
                     visibility += step(dist_to_light, dist3) * 0.25;*/

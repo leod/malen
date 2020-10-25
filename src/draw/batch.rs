@@ -92,13 +92,17 @@ pub type TriBatch<V> = Batch<Triangle<V>>;
 pub type LineBatch<V> = Batch<Line<V>>;
 
 impl<G: Geometry> Batch<G> {
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new_golem(ctx: &golem::Context) -> Result<Self, Error> {
         Ok(Self {
             scratch: Scratch::default(),
-            vertices: VertexBuffer::new(ctx.golem_ctx())?,
-            elements: ElementBuffer::new(ctx.golem_ctx())?,
+            vertices: VertexBuffer::new(ctx)?,
+            elements: ElementBuffer::new(ctx)?,
             _phantom: PhantomData,
         })
+    }
+
+    pub fn new(ctx: &Context) -> Result<Self, Error> {
+        Self::new_golem(ctx.golem_ctx())
     }
 
     pub fn vertices(&self) -> &VertexBuffer {

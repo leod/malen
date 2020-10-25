@@ -16,6 +16,10 @@ pub struct Rect {
 }
 
 impl Rect {
+    pub fn uv_full() -> Self {
+        Self::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0))
+    }
+
     pub fn from_top_left(top_left: Point2, size: Vector2) -> Self {
         Self {
             center: top_left + size / 2.0,
