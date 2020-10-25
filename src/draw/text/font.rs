@@ -1,13 +1,17 @@
 use std::{collections::HashMap, ops::Deref};
 
 use fontdue::{
-    layout::{CoordinateSystem, GlyphPosition, Layout, LayoutSettings, TextStyle},
+    layout::{
+        CoordinateSystem, GlyphPosition, GlyphRasterConfig, Layout, LayoutSettings, TextStyle,
+    },
     FontSettings,
 };
 use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
 
 use crate::{
-    draw::{text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, TriBatch},
+    draw::{
+        text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
+    },
     Color, Context, Error, Matrix3, Point2, Point3, Rect, Vector2,
 };
 
@@ -23,7 +27,7 @@ pub struct Font {
     layout: Layout,
 
     packer: ShelfPacker,
-    cache: HashMap<char, Glyph>,
+    cache: HashMap<GlyphRasterConfig, Glyph>,
 
     pass: TexColPass,
 
@@ -31,8 +35,8 @@ pub struct Font {
     bitmap_buffer: Vec<u8>,
 }
 
-const ATLAS_WIDTH: usize = 2048;
-const ATLAS_HEIGHT: usize = 2048;
+const ATLAS_WIDTH: usize = 512;
+const ATLAS_HEIGHT: usize = 256;
 
 impl Font {
     pub fn from_bytes<Data>(ctx: &Context, data: Data, scale: f32) -> Result<Self, Error>
@@ -64,7 +68,14 @@ impl Font {
         })
     }
 
-    pub fn write(&mut self, pos: Point3, color: Color, text: &str, batch: &mut TextBatch) {
+    pub fn write(
+        &mut self,
+        size: f32,
+        pos: Point3,
+        color: Color,
+        text: &str,
+        batch: &mut TextBatch,
+    ) {
         self.position_buffer.clear();
 
         let settings = LayoutSettings {
@@ -76,21 +87,17 @@ impl Font {
 
         self.layout.layout_horizontal(
             &[&self.font],
-            &[&TextStyle::new(text, self.scale, 0)],
+            &[&TextStyle::new(text, size, 0)],
             &settings,
             &mut self.position_buffer,
         );
 
         for &glyph_pos in &self.position_buffer {
-            let (scale, font, packer, bitmap_buffer) = (
-                self.scale,
-                &self.font,
-                &mut self.packer,
-                &mut self.bitmap_buffer,
-            );
+            let (font, packer, bitmap_buffer) =
+                (&self.font, &mut self.packer, &mut self.bitmap_buffer);
 
-            let glyph = self.cache.entry(glyph_pos.key.c).or_insert_with(|| {
-                let (metrics, alpha_bitmap) = font.rasterize(glyph_pos.key.c, scale);
+            let glyph = self.cache.entry(glyph_pos.key).or_insert_with(|| {
+                let (metrics, alpha_bitmap) = font.rasterize(glyph_pos.key.c, size);
 
                 Self::alpha_to_rgba(&alpha_bitmap, bitmap_buffer);
 
@@ -141,6 +148,10 @@ impl Font {
         ctx.golem_ctx().set_blend_mode(None);
 
         Ok(())
+    }
+
+    pub fn texture(&self) -> &Texture {
+        self.packer.texture()
     }
 
     fn alpha_to_rgba(bitmap: &[u8], output: &mut Vec<u8>) {

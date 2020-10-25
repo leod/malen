@@ -68,9 +68,9 @@ pub struct TexColPass {
 }
 
 impl TexColPass {
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new_golem(ctx: &golem::Context) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
-            ctx.golem_ctx(),
+            ctx,
             ShaderDescription {
                 vertex_input: &TexColVertex::attributes(),
                 fragment_input: &[
@@ -100,16 +100,20 @@ impl TexColPass {
         Ok(Self { shader })
     }
 
+    pub fn new(ctx: &Context) -> Result<Self, Error> {
+        Self::new_golem(ctx.golem_ctx())
+    }
+
     pub fn draw(
         &mut self,
         projection: &Matrix3,
         view: &Matrix3,
-        texture: &Texture,
+        tex: &Texture,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
         let projection_view = projection * view;
 
-        texture.set_active(std::num::NonZeroU32::new(1).unwrap());
+        tex.set_active(std::num::NonZeroU32::new(1).unwrap());
 
         self.shader.bind();
         self.shader.set_uniform(

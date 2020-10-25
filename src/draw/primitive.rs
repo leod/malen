@@ -1,6 +1,6 @@
 use golem::{Attribute, AttributeType, Dimension};
 
-use crate::{Color, Matrix3, Point2, Point3, Vector2};
+use crate::{Color, Matrix3, Point2, Point3, Rect, Vector2};
 
 pub use golem::GeometryMode;
 
@@ -168,17 +168,17 @@ impl Quad {
         }
     }
 
-    pub fn axis_aligned(pos: Point2, size: Vector2) -> Self {
+    pub fn axis_aligned(center: Point2, size: Vector2) -> Self {
         Self {
             corners: [
                 // Top left
-                pos + Self::corners()[0].component_mul(&size),
+                center + Self::corners()[0].component_mul(&size),
                 // Bottom left
-                pos + Self::corners()[1].component_mul(&size),
+                center + Self::corners()[1].component_mul(&size),
                 // Bottom right
-                pos + Self::corners()[2].component_mul(&size),
+                center + Self::corners()[2].component_mul(&size),
                 // Top right
-                pos + Self::corners()[3].component_mul(&size),
+                center + Self::corners()[3].component_mul(&size),
             ],
         }
     }
@@ -192,5 +192,11 @@ impl Quad {
             first_idx + Self::TRIANGLE_INDICES[4],
             first_idx + Self::TRIANGLE_INDICES[5],
         ]
+    }
+}
+
+impl From<Rect> for Quad {
+    fn from(rect: Rect) -> Quad {
+        Quad::axis_aligned(rect.center, rect.size)
     }
 }
