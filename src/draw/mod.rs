@@ -8,7 +8,7 @@ use web_sys::HtmlCanvasElement;
 
 use nalgebra as na;
 
-use crate::{Color, Error, Matrix3, Point2, Rect, Screen, Vector2};
+use crate::{Color, Error, Point2, Rect, Screen, Vector2};
 
 pub use golem::Texture;
 
@@ -17,7 +17,7 @@ pub use pass::{ColPass, TexColPass};
 pub use primitive::{
     ColVertex, Geometry, GeometryMode, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex,
 };
-pub use shadow::{Light, OccluderBatch, ShadowMap, ShadowedColorPass};
+pub use shadow::{Light, OccluderBatch, ShadowColPass, ShadowMap};
 pub use text::{Font, TextBatch};
 
 pub struct Draw {
@@ -47,7 +47,7 @@ impl Draw {
         }
     }
 
-    pub fn debug_tex(&mut self, pos: Point2, tex: &Texture) -> Result<(), Error> {
+    pub fn debug_tex(&mut self, pos: Point2<f32>, tex: &Texture) -> Result<(), Error> {
         let screen = self.screen();
         let size = Vector2::new(tex.width() as f32, tex.height() as f32);
 
@@ -72,7 +72,6 @@ impl Draw {
         );
         debug_tex_pass.draw(
             &screen.orthographic_projection(),
-            &Matrix3::identity(),
             tex,
             &debug_tex_batch.draw_unit(),
         )?;

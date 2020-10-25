@@ -7,20 +7,20 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use webglee::Event::*;
 use webglee::{
     draw::{
-        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowMap,
-        ShadowedColorPass, TextBatch, TriBatch,
+        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
+        TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
     Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
 };
 
 struct Wall {
-    center: Point2,
-    size: Vector2,
+    center: Point2<f32>,
+    size: Vector2<f32>,
 }
 
 struct Thingy {
-    center: Point2,
+    center: Point2<f32>,
     angle: f32,
 }
 
@@ -32,13 +32,13 @@ struct Game {
     text_batch: TextBatch,
 
     shadow_map: ShadowMap,
-    shadowed_color_pass: ShadowedColorPass,
+    shadow_col_pass: ShadowColPass,
     color_pass: ColPass,
     font: Font,
 
     walls: Vec<Wall>,
     thingies: Vec<Thingy>,
-    player_pos: Point2,
+    player_pos: Point2<f32>,
 }
 
 impl Game {
@@ -83,7 +83,7 @@ impl Game {
             line_batch: LineBatch::new(ctx)?,
             text_batch: TextBatch::new(ctx)?,
             shadow_map,
-            shadowed_color_pass: ShadowedColorPass::new(ctx)?,
+            shadow_col_pass: ShadowColPass::new(ctx)?,
             color_pass: ColPass::new(ctx)?,
             font,
             walls,
@@ -124,8 +124,8 @@ impl Game {
 
     pub fn push_quad_with_occluder(
         &mut self,
-        center: Point2,
-        size: Vector2,
+        center: Point2<f32>,
+        size: Vector2<f32>,
         color: Color,
         ignore_light_offset: Option<f32>,
     ) {
@@ -244,7 +244,7 @@ impl Game {
         .to_matrix(&screen);
 
         self.shadow_map
-            .build(ctx, &screen.orthographic_projection(), &view, &lights)?
+            .build(ctx, &(screen.orthographic_projection() * view), &lights)?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
@@ -253,9 +253,8 @@ impl Game {
         ctx.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
         ctx.golem_ctx().clear();
 
-        self.shadowed_color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+        self.shadow_col_pass.draw(
+            &(screen.orthographic_projection() * view),
             Color::new(0.025, 0.025, 0.025, 1.0),
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
@@ -266,13 +265,11 @@ impl Game {
             ..Default::default()
         }));
         self.color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+            &(screen.orthographic_projection() * view),
             &self.tri_plain_batch.draw_unit(),
         )?;
         self.color_pass.draw(
-            &screen.orthographic_projection(),
-            &view,
+            &(screen.orthographic_projection() * view),
             &self.line_batch.draw_unit(),
         )?;
         ctx.golem_ctx().set_depth_test_mode(None);
@@ -282,8 +279,6 @@ impl Game {
             &screen.orthographic_projection(),
             &self.text_batch.draw_unit(),
         )?;
-
-        ctx.debug_tex(Point2::new(400.0, 400.0), self.font.texture())?;
 
         Ok(())
     }

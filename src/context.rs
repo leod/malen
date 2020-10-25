@@ -64,7 +64,7 @@ impl Context {
         self.draw.golem_ctx()
     }
 
-    pub fn debug_tex(&mut self, pos: Point2, tex: &Texture) -> Result<(), Error> {
+    pub fn debug_tex(&mut self, pos: Point2<f32>, tex: &Texture) -> Result<(), Error> {
         self.draw.debug_tex(pos, tex)
     }
 
