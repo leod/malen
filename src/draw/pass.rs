@@ -47,16 +47,13 @@ impl ColPass {
 
     pub fn draw(
         &mut self,
-        projection: &Matrix3,
-        view: &Matrix3,
+        transform: &Matrix3<f32>,
         draw_unit: &DrawUnit<ColVertex>,
     ) -> Result<(), Error> {
-        let projection_view = projection * view;
-
         self.shader.bind();
         self.shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
+            UniformValue::Matrix3(matrix3_to_flat_array(transform)),
         )?;
 
         draw_unit.draw(&self.shader)
@@ -106,19 +103,16 @@ impl TexColPass {
 
     pub fn draw(
         &mut self,
-        projection: &Matrix3,
-        view: &Matrix3,
+        transform: &Matrix3<f32>,
         tex: &Texture,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
-        let projection_view = projection * view;
-
         tex.set_active(std::num::NonZeroU32::new(1).unwrap());
 
         self.shader.bind();
         self.shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(&projection_view)),
+            UniformValue::Matrix3(matrix3_to_flat_array(transform)),
         )?;
         self.shader.set_uniform("my_tex", UniformValue::Int(1))?;
 
