@@ -4,8 +4,9 @@
 //! https://github.com/17cupsofcoffee/tetra/blob/main/src/graphics/text/packer.rs
 
 use golem::{ColorFormat, Texture, TextureFilter};
+use nalgebra::{Point2, Vector2};
 
-use crate::{Context, Error, Point2, Rect, Vector2};
+use crate::{Context, Error, Rect};
 
 /// A shelf has a fixed height and grows in width as more glyphs are added.
 #[derive(Clone, Debug)]
