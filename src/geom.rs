@@ -16,7 +16,7 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn uv_full() -> Self {
+    pub fn zero_to_one() -> Self {
         Self::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0))
     }
 
