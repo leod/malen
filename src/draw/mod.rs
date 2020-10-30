@@ -67,7 +67,7 @@ impl Draw {
         debug_tex_batch.push_quad(
             &Rect::from_top_left(pos, size).into(),
             0.0,
-            Rect::uv_full(),
+            Rect::zero_to_one(),
             Color4::new(0.0, 1.0, 1.0, 1.0),
         );
         debug_tex_pass.draw(
