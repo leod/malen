@@ -1,6 +1,7 @@
 use golem::{Attribute, AttributeType, Dimension};
+use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
-use crate::{Color, Matrix3, Point2, Point3, Rect, Vector2};
+use crate::{Color4, Rect};
 
 pub use golem::GeometryMode;
 
@@ -48,7 +49,7 @@ pub struct ColVertex {
     /// performant way with WebGL 1: We don't have an easy way to send the
     /// per-sprite data to GPU, since we don't have access to UBOs and SSBOs.
     pub world_pos: Point3<f32>,
-    pub color: Color,
+    pub color: Color4,
 }
 
 impl Vertex for ColVertex {
@@ -109,7 +110,7 @@ pub struct TexColVertex {
     /// The vertex position in world coordinates.
     pub world_pos: Point3<f32>,
     pub tex_coords: Point2<f32>,
-    pub color: Color,
+    pub color: Color4,
 }
 
 impl Vertex for TexColVertex {

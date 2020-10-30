@@ -6,9 +6,9 @@ mod text;
 
 use web_sys::HtmlCanvasElement;
 
-use nalgebra as na;
+use nalgebra::{Point2, Vector2};
 
-use crate::{Color, Error, Point2, Rect, Screen, Vector2};
+use crate::{Color4, Error, Rect, Screen};
 
 pub use golem::Texture;
 
@@ -42,7 +42,7 @@ impl Draw {
 
     pub fn screen(&self) -> Screen {
         Screen {
-            size: na::Vector2::new(self.canvas.width(), self.canvas.height()),
+            size: Vector2::new(self.canvas.width(), self.canvas.height()),
             device_pixel_ratio: device_pixel_ratio(),
         }
     }
@@ -68,7 +68,7 @@ impl Draw {
             &Rect::from_top_left(pos, size).into(),
             0.0,
             Rect::uv_full(),
-            Color::new(0.0, 1.0, 1.0, 1.0),
+            Color4::new(0.0, 1.0, 1.0, 1.0),
         );
         debug_tex_pass.draw(
             &screen.orthographic_projection(),

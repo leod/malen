@@ -7,12 +7,13 @@ use fontdue::{
     FontSettings,
 };
 use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
+use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use crate::{
     draw::{
         text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
     },
-    Color, Context, Error, Matrix3, Point2, Point3, Rect, Vector2,
+    Color4, Context, Error, Rect,
 };
 
 pub type TextBatch = TriBatch<TexColVertex>;
@@ -70,7 +71,7 @@ impl Font {
         &mut self,
         size: f32,
         pos: Point3<f32>,
-        color: Color,
+        color: Color4,
         text: &str,
         batch: &mut TextBatch,
     ) {

@@ -10,11 +10,12 @@ use golem::{
     ShaderDescription, ShaderProgram, Surface, Texture, TextureFilter, TextureWrap, Uniform,
     UniformType, UniformValue,
 };
+use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Color, Context, Error, Matrix3, Point2, Vector2, Vector3,
+    Color3, Color4, Context, Error,
 };
 
 pub struct LineSegment {
@@ -123,7 +124,7 @@ impl Vertex for LightAreaVertex {
             Attribute::new("a_world_pos", AttributeType::Vector(Dimension::D2)),
             Attribute::new("a_light_world_pos", AttributeType::Vector(Dimension::D2)),
             Attribute::new("a_light_params", AttributeType::Vector(Dimension::D3)),
-            Attribute::new("a_light_color", AttributeType::Vector(Dimension::D4)),
+            Attribute::new("a_light_color", AttributeType::Vector(Dimension::D3)),
             Attribute::new("a_light_offset", AttributeType::Scalar),
         ]
     }
@@ -144,7 +145,6 @@ impl Vertex for LightAreaVertex {
             self.light.color.x,
             self.light.color.y,
             self.light.color.z,
-            self.light.color.w,
             self.light_offset,
         ])
     }
@@ -156,7 +156,7 @@ pub struct Light {
     pub radius: f32,
     pub angle: f32,
     pub angle_size: f32,
-    pub color: Color,
+    pub color: Color3,
 }
 
 impl Light {
@@ -362,7 +362,7 @@ impl ShadowMap {
                 fragment_input: &[
                     Attribute::new("v_delta", AttributeType::Vector(Dimension::D2)),
                     Attribute::new("v_light_params", AttributeType::Vector(Dimension::D3)),
-                    Attribute::new("v_light_color", AttributeType::Vector(Dimension::D4)),
+                    Attribute::new("v_light_color", AttributeType::Vector(Dimension::D3)),
                     Attribute::new("v_light_offset", AttributeType::Scalar),
                 ],
                 uniforms: &[
@@ -410,9 +410,9 @@ impl ShadowMap {
 
                     visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.5); //step(angle_diff, v_light_params.z);
 
-                    vec3 color = v_light_color.rgb * visibility;
+                    vec3 color = v_light_color * visibility;
 
-                    gl_FragColor = vec4(color, v_light_color.a);
+                    gl_FragColor = vec4(color, 1.0);
                 }
                 "#,
             },
@@ -619,7 +619,7 @@ impl ShadowColPass {
                     Uniform::new("light_surface", UniformType::Sampler2D),
                     Uniform::new(
                         "ambient_light",
-                        UniformType::Vector(NumberType::Float, Dimension::D4),
+                        UniformType::Vector(NumberType::Float, Dimension::D3),
                     ),
                 ],
                 vertex_shader: r#"
@@ -633,7 +633,7 @@ impl ShadowColPass {
                 fragment_shader: r#"
                 void main() {
                     vec3 light = texture(light_surface, v_tex_coords).rgb;
-                    vec3 reflect = ambient_light.rgb + light * v_color.rgb;
+                    vec3 reflect = ambient_light + light * v_color.rgb;
                     gl_FragColor = vec4(
                         pow(reflect, vec3(1.0/2.2)),
                         v_color.a
@@ -648,7 +648,7 @@ impl ShadowColPass {
     pub fn draw(
         &mut self,
         transform: &Matrix3<f32>,
-        ambient_light: Color,
+        ambient_light: Color3,
         shadow_map: &ShadowMap,
         draw_unit: &DrawUnit<ColVertex>,
     ) -> Result<(), Error> {
@@ -667,7 +667,7 @@ impl ShadowColPass {
         )?;
         self.shader.set_uniform(
             "ambient_light",
-            UniformValue::Vector4(ambient_light.coords.into()),
+            UniformValue::Vector3(ambient_light.coords.into()),
         )?;
         self.shader
             .set_uniform("light_surface", UniformValue::Int(1))?;
