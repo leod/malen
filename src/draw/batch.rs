@@ -1,10 +1,11 @@
 use std::marker::PhantomData;
 
 use golem::{ElementBuffer, GeometryMode, ShaderProgram, VertexBuffer};
+use nalgebra::Point3;
 
 use crate::{
     draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
-    Color, Context, Error, Point3, Rect,
+    Color4, Context, Error, Rect,
 };
 
 pub struct DrawUnit<'a, V> {
@@ -183,7 +184,7 @@ impl<V: Vertex> Batch<Triangle<V>> {
 }
 
 impl Batch<Triangle<ColVertex>> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, color: Color) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, color: Color4) {
         let first_idx = self.next_index();
 
         for corner in &quad.corners {
@@ -200,7 +201,7 @@ impl Batch<Triangle<ColVertex>> {
 }
 
 impl Batch<Line<ColVertex>> {
-    pub fn push_quad_outline(&mut self, quad: &Quad, z: f32, color: Color) {
+    pub fn push_quad_outline(&mut self, quad: &Quad, z: f32, color: Color4) {
         let first_idx = self.next_index();
 
         for corner in &quad.corners {
@@ -235,7 +236,7 @@ impl TriBatch<TexVertex> {
 }
 
 impl TriBatch<TexColVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect, color: Color) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect, color: Color4) {
         let first_idx = self.next_index();
 
         for corner_idx in 0..4 {

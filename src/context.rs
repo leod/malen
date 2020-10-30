@@ -4,9 +4,10 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError, Texture};
+use nalgebra::Point2;
 
 use crate::input::EventHandlers;
-use crate::{Draw, Error, Event, InputState, Point2};
+use crate::{Draw, Error, Event, InputState};
 
 pub struct Context {
     event_handlers: EventHandlers,
