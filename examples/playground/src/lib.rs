@@ -4,6 +4,8 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use webglee::nalgebra::{Point2, Point3, Vector2};
+
 use webglee::Event::*;
 use webglee::{
     draw::{
@@ -11,7 +13,7 @@ use webglee::{
         TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
-    Camera, Color, Context, Error, InputState, Point2, Point3, Vector2, VirtualKeyCode,
+    Camera, Color3, Color4, Context, Error, InputState, VirtualKeyCode,
 };
 
 struct Wall {
@@ -126,7 +128,7 @@ impl Game {
         &mut self,
         center: Point2<f32>,
         size: Vector2<f32>,
-        color: Color,
+        color: Color4,
         ignore_light_offset: Option<f32>,
     ) {
         let quad = Quad::axis_aligned(center, size);
@@ -136,7 +138,7 @@ impl Game {
         self.occluder_batch
             .push_occluder_quad(&quad, ignore_light_offset);
         self.line_batch
-            .push_quad_outline(&quad, z, Color::new(0.0, 0.0, 0.0, 1.0));
+            .push_quad_outline(&quad, z, Color4::new(0.0, 0.0, 0.0, 1.0));
     }
 
     pub fn draw(&mut self, ctx: &mut Context) -> Result<(), Error> {
@@ -152,13 +154,13 @@ impl Game {
         self.tri_shadowed_batch.push_quad(
             &Quad::axis_aligned(Point2::new(0.0, 0.0), Vector2::new(4096.0, 4096.0)),
             0.0,
-            Color::new(0.4, 0.9, 0.9, 1.0),
+            Color4::new(0.4, 0.9, 0.9, 1.0),
         );
 
         self.font.write(
             30.0,
             Point3::new(150.0, 150.0, 0.0),
-            Color::new(1.0, 0.0, 1.0, 1.0),
+            Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
             &mut self.text_batch,
         );
@@ -166,7 +168,7 @@ impl Game {
         self.font.write(
             20.0,
             Point3::new(150.0, 300.0, 0.0),
-            Color::new(1.0, 0.0, 1.0, 1.0),
+            Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
             &mut self.text_batch,
         );
@@ -174,40 +176,24 @@ impl Game {
         self.font.write(
             10.0,
             Point3::new(150.0, 450.0, 0.0),
-            Color::new(1.0, 0.0, 1.0, 1.0),
+            Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
             &mut self.text_batch,
         );
-
-        /*self.font.write(
-            30.0,
-            Point3::new(10.0, 10.0, 0.0),
-            Color::new(1.0, 1.0, 1.0, 1.0),
-            &format!("Screen: {:?}", screen),
-            &mut self.text_batch,
-        );
-
-        self.font.write(
-            10.0,
-            Point3::new(10.0, 100.0, 0.0),
-            Color::new(1.0, 1.0, 1.0, 1.0),
-            &format!("This is a long blabla of text life: {:?}", screen),
-            &mut self.text_batch,
-        );*/
 
         let mut lights = vec![Light {
             world_pos: self.player_pos,
             radius: 1024.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
-            color: Color::new(0.6, 0.6, 0.6, 1.0),
+            color: Color3::new(0.6, 0.6, 0.6),
         }];
 
         for i in 0..self.walls.len() {
             self.push_quad_with_occluder(
                 self.walls[i].center,
                 self.walls[i].size,
-                Color::new(0.2, 0.2, 0.8, 1.0),
+                Color4::new(0.2, 0.2, 0.8, 1.0),
                 None,
             )
         }
@@ -216,7 +202,7 @@ impl Game {
             self.push_quad_with_occluder(
                 self.thingies[i].center,
                 Vector2::new(30.0, 30.0),
-                Color::new(0.2, 0.8, 0.2, 1.0),
+                Color4::new(0.2, 0.8, 0.2, 1.0),
                 Some(self.shadow_map.light_offset(i + 1)),
             );
 
@@ -225,14 +211,14 @@ impl Game {
                 radius: 2048.0,
                 angle: self.thingies[i].angle,
                 angle_size: 0.2 * std::f32::consts::PI,
-                color: Color::new(0.1, 0.25, 0.1, 1.0),
+                color: Color3::new(0.1, 0.25, 0.1),
             });
         }
 
         self.push_quad_with_occluder(
             self.player_pos,
             Vector2::new(30.0, 30.0),
-            Color::new(0.7, 0.2, 0.2, 1.0),
+            Color4::new(0.7, 0.2, 0.2, 1.0),
             Some(self.shadow_map.light_offset(0)),
         );
 
@@ -255,7 +241,7 @@ impl Game {
 
         self.shadow_col_pass.draw(
             &(screen.orthographic_projection() * view),
-            Color::new(0.025, 0.025, 0.025, 1.0),
+            Color3::new(0.025, 0.025, 0.025),
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
         )?;

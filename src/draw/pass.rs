@@ -2,11 +2,12 @@ use golem::{
     Attribute, AttributeType, Dimension, ShaderDescription, ShaderProgram, Texture, Uniform,
     UniformType, UniformValue,
 };
+use nalgebra::Matrix3;
 
 use crate::{
     draw::{ColVertex, DrawUnit, TexColVertex, Vertex},
     geom::matrix3_to_flat_array,
-    Context, Error, Matrix3,
+    Context, Error,
 };
 
 pub struct ColPass {
