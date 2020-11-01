@@ -393,9 +393,9 @@ impl ShadowMap {
                     vec2 tex_coords = vec2(angle / (2.0 * 3.141592) + 0.5, v_light_offset);
                     vec2 texel = vec2(1.0 / shadow_map_resolution, 0.0);
 
-                    float dist1 = texture(shadow_map, tex_coords).r * light_radius + 2.0;
-                    float dist2 = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
-                    float dist3 = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
+                    float dist1 = texture(shadow_map, tex_coords).r * light_radius + 3.0;
+                    float dist2 = texture(shadow_map, tex_coords - 1.0 * texel).r * light_radius + 3.0;
+                    float dist3 = texture(shadow_map, tex_coords + 1.0 * texel).r * light_radius + 3.0;
 
                     float visibility = step(dist_to_light, dist1);
                     visibility *= 0.5;
