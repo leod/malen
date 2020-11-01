@@ -15,7 +15,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Color3, Color4, Context, Error,
+    Color3, Context, Error,
 };
 
 pub struct LineSegment {
