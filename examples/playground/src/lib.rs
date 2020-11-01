@@ -208,7 +208,7 @@ impl Game {
 
             lights.push(Light {
                 world_pos: self.thingies[i].center,
-                radius: 2048.0,
+                radius: 1024.0,
                 angle: self.thingies[i].angle,
                 angle_size: 0.2 * std::f32::consts::PI,
                 color: Color3::new(0.1, 0.25, 0.1),
