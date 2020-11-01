@@ -15,7 +15,7 @@ pub use nalgebra;
 pub use context::Context;
 pub use draw::Draw;
 pub use geom::{Camera, Rect, Screen};
-pub use input::{Event, InputState, VirtualKeyCode};
+pub use input::{Event, InputState, Key};
 
 use golem::GolemError;
 use thiserror::Error;
