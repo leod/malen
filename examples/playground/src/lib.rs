@@ -299,6 +299,8 @@ pub fn main() {
             }
         }
 
+        ctx.resize_full();
+
         game.update(dt, ctx.input_state());
         game.draw(&mut ctx).unwrap();
     })
