@@ -13,7 +13,7 @@ use webglee::{
         TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
-    Camera, Color3, Color4, Context, Error, InputState, VirtualKeyCode,
+    Camera, Color3, Color4, Context, Error, InputState, Key,
 };
 
 struct Wall {
@@ -98,16 +98,16 @@ impl Game {
         let dt_secs = dt.as_secs_f32();
 
         let mut player_dir = Vector2::zeros();
-        if input_state.is_key_pressed(VirtualKeyCode::W) {
+        if input_state.is_key_pressed(Key::W) {
             player_dir.y -= 1.0;
         }
-        if input_state.is_key_pressed(VirtualKeyCode::S) {
+        if input_state.is_key_pressed(Key::S) {
             player_dir.y += 1.0;
         }
-        if input_state.is_key_pressed(VirtualKeyCode::A) {
+        if input_state.is_key_pressed(Key::A) {
             player_dir.x -= 1.0;
         }
-        if input_state.is_key_pressed(VirtualKeyCode::D) {
+        if input_state.is_key_pressed(Key::D) {
             player_dir.x += 1.0;
         }
         if player_dir.norm_squared() > 0.0 {
