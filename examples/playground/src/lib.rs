@@ -45,7 +45,7 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &Context) -> Result<Game, Error> {
-        let num_thingies = 32;
+        let num_thingies = 30;
         let shadow_map = ShadowMap::new(ctx, 512, 1 + num_thingies)?;
 
         let font = Font::from_bytes(
@@ -245,6 +245,11 @@ impl Game {
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
         )?;
+
+        /*self.color_pass.draw(
+            &(screen.orthographic_projection() * view),
+            &self.tri_shadowed_batch.draw_unit(),
+        )?;*/
 
         ctx.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
             function: DepthTestFunction::Less,
