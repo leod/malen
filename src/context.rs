@@ -4,7 +4,7 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
 use golem::{glow, GolemError, Texture};
-use nalgebra::Point2;
+use nalgebra::{Point2, Vector2};
 
 use crate::input::EventHandlers;
 use crate::{Draw, Error, Event, InputState};
@@ -67,6 +67,14 @@ impl Context {
 
     pub fn debug_tex(&mut self, pos: Point2<f32>, tex: &Texture) -> Result<(), Error> {
         self.draw.debug_tex(pos, tex)
+    }
+
+    pub fn resize(&self, logical_size: Vector2<u32>) {
+        self.draw.resize(logical_size);
+    }
+
+    pub fn resize_full(&self) {
+        self.draw.resize_full();
     }
 
     /// Run the `webglee` main loop.
