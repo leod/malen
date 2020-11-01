@@ -98,16 +98,16 @@ impl Game {
         let dt_secs = dt.as_secs_f32();
 
         let mut player_dir = Vector2::zeros();
-        if input_state.is_key_pressed(Key::W) {
+        if input_state.key(Key::W) {
             player_dir.y -= 1.0;
         }
-        if input_state.is_key_pressed(Key::S) {
+        if input_state.key(Key::S) {
             player_dir.y += 1.0;
         }
-        if input_state.is_key_pressed(Key::A) {
+        if input_state.key(Key::A) {
             player_dir.x -= 1.0;
         }
-        if input_state.is_key_pressed(Key::D) {
+        if input_state.key(Key::D) {
             player_dir.x += 1.0;
         }
         if player_dir.norm_squared() > 0.0 {
