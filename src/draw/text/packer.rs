@@ -66,6 +66,8 @@ impl ShelfPacker {
     }
 
     pub fn insert(&mut self, data: &[u8], width: usize, height: usize) -> Option<Rect> {
+        assert!(width > 0 && height > 0);
+
         let space = self.allocate_space(width, height);
 
         if let Some((x, y)) = space {
