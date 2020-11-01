@@ -39,8 +39,12 @@ impl InputState {
         }
     }
 
-    pub fn is_key_pressed(&self, key: Key) -> bool {
+    pub fn key(&self, key: Key) -> bool {
         self.pressed_keys.contains(&key)
+    }
+
+    pub fn pressed_keys(&self) -> &BTreeSet<Key> {
+        &self.pressed_keys
     }
 }
 
