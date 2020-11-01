@@ -211,9 +211,16 @@ impl Batch<Line<ColVertex>> {
             });
         }
 
-        self.scratch
-            .elements
-            .extend_from_slice(&Quad::triangle_indices(first_idx));
+        self.scratch.elements.extend_from_slice(&[
+            first_idx + 0,
+            first_idx + 1,
+            first_idx + 1,
+            first_idx + 2,
+            first_idx + 2,
+            first_idx + 3,
+            first_idx + 3,
+            first_idx + 0,
+        ]);
     }
 }
 

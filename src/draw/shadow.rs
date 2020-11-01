@@ -15,7 +15,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Color3, Color4, Context, Error,
+    Color3, Context, Error,
 };
 
 pub struct LineSegment {
@@ -393,14 +393,14 @@ impl ShadowMap {
                     vec2 tex_coords = vec2(angle / (2.0 * 3.141592) + 0.5, v_light_offset);
                     vec2 texel = vec2(1.0 / shadow_map_resolution, 0.0);
 
-                    float dist1 = texture(shadow_map, tex_coords).r * light_radius;
+                    float dist1 = texture(shadow_map, tex_coords).r * light_radius + 2.0;
                     float dist2 = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
                     float dist3 = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
 
                     float visibility = step(dist_to_light, dist1);
-                    /*visibility *= 0.5;
-                    visibility += step(dist_to_light, dist2) * 0.25
-                    visibility += step(dist_to_light, dist3) * 0.25;*/
+                    visibility *= 0.5;
+                    visibility += step(dist_to_light, dist2) * 0.25;
+                    visibility += step(dist_to_light, dist3) * 0.25;
 
                     visibility *= pow(1.0 - dist_to_light / light_radius, 2.0);
 
@@ -408,7 +408,8 @@ impl ShadowMap {
                     if (angle_diff > 3.141592)
                         angle_diff = 2.0 * 3.141592 - angle_diff;
 
-                    visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.5); //step(angle_diff, v_light_params.z);
+                    //visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.5); 
+                    visibility *= step(angle_diff, v_light_params.z);
 
                     vec3 color = v_light_color * visibility;
 

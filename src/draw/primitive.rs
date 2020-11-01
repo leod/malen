@@ -17,10 +17,12 @@ pub trait Geometry {
     fn mode() -> GeometryMode;
 }
 
+#[derive(Debug, Clone)]
 pub struct Line<V> {
     pub points: [V; 2],
 }
 
+#[derive(Debug, Clone)]
 pub struct Triangle<V> {
     pub points: [V; 3],
 }
@@ -41,6 +43,7 @@ impl<V: Vertex> Geometry for Triangle<V> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ColVertex {
     /// The vertex position in world coordinates.
     ///
@@ -77,6 +80,7 @@ impl Vertex for ColVertex {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TexVertex {
     /// The vertex position in world coordinates.
     pub world_pos: Point3<f32>,
@@ -106,6 +110,7 @@ impl Vertex for TexVertex {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TexColVertex {
     /// The vertex position in world coordinates.
     pub world_pos: Point3<f32>,

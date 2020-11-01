@@ -1,9 +1,7 @@
 use std::{collections::HashMap, ops::Deref};
 
 use fontdue::{
-    layout::{
-        CoordinateSystem, GlyphPosition, GlyphRasterConfig, Layout, LayoutSettings, TextStyle,
-    },
+    layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle},
     FontSettings,
 };
 use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
@@ -31,7 +29,6 @@ pub struct Font {
 
     pass: TexColPass,
 
-    position_buffer: Vec<GlyphPosition>,
     bitmap_buffer: Vec<u8>,
 }
 
@@ -62,7 +59,6 @@ impl Font {
             layout,
             cache: HashMap::new(),
             pass,
-            position_buffer: Vec::new(),
             bitmap_buffer: Vec::new(),
         })
     }
@@ -75,23 +71,23 @@ impl Font {
         text: &str,
         batch: &mut TextBatch,
     ) {
-        self.position_buffer.clear();
-
         let settings = LayoutSettings {
             x: pos.x,
             y: pos.y,
             max_width: None,
             ..Default::default()
         };
+        self.layout.reset(&settings);
 
-        self.layout.layout_horizontal(
-            &[&self.font],
-            &[&TextStyle::new(text, size, 0)],
-            &settings,
-            &mut self.position_buffer,
-        );
+        self.layout
+            .append(&[&self.font], &TextStyle::new(text, size, 0));
 
-        for &glyph_pos in &self.position_buffer {
+        for &glyph_pos in self.layout.glyphs() {
+            // Ignore empty glyphs (e.g. space).
+            if glyph_pos.width == 0 || glyph_pos.height == 0 {
+                continue;
+            }
+
             let (font, packer, bitmap_buffer) =
                 (&self.font, &mut self.packer, &mut self.bitmap_buffer);
 
