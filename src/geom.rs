@@ -10,12 +10,12 @@ pub type Matrix2 = na::Matrix2<f32>;
 pub type Matrix3 = na::Matrix3<f32>;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Rect {
+pub struct AaRect {
     pub center: Point2,
     pub size: Vector2,
 }
 
-impl Rect {
+impl AaRect {
     pub fn zero_to_one() -> Self {
         Self::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0))
     }
