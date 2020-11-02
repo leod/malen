@@ -6,7 +6,7 @@
 use golem::{ColorFormat, Texture, TextureFilter};
 use nalgebra::{Point2, Vector2};
 
-use crate::{Context, Error, Rect};
+use crate::{AaRect, Context, Error};
 
 /// A shelf has a fixed height and grows in width as more glyphs are added.
 #[derive(Clone, Debug)]
@@ -65,7 +65,7 @@ impl ShelfPacker {
         &self.texture
     }
 
-    pub fn insert(&mut self, data: &[u8], width: usize, height: usize) -> Option<Rect> {
+    pub fn insert(&mut self, data: &[u8], width: usize, height: usize) -> Option<AaRect> {
         assert!(width > 0 && height > 0);
 
         let space = self.allocate_space(width, height);
@@ -96,7 +96,7 @@ impl ShelfPacker {
                 (height - 1) as f32 / tex_height,
             );
 
-            let uv_rect = Rect::from_top_left(uv_top_left, uv_size);
+            let uv_rect = AaRect::from_top_left(uv_top_left, uv_size);
 
             Some(uv_rect)
         } else {

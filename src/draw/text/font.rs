@@ -11,13 +11,13 @@ use crate::{
     draw::{
         text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
     },
-    Color4, Context, Error, Rect,
+    AaRect, Color4, Context, Error,
 };
 
 pub type TextBatch = TriBatch<TexColVertex>;
 
 struct Glyph {
-    uv_rect: Rect,
+    uv_rect: AaRect,
 }
 
 pub struct Font {
