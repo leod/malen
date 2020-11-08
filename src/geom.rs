@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Point3, Point4, Vector2, Vector3, Vector4, Matrix2, Matrix3};
+use nalgebra::{Matrix2, Matrix3, Point2, Point3, Point4, Vector2, Vector3, Vector4};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AaRect {
@@ -61,7 +61,11 @@ pub fn scale_translate(scale: Vector2<f32>, offset: Vector2<f32>) -> Matrix3<f32
 
 /// Build a 3x3 matrix that applies transformations in this order: first
 /// translation, then scaling and rotation.
-pub fn translate_rotate_scale(offset: Vector2<f32>, angle: f32, scale: Vector2<f32>) -> Matrix3<f32> {
+pub fn translate_rotate_scale(
+    offset: Vector2<f32>,
+    angle: f32,
+    scale: Vector2<f32>,
+) -> Matrix3<f32> {
     // TODO: The point is that we can write this without using matrix
     //       multiplications.
     Matrix3::new_nonuniform_scaling(&scale)
@@ -71,7 +75,11 @@ pub fn translate_rotate_scale(offset: Vector2<f32>, angle: f32, scale: Vector2<f
 
 /// Build a 3x3 matrix that applies transformations in this order: first
 /// scaling, then rotation, and finally translation.
-pub fn scale_rotate_translate(scale: Vector2<f32>, angle: f32, offset: Vector2<f32>) -> Matrix3<f32> {
+pub fn scale_rotate_translate(
+    scale: Vector2<f32>,
+    angle: f32,
+    offset: Vector2<f32>,
+) -> Matrix3<f32> {
     // TODO: The point is that we can write this without using matrix
     //       multiplications.
     Matrix3::new_translation(&offset)

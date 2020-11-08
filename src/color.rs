@@ -26,11 +26,7 @@ impl Color3 {
     }
 
     pub fn write(&self, out: &mut Vec<f32>) {
-        out.extend_from_slice(&[
-            self.r,
-            self.g,
-            self.b,
-        ])
+        out.extend_from_slice(&[self.r, self.g, self.b])
     }
 }
 
@@ -49,12 +45,7 @@ impl Color4 {
     }
 
     pub fn write(&self, out: &mut Vec<f32>) {
-        out.extend_from_slice(&[
-            self.r,
-            self.g,
-            self.b,
-            self.a,
-        ])
+        out.extend_from_slice(&[self.r, self.g, self.b, self.a])
     }
 }
 
