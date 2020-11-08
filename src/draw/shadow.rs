@@ -142,9 +142,9 @@ impl Vertex for LightAreaVertex {
             self.light.radius,
             self.light.angle,
             self.light.angle_size,
-            self.light.color.x,
-            self.light.color.y,
-            self.light.color.z,
+            self.light.color.r,
+            self.light.color.g,
+            self.light.color.b,
             self.light_offset,
         ])
     }
@@ -668,7 +668,7 @@ impl ShadowColPass {
         )?;
         self.shader.set_uniform(
             "ambient_light",
-            UniformValue::Vector3(ambient_light.coords.into()),
+            UniformValue::Vector3(ambient_light.into()),
         )?;
         self.shader
             .set_uniform("light_surface", UniformValue::Int(1))?;

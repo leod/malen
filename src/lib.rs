@@ -3,6 +3,7 @@
 
 mod context;
 mod input;
+mod color;
 
 pub mod draw;
 pub mod geom;
@@ -18,13 +19,11 @@ pub use context::Context;
 pub use draw::Draw;
 pub use geom::{AaRect, Camera, Screen};
 pub use input::{Event, InputState, Key};
+pub use color::{Color3, Color4};
 
 use golem::GolemError;
 use thiserror::Error;
 use wasm_bindgen::JsValue;
-
-pub type Color3 = nalgebra::Point3<f32>;
-pub type Color4 = nalgebra::Point4<f32>;
 
 #[derive(Error, Debug)]
 pub enum Error {

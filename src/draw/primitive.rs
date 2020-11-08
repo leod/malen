@@ -72,11 +72,8 @@ impl Vertex for ColVertex {
             self.world_pos.x,
             self.world_pos.y,
             self.world_pos.z,
-            self.color.x,
-            self.color.y,
-            self.color.z,
-            self.color.w,
         ]);
+        self.color.write(out);
     }
 }
 
@@ -138,11 +135,8 @@ impl Vertex for TexColVertex {
             self.world_pos.z,
             self.tex_coords.x,
             self.tex_coords.y,
-            self.color.x,
-            self.color.y,
-            self.color.z,
-            self.color.w,
         ]);
+        self.color.write(out);
     }
 }
 
