@@ -68,11 +68,7 @@ impl Vertex for ColVertex {
     }
 
     fn write(&self, out: &mut Vec<f32>) {
-        out.extend_from_slice(&[
-            self.world_pos.x,
-            self.world_pos.y,
-            self.world_pos.z,
-        ]);
+        out.extend_from_slice(&[self.world_pos.x, self.world_pos.y, self.world_pos.z]);
         self.color.write(out);
     }
 }

@@ -666,10 +666,8 @@ impl ShadowColPass {
             "mat_projection_view",
             UniformValue::Matrix3(matrix3_to_flat_array(transform)),
         )?;
-        self.shader.set_uniform(
-            "ambient_light",
-            UniformValue::Vector3(ambient_light.into()),
-        )?;
+        self.shader
+            .set_uniform("ambient_light", UniformValue::Vector3(ambient_light.into()))?;
         self.shader
             .set_uniform("light_surface", UniformValue::Int(1))?;
 
