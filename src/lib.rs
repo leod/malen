@@ -12,6 +12,8 @@ pub use golem;
 pub use golem::glow;
 pub use nalgebra;
 
+pub use golem::Texture;
+
 pub use context::Context;
 pub use draw::Draw;
 pub use geom::{AaRect, Camera, Screen};
