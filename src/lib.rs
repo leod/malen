@@ -43,7 +43,7 @@ pub enum Error {
     Golem(GolemError),
 
     #[error("could not get WebGL1 context")]
-    GetContext(JsValue),
+    GetContext(String),
 
     #[error("could not initialize WebGL1")]
     InitializeWebGl,

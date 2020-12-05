@@ -29,12 +29,22 @@ impl Context {
         Self::from_canvas_element(canvas)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn from_canvas_element(_: HtmlCanvasElement) -> Result<Self, Error> {
+        // This is only in here as a workaround for the fact that Visual Studio
+        // Code ignores our target setting in .cargo/config.toml for some
+        // reason. Then, `glow::Context::from_webgl1_context` is not defined
+        // we lose e.g. inline error display.
+        unreachable!("catcheb's clnt only works on web platforms")
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub fn from_canvas_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
         let event_handlers = EventHandlers::new(canvas.clone())?;
         let input_state = InputState::default();
         let webgl_context = canvas
             .get_context("webgl")
-            .map_err(Error::GetContext)?
+            .map_err(|e| Error::GetContext(e.as_string().unwrap_or("error".into())))?
             .ok_or(Error::InitializeWebGl)?
             .dyn_into::<WebGlRenderingContext>()
             .map_err(|_| Error::InitializeWebGl)?;
