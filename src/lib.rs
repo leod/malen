@@ -1,8 +1,8 @@
 //! `malen` is yet another one of these libraries for 2D web game
 //! development.
 
+mod canvas;
 mod color;
-mod context;
 mod error;
 mod input;
 
@@ -16,8 +16,8 @@ pub use nalgebra;
 
 pub use golem::Texture;
 
+pub use canvas::Canvas;
 pub use color::{Color3, Color4};
-pub use context::Context;
 pub use draw::Draw;
 pub use error::Error;
 pub use geom::{AaRect, Camera, ScreenGeom};

@@ -5,7 +5,7 @@ use nalgebra::Point3;
 
 use crate::{
     draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
-    AaRect, Color4, Context, Error,
+    AaRect, Canvas, Color4, Error,
 };
 
 pub struct DrawUnit<'a, V> {
@@ -102,7 +102,7 @@ impl<G: Geometry> Batch<G> {
         })
     }
 
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new(ctx: &Canvas) -> Result<Self, Error> {
         Self::new_golem(ctx.golem_ctx())
     }
 
