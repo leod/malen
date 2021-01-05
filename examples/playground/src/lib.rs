@@ -4,10 +4,10 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use webglee::nalgebra::{Point2, Point3, Vector2};
+use malen::nalgebra::{Point2, Point3, Vector2};
 
-use webglee::Event::*;
-use webglee::{
+use malen::Event::*;
+use malen::{
     draw::{
         ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
         TextBatch, TriBatch,
@@ -282,7 +282,7 @@ pub fn main() {
     log::info!("Hi, starting the example");
 
     let ctx = Context::from_canvas_id("canvas").unwrap();
-    log::info!("Initialized webglee context");
+    log::info!("Initialized malen context");
 
     let mut game = Game::new(&ctx).unwrap();
 
