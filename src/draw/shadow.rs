@@ -1,5 +1,4 @@
 //! 2D shadow mapping for multiple light sources.
-
 //!
 //! The implementation follows https://www.gamasutra.com/blogs/RobWare/20180226/313491/Fast_2D_shadows_in_Unity_using_1D_shadow_mapping.php
 //! with some modifications.
@@ -33,10 +32,6 @@ impl Vertex for LineSegment {
             Attribute::new("a_order", AttributeType::Scalar),
             Attribute::new("a_ignore_light_offset", AttributeType::Scalar),
         ]
-    }
-
-    fn num_values() -> usize {
-        2 * 2 + 1 + 1
     }
 
     fn write(&self, out: &mut Vec<f32>) {
@@ -127,10 +122,6 @@ impl Vertex for LightAreaVertex {
             Attribute::new("a_light_color", AttributeType::Vector(Dimension::D3)),
             Attribute::new("a_light_offset", AttributeType::Scalar),
         ]
-    }
-
-    fn num_values() -> usize {
-        2 + 2 + 3 + 4 + 1
     }
 
     fn write(&self, out: &mut Vec<f32>) {

@@ -7,7 +7,6 @@ pub use golem::GeometryMode;
 
 pub trait Vertex {
     fn attributes() -> Vec<Attribute>;
-    fn num_values() -> usize;
     fn write(&self, out: &mut Vec<f32>);
 }
 
@@ -63,10 +62,6 @@ impl Vertex for ColVertex {
         ]
     }
 
-    fn num_values() -> usize {
-        3 + 4
-    }
-
     fn write(&self, out: &mut Vec<f32>) {
         out.extend_from_slice(&[self.world_pos.x, self.world_pos.y, self.world_pos.z]);
         self.color.write(out);
@@ -86,10 +81,6 @@ impl Vertex for TexVertex {
             Attribute::new("a_world_pos", AttributeType::Vector(Dimension::D3)),
             Attribute::new("a_tex_coords", AttributeType::Vector(Dimension::D2)),
         ]
-    }
-
-    fn num_values() -> usize {
-        3 + 2
     }
 
     fn write(&self, out: &mut Vec<f32>) {
@@ -118,10 +109,6 @@ impl Vertex for TexColVertex {
             Attribute::new("a_tex_coords", AttributeType::Vector(Dimension::D2)),
             Attribute::new("a_color", AttributeType::Vector(Dimension::D4)),
         ]
-    }
-
-    fn num_values() -> usize {
-        3 + 2 + 4
     }
 
     fn write(&self, out: &mut Vec<f32>) {
