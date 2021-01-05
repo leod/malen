@@ -142,7 +142,7 @@ impl Game {
     }
 
     pub fn draw(&mut self, ctx: &mut Context) -> Result<(), Error> {
-        let screen = ctx.draw().screen();
+        let screen = ctx.draw().screen_geom();
 
         self.tri_plain_batch.clear();
         self.tri_shadowed_batch.clear();
@@ -158,7 +158,7 @@ impl Game {
         );
 
         self.font.write(
-            30.0,
+            60.0,
             Point3::new(150.0, 150.0, 0.0),
             Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
@@ -166,7 +166,7 @@ impl Game {
         );
 
         self.font.write(
-            20.0,
+            50.0,
             Point3::new(150.0, 300.0, 0.0),
             Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
@@ -174,7 +174,7 @@ impl Game {
         );
 
         self.font.write(
-            10.0,
+            40.0,
             Point3::new(150.0, 450.0, 0.0),
             Color4::new(1.0, 0.0, 1.0, 1.0),
             "Hello world! What's up?",
@@ -224,7 +224,7 @@ impl Game {
 
         let view = Camera {
             center: self.player_pos,
-            zoom: 0.4,
+            zoom: 1.0,
             angle: 0.0,
         }
         .to_matrix(&screen);

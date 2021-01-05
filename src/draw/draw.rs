@@ -44,6 +44,8 @@ impl Draw {
         //let width = self.canvas.client_width().max(0) as u32;
         //let height = self.canvas.client_height().max(0) as u32;
 
+        log::info!("resizing to full. screen: {:?}", self.screen_geom());
+
         let window = web_sys::window().expect("Failed to obtain window");
         let width = window
             .inner_width()
@@ -56,10 +58,10 @@ impl Draw {
             .as_f64()
             .unwrap_or(480.0) as u32;
 
-        util::set_canvas_size(&self.canvas, Vector2::new(width, height));
+        self.resize(Vector2::new(width, height));
     }
 
-    pub fn screen(&self) -> ScreenGeom {
+    pub fn screen_geom(&self) -> ScreenGeom {
         ScreenGeom {
             size: Vector2::new(self.canvas.width(), self.canvas.height()),
             device_pixel_ratio: util::device_pixel_ratio(),
@@ -67,7 +69,7 @@ impl Draw {
     }
 
     pub fn debug_tex(&mut self, pos: Point2<f32>, tex: &Texture) -> Result<(), Error> {
-        let screen = self.screen();
+        let screen = self.screen_geom();
         let size = Vector2::new(tex.width() as f32, tex.height() as f32);
 
         // We initialize debug batches and shaders lazily, so that they don't
