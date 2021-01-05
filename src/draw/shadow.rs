@@ -14,7 +14,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Color3, Context, Error,
+    Canvas, Color3, Error,
 };
 
 pub struct LineSegment {
@@ -180,7 +180,7 @@ pub struct ShadowMap {
 
 impl ShadowMap {
     fn new_shadow_map(
-        ctx: &Context,
+        ctx: &Canvas,
         resolution: usize,
         max_num_lights: usize,
     ) -> Result<Surface, Error> {
@@ -199,7 +199,7 @@ impl ShadowMap {
         Ok(Surface::new(ctx.golem_ctx(), shadow_map_texture)?)
     }
 
-    fn new_light_surface(ctx: &Context) -> Result<Surface, Error> {
+    fn new_light_surface(ctx: &Canvas) -> Result<Surface, Error> {
         log::info!(
             "Creating new light surface for screen {:?}",
             ctx.draw().screen_geom()
@@ -220,7 +220,7 @@ impl ShadowMap {
         Ok(Surface::new(ctx.golem_ctx(), light_texture)?)
     }
 
-    pub fn new(ctx: &Context, resolution: usize, max_num_lights: usize) -> Result<Self, Error> {
+    pub fn new(ctx: &Canvas, resolution: usize, max_num_lights: usize) -> Result<Self, Error> {
         let shadow_map = Self::new_shadow_map(ctx, resolution, max_num_lights)?;
         let light_surface = Self::new_light_surface(ctx)?;
 
@@ -446,7 +446,7 @@ impl ShadowMap {
 
     pub fn build<'a>(
         &'a mut self,
-        ctx: &'a Context,
+        ctx: &'a Canvas,
         transform: &Matrix3<f32>,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
@@ -485,7 +485,7 @@ impl ShadowMap {
 #[must_use]
 pub struct BuildShadowMap<'a> {
     this: &'a mut ShadowMap,
-    ctx: &'a Context,
+    ctx: &'a Canvas,
     lights: &'a [Light],
     transform: Matrix3<f32>,
 }
@@ -597,7 +597,7 @@ pub struct ShadowColPass {
 }
 
 impl ShadowColPass {
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new(ctx: &Canvas) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
             ctx.golem_ctx(),
             ShaderDescription {

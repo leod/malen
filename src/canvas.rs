@@ -9,14 +9,14 @@ use nalgebra::{Point2, Vector2};
 use crate::input::EventHandlers;
 use crate::{Draw, Error, Event, InputState};
 
-pub struct Context {
+pub struct Canvas {
     event_handlers: EventHandlers,
     input_state: InputState,
     draw: Draw,
 }
 
-impl Context {
-    pub fn from_canvas_id(id: &str) -> Result<Self, Error> {
+impl Canvas {
+    pub fn from_element_id(id: &str) -> Result<Self, Error> {
         let canvas = web_sys::window()
             .ok_or(Error::NoWindow)?
             .document()
@@ -26,11 +26,11 @@ impl Context {
             .dyn_into::<HtmlCanvasElement>()
             .map_err(|_| Error::ElementIsNotCanvas(id.into()))?;
 
-        Self::from_canvas_element(canvas)
+        Self::from_element(canvas)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn from_canvas_element(_: HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn from_element(_: HtmlCanvasElement) -> Result<Self, Error> {
         // This is only in here as a workaround for the fact that Visual Studio
         // Code ignores our target setting in .cargo/config.toml for some
         // reason. Then, `glow::Context::from_webgl1_context` is not defined
@@ -39,7 +39,7 @@ impl Context {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn from_canvas_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn from_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
         let event_handlers = EventHandlers::new(canvas.clone())?;
         let input_state = InputState::default();
         let webgl_context = canvas
@@ -52,7 +52,7 @@ impl Context {
         let golem_context = golem::Context::from_glow(glow_context)?;
         let draw = Draw::new(canvas, golem_context)?;
 
-        Ok(Context {
+        Ok(Self {
             event_handlers,
             input_state,
             draw,
@@ -110,7 +110,7 @@ impl Context {
     /// - Render the game.
     pub fn main_loop<F>(self, mut callback: F) -> Result<(), Error>
     where
-        F: FnMut(&mut Context, Duration, &[Event], &mut bool) + 'static,
+        F: FnMut(&mut Canvas, Duration, &[Event], &mut bool) + 'static,
     {
         // Source:
         // https://github.com/grovesNL/glow/blob/2d42c5b105d979efe764191b5b1ce78fab99ffcf/src/web_sys.rs#L3258

@@ -13,7 +13,7 @@ use malen::{
         TextBatch, TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
-    Camera, Color3, Color4, Context, Error, InputState, Key,
+    Camera, Canvas, Color3, Color4, Error, InputState, Key,
 };
 
 struct Wall {
@@ -44,12 +44,12 @@ struct Game {
 }
 
 impl Game {
-    pub fn new(ctx: &Context) -> Result<Game, Error> {
+    pub fn new(canvas: &Canvas) -> Result<Game, Error> {
         let num_thingies = 30;
-        let shadow_map = ShadowMap::new(ctx, 512, 1 + num_thingies)?;
+        let shadow_map = ShadowMap::new(canvas, 512, 1 + num_thingies)?;
 
         let font = Font::from_bytes(
-            ctx,
+            canvas,
             include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
             60.0,
         )?;
@@ -79,14 +79,14 @@ impl Game {
             .collect();
 
         Ok(Game {
-            occluder_batch: OccluderBatch::new(ctx)?,
-            tri_shadowed_batch: TriBatch::new(ctx)?,
-            tri_plain_batch: TriBatch::new(ctx)?,
-            line_batch: LineBatch::new(ctx)?,
-            text_batch: TextBatch::new(ctx)?,
+            occluder_batch: OccluderBatch::new(canvas)?,
+            tri_shadowed_batch: TriBatch::new(canvas)?,
+            tri_plain_batch: TriBatch::new(canvas)?,
+            line_batch: LineBatch::new(canvas)?,
+            text_batch: TextBatch::new(canvas)?,
             shadow_map,
-            shadow_col_pass: ShadowColPass::new(ctx)?,
-            color_pass: ColPass::new(ctx)?,
+            shadow_col_pass: ShadowColPass::new(canvas)?,
+            color_pass: ColPass::new(canvas)?,
             font,
             walls,
             thingies,
@@ -141,8 +141,8 @@ impl Game {
             .push_quad_outline(&quad, z, Color4::new(0.0, 0.0, 0.0, 1.0));
     }
 
-    pub fn draw(&mut self, ctx: &mut Context) -> Result<(), Error> {
-        let screen = ctx.draw().screen_geom();
+    pub fn draw(&mut self, canvas: &mut Canvas) -> Result<(), Error> {
+        let screen = canvas.draw().screen_geom();
 
         self.tri_plain_batch.clear();
         self.tri_shadowed_batch.clear();
@@ -230,14 +230,15 @@ impl Game {
         .to_matrix(&screen);
 
         self.shadow_map
-            .build(ctx, &(screen.orthographic_projection() * view), &lights)?
+            .build(canvas, &(screen.orthographic_projection() * view), &lights)?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
-        ctx.golem_ctx()
+        canvas
+            .golem_ctx()
             .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        ctx.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
-        ctx.golem_ctx().clear();
+        canvas.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
+        canvas.golem_ctx().clear();
 
         self.shadow_col_pass.draw(
             &(screen.orthographic_projection() * view),
@@ -251,7 +252,7 @@ impl Game {
             &self.tri_shadowed_batch.draw_unit(),
         )?;*/
 
-        ctx.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
+        canvas.golem_ctx().set_depth_test_mode(Some(DepthTestMode {
             function: DepthTestFunction::Less,
             ..Default::default()
         }));
@@ -263,10 +264,10 @@ impl Game {
             &(screen.orthographic_projection() * view),
             &self.line_batch.draw_unit(),
         )?;
-        ctx.golem_ctx().set_depth_test_mode(None);
+        canvas.golem_ctx().set_depth_test_mode(None);
 
         self.font.draw(
-            ctx,
+            canvas,
             &screen.orthographic_projection(),
             &self.text_batch.draw_unit(),
         )?;
@@ -281,28 +282,29 @@ pub fn main() {
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Hi, starting the example");
 
-    let ctx = Context::from_canvas_id("canvas").unwrap();
+    let canvas = Canvas::from_element_id("canvas").unwrap();
     log::info!("Initialized malen context");
 
-    let mut game = Game::new(&ctx).unwrap();
+    let mut game = Game::new(&canvas).unwrap();
 
-    ctx.main_loop(move |mut ctx, dt, events, _running| {
-        for event in events {
-            match event {
-                Focused => {
-                    log::info!("got focus");
+    canvas
+        .main_loop(move |mut canvas, dt, events, _running| {
+            for event in events {
+                match event {
+                    Focused => {
+                        log::info!("got focus");
+                    }
+                    Unfocused => {
+                        log::info!("lost focus");
+                    }
+                    _ => (),
                 }
-                Unfocused => {
-                    log::info!("lost focus");
-                }
-                _ => (),
             }
-        }
 
-        ctx.resize_full();
+            canvas.resize_full();
 
-        game.update(dt, ctx.input_state());
-        game.draw(&mut ctx).unwrap();
-    })
-    .unwrap();
+            game.update(dt, canvas.input_state());
+            game.draw(&mut canvas).unwrap();
+        })
+        .unwrap();
 }

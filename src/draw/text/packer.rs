@@ -6,7 +6,7 @@
 use golem::{ColorFormat, Texture, TextureFilter};
 use nalgebra::{Point2, Vector2};
 
-use crate::{AaRect, Context, Error};
+use crate::{AaRect, Canvas, Error};
 
 /// A shelf has a fixed height and grows in width as more glyphs are added.
 #[derive(Clone, Debug)]
@@ -48,7 +48,7 @@ pub struct ShelfPacker {
 }
 
 impl ShelfPacker {
-    pub fn new(ctx: &Context, width: usize, height: usize) -> Result<ShelfPacker, Error> {
+    pub fn new(ctx: &Canvas, width: usize, height: usize) -> Result<ShelfPacker, Error> {
         let mut texture = Texture::new(ctx.golem_ctx())?;
         texture.set_image(None, width as u32, height as u32, ColorFormat::RGBA);
         texture.set_magnification(TextureFilter::Nearest)?;
