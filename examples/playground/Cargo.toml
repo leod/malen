@@ -10,7 +10,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-webglee = { path = "../../" }
+malen = { path = "../../" }
 wasm-bindgen = "0.2"
 console_log = "0.2"
 log = "0.4"

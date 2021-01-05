@@ -1,4 +1,4 @@
-//! `webglee` is yet another one of these libraries for 2D web game
+//! `malen` is yet another one of these libraries for 2D web game
 //! development.
 
 mod color;
