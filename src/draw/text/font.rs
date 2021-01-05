@@ -11,7 +11,7 @@ use crate::{
     draw::{
         text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
     },
-    AaRect, Color4, Context, Error,
+    AaRect, Canvas, Color4, Error,
 };
 
 pub type TextBatch = TriBatch<TexColVertex>;
@@ -36,7 +36,7 @@ const ATLAS_WIDTH: usize = 512;
 const ATLAS_HEIGHT: usize = 256;
 
 impl Font {
-    pub fn from_bytes<Data>(ctx: &Context, data: Data, scale: f32) -> Result<Self, Error>
+    pub fn from_bytes<Data>(ctx: &Canvas, data: Data, scale: f32) -> Result<Self, Error>
     where
         Data: Deref<Target = [u8]>,
     {
@@ -120,7 +120,7 @@ impl Font {
 
     pub fn draw(
         &mut self,
-        ctx: &Context,
+        ctx: &Canvas,
         transform: &Matrix3<f32>,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {

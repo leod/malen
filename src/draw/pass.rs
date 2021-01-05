@@ -7,7 +7,7 @@ use nalgebra::Matrix3;
 use crate::{
     draw::{ColVertex, DrawUnit, TexColVertex, Vertex},
     geom::matrix3_to_flat_array,
-    Context, Error,
+    Canvas, Error,
 };
 
 pub struct ColPass {
@@ -15,7 +15,7 @@ pub struct ColPass {
 }
 
 impl ColPass {
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new(ctx: &Canvas) -> Result<Self, Error> {
         let shader = ShaderProgram::new(
             ctx.golem_ctx(),
             ShaderDescription {
@@ -98,7 +98,7 @@ impl TexColPass {
         Ok(Self { shader })
     }
 
-    pub fn new(ctx: &Context) -> Result<Self, Error> {
+    pub fn new(ctx: &Canvas) -> Result<Self, Error> {
         Self::new_golem(ctx.golem_ctx())
     }
 
