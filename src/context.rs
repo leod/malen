@@ -87,11 +87,11 @@ impl Context {
         self.draw.resize_full();
     }
 
-    /// Run the `webglee` main loop.
+    /// Run the `malen` main loop.
     ///
     /// The callback is called once per frame, and it is passed the following
     /// arguments:
-    /// 1. A reference to the webglee `Context`. The context can be used to
+    /// 1. A reference to the malen `Context`. The context can be used to
     ///    draw things.
     /// 2. The time that has elapsed since the last frame.
     /// 3. The input events that occured since the last frame.
