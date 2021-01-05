@@ -5,6 +5,7 @@ mod canvas;
 mod color;
 mod error;
 mod input;
+mod main_loop;
 
 pub(crate) mod util;
 
@@ -23,3 +24,4 @@ pub use color::{Color3, Color4};
 pub use error::Error;
 pub use geom::{AaRect, Camera, ScreenGeom};
 pub use input::{Event, InputState, Key};
+pub use main_loop::main_loop;

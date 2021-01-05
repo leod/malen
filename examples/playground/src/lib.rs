@@ -6,7 +6,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::nalgebra::{Point2, Point3, Vector2};
 
-use malen::Event::*;
 use malen::{
     draw::{
         ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
@@ -282,29 +281,30 @@ pub fn main() {
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Hi, starting the example");
 
-    let canvas = Canvas::from_element_id("canvas").unwrap();
+    let mut canvas = Canvas::from_element_id("canvas").unwrap();
     log::info!("Initialized malen context");
 
     let mut game = Game::new(&canvas).unwrap();
 
-    canvas
-        .main_loop(move |mut canvas, dt, events, _running| {
-            for event in events {
-                match event {
-                    Focused => {
-                        log::info!("got focus");
-                    }
-                    Unfocused => {
-                        log::info!("lost focus");
-                    }
-                    _ => (),
+    malen::main_loop(move |dt, _running| {
+        use malen::Event::*;
+
+        while let Some(event) = canvas.pop_event() {
+            match event {
+                Focused => {
+                    log::info!("got focus");
                 }
+                Unfocused => {
+                    log::info!("lost focus");
+                }
+                _ => (),
             }
+        }
 
-            canvas.resize_full();
+        canvas.resize_full();
 
-            game.update(dt, canvas.input_state());
-            game.draw(&mut canvas).unwrap();
-        })
-        .unwrap();
+        game.update(dt, canvas.input_state());
+        game.draw(&mut canvas).unwrap();
+    })
+    .unwrap();
 }

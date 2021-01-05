@@ -1,4 +1,8 @@
-use std::{cell::RefCell, collections::BTreeSet, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{BTreeSet, VecDeque},
+    rc::Rc,
+};
 
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
@@ -22,7 +26,7 @@ pub struct InputState {
 }
 
 impl InputState {
-    pub fn on_event(&mut self, event: &Event) {
+    pub(crate) fn on_event(&mut self, event: &Event) {
         match event {
             Event::Unfocused => {
                 self.pressed_keys.clear();
@@ -48,12 +52,12 @@ impl InputState {
 
 #[derive(Default, Debug, Clone)]
 struct SharedState {
-    events: Vec<Event>,
+    events: VecDeque<Event>,
 }
 
 pub struct EventHandlers {
-    _canvas: HtmlCanvasElement,
     state: Rc<RefCell<SharedState>>,
+
     _on_focus: EventListener<FocusEvent>,
     _on_blur: EventListener<FocusEvent>,
     _on_key_down: EventListener<KeyboardEvent>,
@@ -71,7 +75,7 @@ impl EventHandlers {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.events.push(Event::Focused);
+                state.events.push_back(Event::Focused);
             }
         });
 
@@ -79,7 +83,7 @@ impl EventHandlers {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
-                state.events.push(Event::Unfocused);
+                state.events.push_back(Event::Unfocused);
             }
         });
 
@@ -87,7 +91,7 @@ impl EventHandlers {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = Key::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push(Event::KeyPressed(key));
+                    state.borrow_mut().events.push_back(Event::KeyPressed(key));
                 }
             }
         });
@@ -96,12 +100,12 @@ impl EventHandlers {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = Key::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push(Event::KeyReleased(key));
+                    state.borrow_mut().events.push_back(Event::KeyReleased(key));
                 }
             }
         });
 
-        let on_resize = EventListener::new_consume(&canvas.clone(), "resize", {
+        let on_resize = EventListener::new_consume(&canvas, "resize", {
             let state = state.clone();
             move |_| {
                 let width = window.inner_width().map(|w| w.as_f64());
@@ -110,7 +114,7 @@ impl EventHandlers {
                     state
                         .borrow_mut()
                         .events
-                        .push(Event::WindowResized(na::Vector2::new(*width, *height)));
+                        .push_back(Event::WindowResized(na::Vector2::new(*width, *height)));
                 } else {
                     log::warn!(
                         "Failed to read innerWidth/innerHeight from window. Got: {:?}, {:?}",
@@ -122,7 +126,6 @@ impl EventHandlers {
         });
 
         Ok(Self {
-            _canvas: canvas,
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,
@@ -132,8 +135,8 @@ impl EventHandlers {
         })
     }
 
-    pub fn take_events(&mut self) -> Vec<Event> {
-        std::mem::replace(&mut self.state.borrow_mut().events, Vec::new())
+    pub fn pop_event(&mut self) -> Option<Event> {
+        self.state.borrow_mut().events.pop_front()
     }
 }
 
