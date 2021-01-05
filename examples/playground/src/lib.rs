@@ -142,7 +142,7 @@ impl Game {
     }
 
     pub fn draw(&mut self, canvas: &mut Canvas) -> Result<(), Error> {
-        let screen = canvas.draw().screen_geom();
+        let screen = canvas.screen_geom();
 
         self.tri_plain_batch.clear();
         self.tri_shadowed_batch.clear();
