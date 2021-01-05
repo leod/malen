@@ -186,7 +186,10 @@ impl<T> Drop for EventListener<T> {
     fn drop(&mut self) {
         self.element
             .remove_event_listener_with_callback(self.kind, self.callback.as_ref().unchecked_ref())
-            .expect(&format!("Failed to remove event listener for kind {}", self.kind));
+            .expect(&format!(
+                "Failed to remove event listener for kind {}",
+                self.kind
+            ));
     }
 }
 
