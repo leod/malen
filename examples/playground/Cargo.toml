@@ -15,7 +15,7 @@ wasm-bindgen = "0.2"
 console_log = "0.2"
 log = "0.4"
 console_error_panic_hook = "0.1"
-nalgebra = "0.22"
+nalgebra = "0.23"
 
 rand = "0.7"
 rand_distr = "0.3"
