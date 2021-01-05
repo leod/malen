@@ -16,8 +16,6 @@ pub enum Event {
     WindowResized(na::Vector2<f64>),
 }
 
-type EventHandler<T> = Closure<dyn FnMut(T)>;
-
 #[derive(Debug, Clone, Default)]
 pub struct InputState {
     pressed_keys: BTreeSet<Key>,
@@ -49,27 +47,27 @@ impl InputState {
 }
 
 #[derive(Default, Debug, Clone)]
-struct State {
+struct SharedState {
     events: Vec<Event>,
 }
 
 pub struct EventHandlers {
     _canvas: HtmlCanvasElement,
-    state: Rc<RefCell<State>>,
-    _on_focus: EventHandler<FocusEvent>,
-    _on_blur: EventHandler<FocusEvent>,
-    _on_key_down: EventHandler<KeyboardEvent>,
-    _on_key_release: EventHandler<KeyboardEvent>,
-    _on_resize: EventHandler<web_sys::Event>,
+    state: Rc<RefCell<SharedState>>,
+    _on_focus: EventListener<FocusEvent>,
+    _on_blur: EventListener<FocusEvent>,
+    _on_key_down: EventListener<KeyboardEvent>,
+    _on_key_release: EventListener<KeyboardEvent>,
+    _on_resize: EventListener<web_sys::Event>,
 }
 
 impl EventHandlers {
     pub fn new(canvas: HtmlCanvasElement) -> Result<Self, Error> {
-        let state = Rc::new(RefCell::new(State::default()));
+        let state = Rc::new(RefCell::new(SharedState::default()));
 
         let window = web_sys::window().ok_or(Error::NoWindow)?;
 
-        let on_focus = set_handler(&window, "focus", {
+        let on_focus = EventListener::new_consume(&canvas, "focus", {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
@@ -77,7 +75,7 @@ impl EventHandlers {
             }
         });
 
-        let on_blur = set_handler(&window, "blur", {
+        let on_blur = EventListener::new_consume(&canvas, "blur", {
             let state = state.clone();
             move |_: FocusEvent| {
                 let mut state = state.borrow_mut();
@@ -85,7 +83,7 @@ impl EventHandlers {
             }
         });
 
-        let on_key_down = set_handler(&window, "keydown", {
+        let on_key_down = EventListener::new_consume(&canvas, "keydown", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = Key::from_keyboard_event(&event) {
@@ -94,7 +92,7 @@ impl EventHandlers {
             }
         });
 
-        let on_key_release = set_handler(&window, "keyup", {
+        let on_key_release = EventListener::new_consume(&canvas, "keyup", {
             let state = state.clone();
             move |event: KeyboardEvent| {
                 if let Some(key) = Key::from_keyboard_event(&event) {
@@ -103,7 +101,7 @@ impl EventHandlers {
             }
         });
 
-        let on_resize = set_handler(&window.clone(), "resize", {
+        let on_resize = EventListener::new_consume(&canvas.clone(), "resize", {
             let state = state.clone();
             move |_| {
                 let width = window.inner_width().map(|w| w.as_f64());
@@ -139,31 +137,57 @@ impl EventHandlers {
     }
 }
 
-fn set_handler<T, E, F>(target: T, event_name: &str, mut handler: F) -> EventHandler<E>
+/// Event handlers without automatic clean up, inspired by
+/// <https://github.com/rustwasm/gloo/issues/30>.
+struct EventListener<T> {
+    element: web_sys::EventTarget,
+    kind: &'static str,
+    callback: Closure<dyn FnMut(T)>,
+}
+
+impl<T> EventListener<T>
 where
-    T: AsRef<web_sys::EventTarget>,
-    E: 'static + AsRef<web_sys::Event> + FromWasmAbi,
-    F: 'static + FnMut(E),
+    T: 'static + AsRef<web_sys::Event> + FromWasmAbi,
 {
-    // Source:
-    // https://github.com/rust-windowing/winit/blob/e4754999b7e7f27786092a62eda5275672d74130/src/platform_impl/web/web_sys/canvas.rs#L295
+    pub fn new<F>(element: &web_sys::EventTarget, kind: &'static str, f: F) -> Self
+    where
+        F: 'static + FnMut(T),
+    {
+        let callback = Closure::wrap(Box::new(f) as Box<dyn FnMut(T)>);
 
-    let closure = Closure::wrap(Box::new(move |event: E| {
-        {
-            let event_ref = event.as_ref();
-            event_ref.stop_propagation();
-            event_ref.cancel_bubble();
+        element
+            .add_event_listener_with_callback(kind, &callback.as_ref().unchecked_ref())
+            .expect(&format!("Failed to add event listener for kind {}", kind));
+
+        Self {
+            element: element.clone(),
+            kind,
+            callback,
         }
+    }
 
-        handler(event);
-    }) as Box<dyn FnMut(E)>);
+    pub fn new_consume<F>(element: &web_sys::EventTarget, kind: &'static str, mut f: F) -> Self
+    where
+        F: 'static + FnMut(T),
+    {
+        Self::new(element, kind, move |event| {
+            {
+                let event_ref = event.as_ref();
+                event_ref.stop_propagation();
+                event_ref.cancel_bubble();
+            }
 
-    target
-        .as_ref()
-        .add_event_listener_with_callback(event_name, &closure.as_ref().unchecked_ref())
-        .expect("Failed to add event listener with callback");
+            f(event);
+        })
+    }
+}
 
-    closure
+impl<T> Drop for EventListener<T> {
+    fn drop(&mut self) {
+        self.element
+            .remove_event_listener_with_callback(self.kind, self.callback.as_ref().unchecked_ref())
+            .expect(&format!("Failed to remove event listener for kind {}", self.kind));
+    }
 }
 
 /// A key that can be pressed.

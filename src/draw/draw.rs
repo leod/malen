@@ -17,7 +17,11 @@ pub struct Draw {
 
 impl Draw {
     pub fn new(canvas: HtmlCanvasElement, golem_ctx: golem::Context) -> Result<Self, Error> {
+        // Make sure that the canvas size is correct for the screen's DPI.
         util::set_canvas_size(&canvas, Vector2::new(canvas.width(), canvas.height()));
+
+        // Make the canvas focusable.
+        canvas.set_attribute("tabIndex", "1").unwrap();
 
         Ok(Draw {
             canvas,
@@ -43,8 +47,6 @@ impl Draw {
         // [1] https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
         //let width = self.canvas.client_width().max(0) as u32;
         //let height = self.canvas.client_height().max(0) as u32;
-
-        log::info!("resizing to full. screen: {:?}", self.screen_geom());
 
         let window = web_sys::window().expect("Failed to obtain window");
         let width = window
