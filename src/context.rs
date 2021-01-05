@@ -34,8 +34,8 @@ impl Context {
         // This is only in here as a workaround for the fact that Visual Studio
         // Code ignores our target setting in .cargo/config.toml for some
         // reason. Then, `glow::Context::from_webgl1_context` is not defined
-        // we lose e.g. inline error display.
-        unreachable!("catcheb's clnt only works on web platforms")
+        // and we lose e.g. inline error display.
+        unreachable!("malen only works on web platforms")
     }
 
     #[cfg(target_arch = "wasm32")]

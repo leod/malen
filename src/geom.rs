@@ -1,4 +1,4 @@
-use nalgebra::{Matrix2, Matrix3, Point2, Point3, Point4, Vector2, Vector3, Vector4};
+use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 
 #[derive(Debug, Clone, Copy)]
 pub struct AaRect {
@@ -88,14 +88,14 @@ pub fn scale_rotate_translate(
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Screen {
+pub struct ScreenGeom {
     /// The screen size in pixels.
     pub size: Vector2<u32>,
 
     pub device_pixel_ratio: f64,
 }
 
-impl Screen {
+impl ScreenGeom {
     /// Returns an orthographic projection matrix.
     ///
     /// The returned matrix maps `[0..width] x [0..height]` to
@@ -137,7 +137,7 @@ pub struct Camera {
 impl Camera {
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
     /// transformation from world space to camera space.
-    pub fn to_matrix(&self, screen: &Screen) -> Matrix3<f32> {
+    pub fn to_matrix(&self, screen: &ScreenGeom) -> Matrix3<f32> {
         // It's a bit easier to first consider the camera space -> world space
         // transformation C2W and then take the inverse to get W2C. For C2W, we
         // first need to scale with S / rotate with R (order shouldn't matter
