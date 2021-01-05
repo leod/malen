@@ -3,8 +3,8 @@
 
 mod color;
 mod context;
-mod input;
 mod error;
+mod input;
 
 pub mod draw;
 pub mod geom;
@@ -19,6 +19,6 @@ pub use golem::Texture;
 pub use color::{Color3, Color4};
 pub use context::Context;
 pub use draw::Draw;
+pub use error::Error;
 pub use geom::{AaRect, Camera, ScreenGeom};
 pub use input::{Event, InputState, Key};
-pub use error::Error;

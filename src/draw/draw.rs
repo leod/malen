@@ -2,7 +2,10 @@ use web_sys::HtmlCanvasElement;
 
 use nalgebra::{Point2, Vector2};
 
-use crate::{AaRect, Color4, Error, ScreenGeom, draw::{util, Texture, TriBatch, TexColVertex, TexColPass}};
+use crate::{
+    draw::{util, TexColPass, TexColVertex, Texture, TriBatch},
+    AaRect, Color4, Error, ScreenGeom,
+};
 
 pub struct Draw {
     canvas: HtmlCanvasElement,
