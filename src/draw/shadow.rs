@@ -202,14 +202,14 @@ impl ShadowMap {
     fn new_light_surface(ctx: &Context) -> Result<Surface, Error> {
         log::info!(
             "Creating new light surface for screen {:?}",
-            ctx.draw().screen()
+            ctx.draw().screen_geom()
         );
 
         let mut light_texture = Texture::new(ctx.golem_ctx())?;
         light_texture.set_image(
             None,
-            ctx.draw().screen().size.x,
-            ctx.draw().screen().size.y,
+            ctx.draw().screen_geom().size.x,
+            ctx.draw().screen_geom().size.y,
             ColorFormat::RGBA,
         );
         light_texture.set_magnification(TextureFilter::Nearest)?;
@@ -450,8 +450,8 @@ impl ShadowMap {
         transform: &Matrix3<f32>,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
-        if ctx.draw().screen().size.x != self.light_surface.width().unwrap()
-            || ctx.draw().screen().size.y != self.light_surface.height().unwrap()
+        if ctx.draw().screen_geom().size.x != self.light_surface.width().unwrap()
+            || ctx.draw().screen_geom().size.y != self.light_surface.height().unwrap()
         {
             // Screen surface has been resized, so we also need to recreate
             // the light surface.

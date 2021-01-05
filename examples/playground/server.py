@@ -28,10 +28,10 @@ class HttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         '.wasm': 'application/wasm',
     }
 
-httpd = socketserver.TCPServer(("localhost", PORT), HttpRequestHandler)
+httpd = socketserver.TCPServer(("127.0.0.1", PORT), HttpRequestHandler)
 
 try:
-    print(f"Serving on http://localhost:{PORT}")
+    print(f"Serving on http://127.0.0.1:{PORT}")
     httpd.serve_forever()
 except KeyboardInterrupt:
     pass
