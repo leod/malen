@@ -7,9 +7,9 @@ build-release:
 	cp static/* pkg/
 
 run: build
-	(cd pkg && python3 -m http.server)
+	python3 server.py pkg/
 
 run-release: build-release
-	(cd pkg && python3 -m http.server)
+	python3 server.py pkg/
 
 .PHONY: build build-release run run-release
