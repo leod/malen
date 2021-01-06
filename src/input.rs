@@ -7,8 +7,6 @@ use std::{
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
 
-use nalgebra as na;
-
 use crate::Error;
 
 #[derive(Debug, Clone)]
@@ -66,8 +64,6 @@ pub struct EventHandlers {
 impl EventHandlers {
     pub fn new(canvas: HtmlCanvasElement) -> Result<Self, Error> {
         let state = Rc::new(RefCell::new(SharedState::default()));
-
-        let window = web_sys::window().ok_or(Error::NoWindow)?;
 
         let on_focus = EventListener::new_consume(&canvas, "focus", {
             let state = state.clone();
