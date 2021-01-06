@@ -57,20 +57,22 @@ impl Canvas {
         let glow_ctx = glow::Context::from_webgl1_context(webgl_ctx);
         let golem_ctx = golem::Context::from_glow(glow_ctx)?;
 
-        // Make sure that the canvas size is correct for the screen's DPI.
-        util::set_canvas_size(&canvas, Vector2::new(canvas.width(), canvas.height()));
-
         // Make the canvas focusable.
         canvas.set_attribute("tabIndex", "1").unwrap();
 
-        Ok(Self {
+        let mut canvas = Self {
             canvas,
             golem_ctx,
             event_handlers,
             input_state,
             debug_tex_batch: None,
             debug_tex_pass: None,
-        })
+        };
+
+        // Make sure that the canvas size is correct for the screen's DPI.
+        canvas.resize(canvas.screen_geom().size);
+
+        Ok(canvas)
     }
 
     pub fn canvas(&self) -> HtmlCanvasElement {
@@ -87,6 +89,7 @@ impl Canvas {
 
     pub fn resize(&self, logical_size: Vector2<u32>) {
         util::set_canvas_size(&self.canvas, logical_size);
+        self.set_viewport(Point2::origin(), logical_size);
     }
 
     pub fn screen_geom(&self) -> ScreenGeom {
@@ -98,12 +101,23 @@ impl Canvas {
 
     pub fn pop_event(&mut self) -> Option<Event> {
         if let Some(event) = self.event_handlers.pop_event() {
-            self.input_state.on_event(&event);
+            self.on_event(&event);
 
             Some(event)
         } else {
             None
         }
+    }
+
+    pub fn clear(&self, color: Color4) {
+        self.golem_ctx
+            .set_clear_color(color.r, color.g, color.b, color.a);
+        self.golem_ctx.clear();
+    }
+
+    pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
+        self.golem_ctx
+            .set_viewport(lower_left.x, lower_left.y, size.x, size.y);
     }
 
     pub fn resize_full(&self) {
@@ -160,6 +174,10 @@ impl Canvas {
         )?;
 
         Ok(())
+    }
+
+    fn on_event(&mut self, event: &Event) {
+        self.input_state.on_event(event);
     }
 }
 
