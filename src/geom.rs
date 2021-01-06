@@ -139,6 +139,18 @@ pub struct Camera {
 }
 
 impl Camera {
+    pub fn screen_view_matrix(screen_geom: &ScreenGeom) -> Matrix3<f32> {
+        Self {
+            center: Point2::new(
+                screen_geom.size.x as f32 / 2.0,
+                screen_geom.size.y as f32 / 2.0,
+            ),
+            angle: 0.0,
+            zoom: 1.0,
+        }
+        .to_matrix(&screen_geom)
+    }
+
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
     /// transformation from world space to camera space.
     pub fn to_matrix(&self, screen: &ScreenGeom) -> Matrix3<f32> {
