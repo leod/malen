@@ -17,10 +17,9 @@ pub use golem;
 pub use golem::glow;
 pub use nalgebra;
 
-pub use golem::Texture;
-
 pub use canvas::Canvas;
 pub use color::{Color3, Color4};
+pub use draw::{Batch, Font, TextBatch, Texture};
 pub use error::Error;
 pub use geom::{AaRect, Camera, ScreenGeom};
 pub use input::{Event, InputState, Key};

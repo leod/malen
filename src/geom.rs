@@ -116,6 +116,10 @@ impl ScreenGeom {
 
         scale_and_flip_y * shift * scale_to_unit
     }
+
+    pub fn aa_rect(&self) -> AaRect {
+        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.size))
+    }
 }
 
 #[derive(Debug, Clone)]

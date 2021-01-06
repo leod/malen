@@ -141,8 +141,6 @@ impl Game {
     }
 
     pub fn draw(&mut self, canvas: &mut Canvas) -> Result<(), Error> {
-        let screen = canvas.screen_geom();
-
         self.tri_plain_batch.clear();
         self.tri_shadowed_batch.clear();
         self.line_batch.clear();
@@ -221,26 +219,27 @@ impl Game {
             Some(self.shadow_map.light_offset(0)),
         );
 
+        let screen_geom = canvas.screen_geom();
         let view = Camera {
             center: self.player_pos,
             zoom: 1.0,
             angle: 0.0,
         }
-        .to_matrix(&screen);
+        .to_matrix(&screen_geom);
 
         self.shadow_map
-            .build(canvas, &(screen.orthographic_projection() * view), &lights)?
+            .build(
+                canvas,
+                &(screen_geom.orthographic_projection() * view),
+                &lights,
+            )?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
-        canvas
-            .golem_ctx()
-            .set_viewport(0, 0, screen.size.x as u32, screen.size.y as u32);
-        canvas.golem_ctx().set_clear_color(0.0, 0.0, 0.0, 1.0);
-        canvas.golem_ctx().clear();
+        canvas.clear(Color4::new(0.0, 0.0, 0.0, 1.0));
 
         self.shadow_col_pass.draw(
-            &(screen.orthographic_projection() * view),
+            &(screen_geom.orthographic_projection() * view),
             Color3::new(0.025, 0.025, 0.025),
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
@@ -256,18 +255,18 @@ impl Game {
             ..Default::default()
         }));
         self.color_pass.draw(
-            &(screen.orthographic_projection() * view),
+            &(screen_geom.orthographic_projection() * view),
             &self.tri_plain_batch.draw_unit(),
         )?;
         self.color_pass.draw(
-            &(screen.orthographic_projection() * view),
+            &(screen_geom.orthographic_projection() * view),
             &self.line_batch.draw_unit(),
         )?;
         canvas.golem_ctx().set_depth_test_mode(None);
 
         self.font.draw(
             canvas,
-            &screen.orthographic_projection(),
+            &screen_geom.orthographic_projection(),
             &self.text_batch.draw_unit(),
         )?;
 

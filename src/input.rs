@@ -17,7 +17,6 @@ pub enum Event {
     Unfocused,
     KeyPressed(Key),
     KeyReleased(Key),
-    WindowResized(na::Vector2<f64>),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -62,7 +61,6 @@ pub struct EventHandlers {
     _on_blur: EventListener<FocusEvent>,
     _on_key_down: EventListener<KeyboardEvent>,
     _on_key_release: EventListener<KeyboardEvent>,
-    _on_resize: EventListener<web_sys::Event>,
 }
 
 impl EventHandlers {
@@ -105,33 +103,12 @@ impl EventHandlers {
             }
         });
 
-        let on_resize = EventListener::new_consume(&canvas, "resize", {
-            let state = state.clone();
-            move |_| {
-                let width = window.inner_width().map(|w| w.as_f64());
-                let height = window.inner_height().map(|w| w.as_f64());
-                if let (Ok(Some(width)), Ok(Some(height))) = (&width, &height) {
-                    state
-                        .borrow_mut()
-                        .events
-                        .push_back(Event::WindowResized(na::Vector2::new(*width, *height)));
-                } else {
-                    log::warn!(
-                        "Failed to read innerWidth/innerHeight from window. Got: {:?}, {:?}",
-                        width,
-                        height
-                    );
-                }
-            }
-        });
-
         Ok(Self {
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,
             _on_key_down: on_key_down,
             _on_key_release: on_key_release,
-            _on_resize: on_resize,
         })
     }
 
