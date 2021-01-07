@@ -63,6 +63,29 @@ impl Font {
         })
     }
 
+    pub fn text_size(&mut self, size: f32, text: &str) -> Vector2<f32> {
+        let settings = LayoutSettings {
+            x: 0.0,
+            y: 0.0,
+            max_width: None,
+            ..Default::default()
+        };
+        self.layout.reset(&settings);
+
+        self.layout
+            .append(&[&self.font], &TextStyle::new(text, size, 0));
+
+        self.layout
+            .glyphs()
+            .last()
+            .map_or(Vector2::zeros(), |glyph_pos| {
+                Vector2::new(
+                    glyph_pos.x + glyph_pos.width as f32,
+                    glyph_pos.y + glyph_pos.height as f32,
+                )
+            })
+    }
+
     pub fn write(
         &mut self,
         size: f32,
