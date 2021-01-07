@@ -3,6 +3,7 @@ mod pass;
 mod primitive;
 mod text;
 
+pub mod plot;
 pub mod shadow;
 
 pub use golem::Texture;
