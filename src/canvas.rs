@@ -60,7 +60,7 @@ impl Canvas {
         // Make the canvas focusable.
         canvas.set_attribute("tabIndex", "1").unwrap();
 
-        let mut canvas = Self {
+        let canvas = Self {
             canvas,
             golem_ctx,
             event_handlers,

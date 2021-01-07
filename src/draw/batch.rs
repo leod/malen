@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use golem::{ElementBuffer, GeometryMode, ShaderProgram, VertexBuffer};
-use nalgebra::Point3;
+use nalgebra::{Point2, Point3};
 
 use crate::{
     draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
@@ -221,6 +221,23 @@ impl Batch<Line<ColVertex>> {
             first_idx + 3,
             first_idx + 0,
         ]);
+    }
+
+    pub fn push_line(&mut self, p: Point2<f32>, q: Point2<f32>, z: f32, color: Color4) {
+        let first_idx = self.next_index();
+
+        self.push_vertex(&ColVertex {
+            world_pos: Point3::new(p.x, p.y, z),
+            color,
+        });
+        self.push_vertex(&ColVertex {
+            world_pos: Point3::new(q.x, q.y, z),
+            color,
+        });
+
+        self.scratch
+            .elements
+            .extend_from_slice(&[first_idx + 0, first_idx + 1]);
     }
 }
 
