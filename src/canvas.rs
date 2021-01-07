@@ -109,6 +109,17 @@ impl Canvas {
         }
     }
 
+    pub fn has_focus(&self) -> bool {
+        let active_element = web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .active_element()
+            .unwrap();
+
+        &active_element == AsRef::<web_sys::Element>::as_ref(&self.canvas)
+    }
+
     pub fn clear(&self, color: Color4) {
         self.golem_ctx
             .set_clear_color(color.r, color.g, color.b, color.a);

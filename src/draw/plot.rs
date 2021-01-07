@@ -122,13 +122,6 @@ impl Plotting {
             plot.size.y / (y_range.1 - y_range.0),
         ));
 
-        log::info!(
-            "x_range: {:?}, y_range: {:?}, axis_scale: {:?}",
-            x_range,
-            y_range,
-            axis_scale
-        );
-
         let map_point = |(x, y): (f32, f32)| {
             let pos = Point2::new(x, y);
             let clipped = clip_to_ranges(pos, x_range, y_range);
