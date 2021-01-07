@@ -1,9 +1,11 @@
-use nalgebra::{Matrix2, Matrix3, Point2, Point3, Vector2};
+use nalgebra::{Matrix2, Matrix3, Point2, Vector2};
 
 use crate::{
     draw::{ColPass, ColVertex, Font, LineBatch, TextBatch, TriBatch},
     AaRect, Canvas, Color4, Error,
 };
+
+const AXIS_MARGIN: f32 = 30.0;
 
 #[derive(Debug, Clone)]
 pub struct LinePlotData {
@@ -16,6 +18,7 @@ pub struct LinePlotData {
 pub struct Axis {
     pub label: String,
     pub range: Option<(f32, f32)>,
+    pub tics: f32,
 }
 
 impl Axis {
@@ -75,6 +78,11 @@ impl Plotting {
         transform: &Matrix3<f32>,
         plot: &Plot,
     ) -> Result<(), Error> {
+        // Flip Y axis so that (0,0) is at the bottom-right of the screen again.
+        // (This is assuming that the caller uses
+        // ScreenGeom::orthographic_projection.)
+        let transform = Matrix3::new_nonuniform_scaling(&Vector2::new(1.0, -1.0)) * transform;
+
         // Reset batch contents from previous draw calls.
         self.tri_batch.clear();
         self.line_batch.clear();
@@ -89,18 +97,12 @@ impl Plotting {
             );
         }
 
-        // Render X axis.
-        self.line_batch.push_line(
-            Point2::new(0.0, plot.size.y),
-            Point2::new(plot.size.x, plot.size.y),
-            0.1,
-            plot.axis_color,
-        );
+        // Render X and Y axis.
+        let plot_offset = Vector2::new(AXIS_MARGIN / 2.0, AXIS_MARGIN / 2.0);
+        let plot_size = plot.size - 2.0 * plot_offset;
 
-        // Render Y axis.
-        self.line_batch.push_line(
-            Point2::origin(),
-            Point2::new(0.0, plot.size.y),
+        self.line_batch.push_quad_outline(
+            &AaRect::from_top_left(Point2::origin() + plot_offset, plot_size).into(),
             0.1,
             plot.axis_color,
         );
@@ -118,8 +120,8 @@ impl Plotting {
         );
 
         let axis_scale = Matrix2::from_diagonal(&Vector2::new(
-            plot.size.x / (x_range.1 - x_range.0),
-            plot.size.y / (y_range.1 - y_range.0),
+            plot_size.x / (x_range.1 - x_range.0),
+            plot_size.y / (y_range.1 - y_range.0),
         ));
 
         let map_point = |(x, y): (f32, f32)| {
@@ -127,8 +129,8 @@ impl Plotting {
             let clipped = clip_to_ranges(pos, x_range, y_range);
             let shifted = clipped - Vector2::new(x_range.0, y_range.0);
             let scaled = axis_scale * shifted;
-            let flipped = Point2::new(scaled.x, plot.size.y - scaled.y);
-            flipped
+            let margined = scaled + plot_offset;
+            margined
         };
 
         // Render each of the lines.
@@ -140,11 +142,23 @@ impl Plotting {
         }
 
         // Finally, draw all the prepared batches.
-        self.col_pass.draw(transform, &self.tri_batch.draw_unit())?;
         self.col_pass
-            .draw(transform, &self.line_batch.draw_unit())?;
-        font.draw(canvas, transform, &self.text_batch.draw_unit())?;
+            .draw(&transform, &self.tri_batch.draw_unit())?;
+        self.col_pass
+            .draw(&transform, &self.line_batch.draw_unit())?;
+        font.draw(canvas, &transform, &self.text_batch.draw_unit())?;
 
         Ok(())
+    }
+
+    fn render_tics(
+        &mut self,
+        axis: &Axis,
+        start_pos: Point2<f32>,
+        delta: Vector2<f32>,
+        offset: Vector2<f32>,
+        n: usize,
+        font: &Font,
+    ) {
     }
 }
