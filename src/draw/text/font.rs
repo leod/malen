@@ -93,7 +93,7 @@ impl Font {
         color: Color4,
         text: &str,
         batch: &mut TextBatch,
-    ) {
+    ) -> Vector2<f32> {
         let settings = LayoutSettings {
             x: pos.x,
             y: pos.y,
@@ -104,6 +104,8 @@ impl Font {
 
         self.layout
             .append(&[&self.font], &TextStyle::new(text, size, 0));
+
+        let mut last_end_offset = Vector2::zeros();
 
         for &glyph_pos in self.layout.glyphs() {
             // Ignore empty glyphs (e.g. space).
@@ -138,7 +140,14 @@ impl Font {
                 glyph.uv_rect,
                 color,
             );
+
+            last_end_offset = Vector2::new(
+                glyph_pos.x + glyph_pos.width as f32 / 2.0 - pos.x,
+                glyph_pos.y + glyph_pos.height as f32 / 2.0 - pos.y,
+            );
         }
+
+        last_end_offset
     }
 
     pub fn draw(

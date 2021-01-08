@@ -8,9 +8,12 @@ use crate::{
 const AXIS_MARGIN: f64 = 70.0;
 const TICK_SIZE: f64 = 7.5;
 
-const LEGEND_LINE_SIZE: f64 = 30.0;
-const LEGEND_TEXT_MARGIN: f64 = 7.5;
-const LEGEND_ENTRY_MARGIN: f64 = 15.0;
+const LEGEND_LINE_SIZE: f32 = 30.0;
+const LEGEND_TEXT_MARGIN: f32 = 7.5;
+const LEGEND_ENTRY_MARGIN: f32 = 50.0;
+const LEGEND_Y_OFFSET: f32 = 15.0;
+
+const FONT_SIZE: f32 = 11.0;
 
 #[derive(Debug, Clone)]
 pub struct LinePlotData {
@@ -196,7 +199,7 @@ impl<'a> RenderCtx<'a> {
             let shifted_pos = Point3::new(shifted_pos.x, shifted_pos.y, 0.2);
 
             self.font.write(
-                11.0,
+                FONT_SIZE,
                 convert(shifted_pos),
                 self.plot.text_color,
                 &text,
@@ -236,7 +239,33 @@ impl<'a> RenderCtx<'a> {
     }
 
     fn render_legend(&mut self) {
-        for line in self.plot.lines.iter() {}
+        let mut width = (LEGEND_LINE_SIZE + LEGEND_TEXT_MARGIN) * self.plot.lines.len() as f32
+            + LEGEND_ENTRY_MARGIN as f32 * ((self.plot.lines.len() - 1) as f32);
+        let mut max_text_height = 0.0f32;
+        for line in self.plot.lines.iter() {
+            let size = self.font.text_size(FONT_SIZE, &line.caption);
+            width += size.x;
+            max_text_height = max_text_height.max(size.y / 2.0);
+        }
+
+        let mut pos = Point2::new(self.plot.size.x as f32 / 2.0 - width / 2.0, LEGEND_Y_OFFSET);
+        for line in self.plot.lines.iter() {
+            let line_start = pos;
+            pos.x += LEGEND_LINE_SIZE;
+            self.line_batch.push_line(line_start, pos, 0.3, line.color);
+
+            pos.x += LEGEND_TEXT_MARGIN;
+            let text_size = self.font.write(
+                FONT_SIZE,
+                Point3::new(pos.x, pos.y - max_text_height - 1.0, 0.3),
+                self.plot.text_color,
+                &line.caption,
+                self.text_batch,
+            );
+            pos.x += text_size.x;
+
+            pos.x += LEGEND_ENTRY_MARGIN;
+        }
     }
 
     fn render_lines(&mut self) {
