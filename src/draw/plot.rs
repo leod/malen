@@ -156,7 +156,9 @@ impl Plotting {
                 let text = &format!("{:.*}", tic_precision, current_offset);
                 let text_size = font.text_size(11.0, &text);
 
-                let pos = map_point(Point2::origin() + current_offset * axis);
+                let pos = map_point(
+                    Point2::new(x_range.0, y_range.0) + (current_offset - range.0) * axis,
+                );
                 let shifted_pos = if is_x {
                     Point2::new(pos.x - text_size.x / 2.0, pos.y + 6.0)
                 } else {
