@@ -151,7 +151,14 @@ impl Plotting {
                 Vector2::new(1.0, 0.0f32)
             };
 
-            let mut current_offset = round_to_multiple(range.0);
+            let epsilon = 1e-7;
+            let tics_rem = range.0.rem_euclid(tics);
+            let mut current_offset = if tics_rem < epsilon {
+                round_to_multiple(range.0)
+            } else {
+                range.0 + tics - tics_rem
+            };
+
             while current_offset <= round_to_multiple(range.1) {
                 let text = &format!("{:.*}", tic_precision, current_offset);
                 let text_size = font.text_size(11.0, &text);
