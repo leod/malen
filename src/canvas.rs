@@ -15,6 +15,7 @@ pub struct Canvas {
     golem_ctx: golem::Context,
     event_handlers: EventHandlers,
     input_state: InputState,
+    logical_size: Vector2<u32>,
 
     debug_tex_batch: Option<TriBatch<TexColVertex>>,
     debug_tex_pass: Option<TexColPass>,
@@ -60,17 +61,21 @@ impl Canvas {
         // Make the canvas focusable.
         canvas.set_attribute("tabIndex", "1").unwrap();
 
-        let canvas = Self {
+        let logical_size = Vector2::new(canvas.width(), canvas.height());
+
+        let mut canvas = Self {
             canvas,
             golem_ctx,
             event_handlers,
             input_state,
+            logical_size,
             debug_tex_batch: None,
             debug_tex_pass: None,
         };
 
-        // Make sure that the canvas size is correct for the screen's DPI.
-        canvas.resize(canvas.screen_geom().size);
+        // Make sure that the physical canvas size is correct (adjusting for the
+        // screen's DPI).
+        canvas.resize(logical_size);
 
         Ok(canvas)
     }
@@ -87,11 +92,6 @@ impl Canvas {
         &self.input_state
     }
 
-    pub fn resize(&self, logical_size: Vector2<u32>) {
-        util::set_canvas_size(&self.canvas, logical_size);
-        self.set_viewport(Point2::origin(), logical_size);
-    }
-
     pub fn screen_geom(&self) -> ScreenGeom {
         ScreenGeom {
             size: Vector2::new(self.canvas.width(), self.canvas.height()),
@@ -100,6 +100,8 @@ impl Canvas {
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {
+        self.resize(self.logical_size);
+
         if let Some(event) = self.event_handlers.pop_event() {
             self.on_event(&event);
 
@@ -131,7 +133,13 @@ impl Canvas {
             .set_viewport(lower_left.x, lower_left.y, size.x, size.y);
     }
 
-    pub fn resize_full(&self) {
+    pub fn resize(&mut self, logical_size: Vector2<u32>) {
+        util::set_canvas_size(&self.canvas, logical_size);
+        self.set_viewport(Point2::origin(), logical_size);
+        self.logical_size = logical_size;
+    }
+
+    pub fn resize_full(&mut self) {
         // A collection of anti-patterns [1] recommends using
         // clientWidth/clientHeight and CSS for resizing. I have not been able
         // to get this to work yet.
