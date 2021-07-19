@@ -88,14 +88,16 @@ pub fn scale_rotate_translate(
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ScreenGeom {
-    /// The screen size in pixels.
-    pub size: Vector2<u32>,
+pub struct Screen {
+    pub logical_size: Vector2<u32>,
+
+    /// The screen size in physical pixels.
+    pub physical_size: Vector2<u32>,
 
     pub device_pixel_ratio: f64,
 }
 
-impl ScreenGeom {
+impl Screen {
     /// Returns an orthographic projection matrix.
     ///
     /// The returned matrix maps `[0..width] x [0..height]` to
@@ -106,10 +108,9 @@ impl ScreenGeom {
     ///   top-left of your screen.
     /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3<f32> {
-        let ratio = self.device_pixel_ratio as f32;
         let scale_to_unit = Matrix3::new_nonuniform_scaling(&Vector2::new(
-            ratio / self.size.x as f32,
-            ratio / self.size.y as f32,
+            1.0 / self.logical_size.x as f32,
+            1.0 / self.logical_size.y as f32,
         ));
         let shift = Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));
@@ -117,8 +118,12 @@ impl ScreenGeom {
         scale_and_flip_y * shift * scale_to_unit
     }
 
-    pub fn aa_rect(&self) -> AaRect {
-        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.size))
+    pub fn physical_rect(&self) -> AaRect {
+        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.physical_size))
+    }
+
+    pub fn logical_rect(&self) -> AaRect {
+        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.logical_size))
     }
 }
 
@@ -139,21 +144,21 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn screen_view_matrix(screen_geom: &ScreenGeom) -> Matrix3<f32> {
+    pub fn screen_view_matrix(screen: &Screen) -> Matrix3<f32> {
         Self {
             center: Point2::new(
-                screen_geom.size.x as f32 / 2.0,
-                screen_geom.size.y as f32 / 2.0,
+                screen.logical_size.x as f32 / 2.0,
+                screen.logical_size.y as f32 / 2.0,
             ),
             angle: 0.0,
             zoom: 1.0,
         }
-        .to_matrix(&screen_geom)
+        .to_matrix(&screen)
     }
 
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
     /// transformation from world space to camera space.
-    pub fn to_matrix(&self, screen: &ScreenGeom) -> Matrix3<f32> {
+    pub fn to_matrix(&self, screen: &Screen) -> Matrix3<f32> {
         // It's a bit easier to first consider the camera space -> world space
         // transformation C2W and then take the inverse to get W2C. For C2W, we
         // first need to scale with S / rotate with R (order shouldn't matter
@@ -168,8 +173,8 @@ impl Camera {
         //        T(x)^-1 = T(-x).)
 
         Matrix3::new_translation(&Vector2::new(
-            screen.size.x as f32 / (2.0 * screen.device_pixel_ratio as f32),
-            screen.size.y as f32 / (2.0 * screen.device_pixel_ratio as f32),
+            screen.logical_size.x as f32 / 2.0,
+            screen.logical_size.y as f32 / 2.0,
         )) * translate_rotate_scale(
             -self.center.coords,
             -self.angle,

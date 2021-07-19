@@ -14,7 +14,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Canvas, Color3, Error,
+    Camera, Canvas, Color3, Error, Screen,
 };
 
 pub struct LineSegment {
@@ -199,19 +199,36 @@ impl ShadowMap {
         Ok(Surface::new(canvas.golem_ctx(), shadow_map_texture)?)
     }
 
+    fn light_surface_size(canvas: &Canvas) -> Vector2<u32> {
+        Vector2::new(
+            canvas
+                .screen()
+                .physical_size
+                .x
+                .min(canvas.caps().max_texture_size),
+            canvas
+                .screen()
+                .physical_size
+                .y
+                .min(canvas.caps().max_texture_size),
+        )
+    }
+
     fn new_light_surface(canvas: &Canvas) -> Result<Surface, Error> {
+        let size = Self::light_surface_size(canvas);
+
         log::info!(
-            "Creating new light surface for screen {:?}",
-            canvas.screen_geom()
+            "Creating new light surface for screen {:?} with size {:?}",
+            canvas.screen(),
+            size,
+        );
+        log::info!(
+            "Maximum allowed texture size: {}",
+            canvas.caps().max_texture_size
         );
 
         let mut light_texture = Texture::new(canvas.golem_ctx())?;
-        light_texture.set_image(
-            None,
-            canvas.screen_geom().size.x,
-            canvas.screen_geom().size.y,
-            ColorFormat::RGBA,
-        );
+        light_texture.set_image(None, size.x, size.y, ColorFormat::RGBA);
         light_texture.set_magnification(TextureFilter::Nearest)?;
         light_texture.set_minification(TextureFilter::Nearest)?;
         light_texture.set_wrap_h(TextureWrap::ClampToEdge)?;
@@ -447,11 +464,12 @@ impl ShadowMap {
     pub fn build<'a>(
         &'a mut self,
         canvas: &'a Canvas,
-        transform: &Matrix3<f32>,
+        camera: &'a Camera,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
-        if canvas.screen_geom().size.x != self.light_surface.width().unwrap()
-            || canvas.screen_geom().size.y != self.light_surface.height().unwrap()
+        let light_surface_size = Self::light_surface_size(canvas);
+        if light_surface_size.x != self.light_surface.width().unwrap()
+            || light_surface_size.y != self.light_surface.height().unwrap()
         {
             // Screen surface has been resized, so we also need to recreate
             // the light surface.
@@ -464,9 +482,10 @@ impl ShadowMap {
 
         // Clear the shadow map to maximal distance, i.e. 1.
         self.shadow_map.bind();
-        canvas
-            .golem_ctx()
-            .set_viewport(0, 0, self.resolution as u32, self.max_num_lights as u32);
+        canvas.set_viewport(
+            Point2::origin(),
+            Vector2::new(self.resolution as u32, self.max_num_lights as u32),
+        );
         canvas.golem_ctx().set_clear_color(1.0, 1.0, 1.0, 1.0);
         canvas.golem_ctx().clear();
 
@@ -474,12 +493,20 @@ impl ShadowMap {
             this: self,
             canvas,
             lights,
-            transform: *transform,
+            camera: camera.clone(),
         })
     }
 
     pub fn light_offset(&self, index: usize) -> f32 {
         (index as f32 + 0.5) / self.max_num_lights as f32
+    }
+
+    pub fn shadow_map(&self) -> &Surface {
+        &self.shadow_map
+    }
+
+    pub fn light_surface(&self) -> &Surface {
+        &self.light_surface
     }
 }
 
@@ -488,7 +515,7 @@ pub struct BuildShadowMap<'a> {
     this: &'a mut ShadowMap,
     canvas: &'a Canvas,
     lights: &'a [Light],
-    transform: Matrix3<f32>,
+    camera: Camera,
 }
 
 impl<'a> BuildShadowMap<'a> {
@@ -535,19 +562,25 @@ impl<'a> BuildShadowMap<'a> {
     }
 
     pub fn finish(self) -> Result<(), Error> {
+        let screen = self.canvas.screen();
         let golem_ctx = self.canvas.golem_ctx();
 
         //Surface::unbind(self.ctx.golem_ctx());
         self.this.light_surface.bind();
 
-        golem_ctx.set_viewport(
-            0,
-            0,
-            self.this.light_surface.width().unwrap(),
-            self.this.light_surface.height().unwrap(),
-        );
         golem_ctx.set_clear_color(0.0, 0.0, 0.0, 1.0);
         golem_ctx.clear();
+
+        let clipped_screen = Screen {
+            physical_size: Vector2::new(
+                self.this.light_surface.width().unwrap(),
+                self.this.light_surface.height().unwrap(),
+            ),
+            ..screen
+        };
+        let transform = clipped_screen.orthographic_projection() * self.camera.to_matrix(&screen);
+        self.canvas
+            .set_viewport(Point2::origin(), clipped_screen.physical_size);
 
         golem_ctx.set_blend_mode(Some(BlendMode {
             equation: BlendEquation::Same(BlendOperation::Add),
@@ -569,7 +602,7 @@ impl<'a> BuildShadowMap<'a> {
         self.this.light_surface_shader.bind();
         self.this.light_surface_shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(&self.transform)),
+            UniformValue::Matrix3(matrix3_to_flat_array(&transform)),
         )?;
         self.this
             .light_surface_shader
@@ -585,9 +618,11 @@ impl<'a> BuildShadowMap<'a> {
             .light_area_batch
             .draw(&self.this.light_surface_shader)?;
 
+        // Clean up
         self.canvas.golem_ctx().set_blend_mode(None);
-
         Surface::unbind(self.canvas.golem_ctx());
+        self.canvas
+            .set_viewport(Point2::origin(), self.canvas.screen().physical_size);
 
         Ok(())
     }
@@ -663,8 +698,10 @@ impl ShadowColPass {
         self.shader
             .set_uniform("light_surface", UniformValue::Int(1))?;
 
-        draw_unit.draw(&self.shader)
+        draw_unit.draw(&self.shader)?;
 
         // FIXME: Unbind light surface
+
+        Ok(())
     }
 }
