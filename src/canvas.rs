@@ -1,16 +1,36 @@
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
-use golem::{glow, GolemError, Texture};
+use golem::{
+    glow::{self, HasContext},
+    GolemError, Texture,
+};
 use nalgebra::{Point2, Vector2};
 
 use crate::input::EventHandlers;
 use crate::{
     draw::{TexColPass, TexColVertex, TriBatch},
-    util, AaRect, Color4, Error, Event, InputState, ScreenGeom,
+    util, AaRect, Color4, Error, Event, InputState, Screen,
 };
 
+#[derive(Debug, Clone)]
+pub struct CanvasCaps {
+    pub max_texture_size: u32,
+}
+
+impl CanvasCaps {
+    fn new(glow_ctx: &glow::Context) -> Self {
+        let max_texture_size = unsafe {
+            (glow::MAX_TEXTURE_SIZE - 1)
+                .min(glow_ctx.get_parameter_i32(glow::MAX_TEXTURE_SIZE) as u32)
+        };
+
+        CanvasCaps { max_texture_size }
+    }
+}
+
 pub struct Canvas {
+    caps: CanvasCaps,
     canvas: HtmlCanvasElement,
     golem_ctx: golem::Context,
     event_handlers: EventHandlers,
@@ -56,6 +76,7 @@ impl Canvas {
             .dyn_into::<WebGlRenderingContext>()
             .map_err(|_| Error::InitializeWebGl)?;
         let glow_ctx = glow::Context::from_webgl1_context(webgl_ctx);
+        let caps = CanvasCaps::new(&glow_ctx);
         let golem_ctx = golem::Context::from_glow(glow_ctx)?;
 
         // Make the canvas focusable.
@@ -64,6 +85,7 @@ impl Canvas {
         let logical_size = Vector2::new(canvas.width(), canvas.height());
 
         let mut canvas = Self {
+            caps,
             canvas,
             golem_ctx,
             event_handlers,
@@ -80,6 +102,10 @@ impl Canvas {
         Ok(canvas)
     }
 
+    pub fn caps(&self) -> &CanvasCaps {
+        &self.caps
+    }
+
     pub fn canvas(&self) -> HtmlCanvasElement {
         self.canvas.clone()
     }
@@ -92,9 +118,10 @@ impl Canvas {
         &self.input_state
     }
 
-    pub fn screen_geom(&self) -> ScreenGeom {
-        ScreenGeom {
-            size: Vector2::new(self.canvas.width(), self.canvas.height()),
+    pub fn screen(&self) -> Screen {
+        Screen {
+            logical_size: self.logical_size,
+            physical_size: Vector2::new(self.canvas.width(), self.canvas.height()),
             device_pixel_ratio: util::device_pixel_ratio(),
         }
     }
@@ -135,7 +162,7 @@ impl Canvas {
 
     pub fn resize(&mut self, logical_size: Vector2<u32>) {
         util::set_canvas_size(&self.canvas, logical_size);
-        self.set_viewport(Point2::origin(), logical_size);
+        self.set_viewport(Point2::origin(), self.screen().physical_size);
         self.logical_size = logical_size;
     }
 
@@ -163,9 +190,13 @@ impl Canvas {
         self.resize(Vector2::new(width, height));
     }
 
-    pub fn debug_tex(&mut self, pos: Point2<f32>, tex: &Texture) -> Result<(), Error> {
-        let screen = self.screen_geom();
-        let size = Vector2::new(tex.width() as f32, tex.height() as f32);
+    pub fn debug_tex(
+        &mut self,
+        pos: Point2<f32>,
+        size: Vector2<f32>,
+        tex: &Texture,
+    ) -> Result<(), Error> {
+        let screen = self.screen();
 
         // We initialize debug batches and shaders lazily, so that they don't
         // have any impact on startup time when not debugging.

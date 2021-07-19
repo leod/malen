@@ -117,8 +117,8 @@ impl Font {
                 (&self.font, &mut self.packer, &mut self.bitmap_buffer);
 
             let glyph = self.cache.entry(glyph_pos.key).or_insert_with(|| {
-                let (metrics, alpha_bitmap)
-                    = font.rasterize_indexed(glyph_pos.key.glyph_index as usize, size);
+                let (metrics, alpha_bitmap) =
+                    font.rasterize_indexed(glyph_pos.key.glyph_index as usize, size);
 
                 Self::alpha_to_rgba(&alpha_bitmap, bitmap_buffer);
 

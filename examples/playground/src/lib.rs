@@ -155,6 +155,14 @@ impl Game {
         );
 
         self.font.write(
+            10.0,
+            Point3::new(10.0, 10.0, 0.0),
+            Color4::new(1.0, 0.0, 1.0, 1.0),
+            &format!("{:?}", canvas.screen()),
+            &mut self.text_batch,
+        );
+
+        self.font.write(
             60.0,
             Point3::new(150.0, 150.0, 0.0),
             Color4::new(1.0, 0.0, 1.0, 1.0),
@@ -219,27 +227,24 @@ impl Game {
             Some(self.shadow_map.light_offset(0)),
         );
 
-        let screen_geom = canvas.screen_geom();
-        let view = Camera {
+        let screen = canvas.screen();
+        let camera = Camera {
             center: self.player_pos,
             zoom: 1.0,
             angle: 0.0,
-        }
-        .to_matrix(&screen_geom);
+        };
+        let view = camera.to_matrix(&screen);
+        let transform = screen.orthographic_projection() * view;
 
         self.shadow_map
-            .build(
-                canvas,
-                &(screen_geom.orthographic_projection() * view),
-                &lights,
-            )?
+            .build(canvas, &camera, &lights)?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
         canvas.clear(Color4::new(0.0, 0.0, 0.0, 1.0));
 
         self.shadow_col_pass.draw(
-            &(screen_geom.orthographic_projection() * view),
+            &transform,
             Color3::new(0.025, 0.025, 0.025),
             &self.shadow_map,
             &self.tri_shadowed_batch.draw_unit(),
@@ -254,21 +259,30 @@ impl Game {
             function: DepthTestFunction::Less,
             ..Default::default()
         }));
-        self.color_pass.draw(
-            &(screen_geom.orthographic_projection() * view),
-            &self.tri_plain_batch.draw_unit(),
-        )?;
-        self.color_pass.draw(
-            &(screen_geom.orthographic_projection() * view),
-            &self.line_batch.draw_unit(),
-        )?;
+        self.color_pass
+            .draw(&transform, &self.tri_plain_batch.draw_unit())?;
+        self.color_pass
+            .draw(&transform, &self.line_batch.draw_unit())?;
         canvas.golem_ctx().set_depth_test_mode(None);
 
         self.font.draw(
             canvas,
-            &screen_geom.orthographic_projection(),
+            &screen.orthographic_projection(),
             &self.text_batch.draw_unit(),
         )?;
+
+        /*unsafe {
+            canvas.debug_tex(
+                Point2::new(100.0, 100.0),
+                Vector2::new(320.0, 240.0),
+                self.shadow_map.light_surface().borrow_texture().unwrap(),
+            )?;
+            canvas.debug_tex(
+                Point2::new(10.0, 100.0),
+                Vector2::new(320.0, 240.0),
+                self.shadow_map.shadow_map().borrow_texture().unwrap(),
+            )?;
+        }*/
 
         Ok(())
     }
