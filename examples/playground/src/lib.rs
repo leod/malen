@@ -40,6 +40,8 @@ struct Game {
     walls: Vec<Wall>,
     thingies: Vec<Thingy>,
     player_pos: Point2<f32>,
+
+    last_timestamp_secs: Option<f64>,
 }
 
 impl Game {
@@ -90,11 +92,18 @@ impl Game {
             walls,
             thingies,
             player_pos: Point2::origin(),
+            last_timestamp_secs: None,
         })
     }
 
-    pub fn update(&mut self, dt: Duration, input_state: &InputState) {
-        let dt_secs = dt.as_secs_f32();
+    pub fn update(&mut self, timestamp_secs: f64, input_state: &InputState) {
+        let dt_secs = self
+            .last_timestamp_secs
+            .map_or(0.0, |last_timestamp_secs| {
+                timestamp_secs - last_timestamp_secs
+            })
+            .max(0.0) as f32;
+        self.last_timestamp_secs = Some(timestamp_secs);
 
         let mut player_dir = Vector2::zeros();
         if input_state.key(Key::W) {
@@ -299,7 +308,7 @@ pub fn main() {
 
     let mut game = Game::new(&canvas).unwrap();
 
-    malen::main_loop(move |dt, _running| {
+    malen::main_loop(move |timestamp_secs, _running| {
         use malen::Event::*;
 
         while let Some(event) = canvas.pop_event() {
@@ -316,7 +325,7 @@ pub fn main() {
 
         canvas.resize_full();
 
-        game.update(dt, canvas.input_state());
+        game.update(timestamp_secs, canvas.input_state());
         game.draw(&mut canvas).unwrap();
     })
     .unwrap();
