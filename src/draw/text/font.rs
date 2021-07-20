@@ -157,14 +157,7 @@ impl Font {
         transform: &Matrix3<f32>,
         draw_unit: &DrawUnit<TexColVertex>,
     ) -> Result<(), Error> {
-        ctx.golem_ctx().set_blend_mode(Some(BlendMode {
-            equation: BlendEquation::Same(BlendOperation::Add),
-            function: BlendFunction::Same {
-                source: BlendFactor::One,
-                destination: BlendFactor::One,
-            },
-            ..Default::default()
-        }));
+        ctx.golem_ctx().set_blend_mode(Some(BlendMode::default()));
 
         self.pass
             .draw(transform, self.packer.texture(), draw_unit)?;
