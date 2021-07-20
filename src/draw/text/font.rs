@@ -4,7 +4,7 @@ use fontdue::{
     layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle},
     FontSettings,
 };
-use golem::blend::{BlendEquation, BlendFactor, BlendFunction, BlendMode, BlendOperation};
+use golem::blend::BlendMode;
 use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use crate::{
