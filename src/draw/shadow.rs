@@ -14,7 +14,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
     geom::matrix3_to_flat_array,
-    Camera, Canvas, Color3, Error, Screen,
+    Canvas, Color3, Error, Screen,
 };
 
 pub struct LineSegment {
@@ -464,7 +464,7 @@ impl ShadowMap {
     pub fn build<'a>(
         &'a mut self,
         canvas: &'a Canvas,
-        camera: &'a Camera,
+        view: &'a Matrix3<f32>,
         lights: &'a [Light],
     ) -> Result<BuildShadowMap<'a>, Error> {
         let light_surface_size = Self::light_surface_size(canvas);
@@ -493,7 +493,7 @@ impl ShadowMap {
             this: self,
             canvas,
             lights,
-            camera: camera.clone(),
+            view: view.clone(),
         })
     }
 
@@ -515,7 +515,7 @@ pub struct BuildShadowMap<'a> {
     this: &'a mut ShadowMap,
     canvas: &'a Canvas,
     lights: &'a [Light],
-    camera: Camera,
+    view: Matrix3<f32>,
 }
 
 impl<'a> BuildShadowMap<'a> {
@@ -578,7 +578,7 @@ impl<'a> BuildShadowMap<'a> {
             ),
             ..screen
         };
-        let transform = clipped_screen.orthographic_projection() * self.camera.to_matrix(&screen);
+        let transform = clipped_screen.orthographic_projection() * self.view;
         self.canvas
             .set_viewport(Point2::origin(), clipped_screen.physical_size);
 

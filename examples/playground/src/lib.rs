@@ -246,7 +246,7 @@ impl Game {
         let transform = screen.orthographic_projection() * view;
 
         self.shadow_map
-            .build(canvas, &camera, &lights)?
+            .build(canvas, &view, &lights)?
             .draw_occluders(&self.occluder_batch.draw_unit())?
             .finish()?;
 
