@@ -13,7 +13,7 @@ const LEGEND_TEXT_MARGIN: f32 = 7.5;
 const LEGEND_ENTRY_MARGIN: f32 = 50.0;
 const LEGEND_Y_OFFSET: f32 = 15.0;
 
-const FONT_SIZE: f32 = 11.0;
+const FONT_SIZE: f32 = 14.0;
 
 #[derive(Debug, Clone)]
 pub struct Line {
@@ -194,7 +194,7 @@ impl<'a> RenderCtx<'a> {
             let shifted_pos = if is_x {
                 Point2::new(pos.x - text_size.x / 2.0, pos.y + 6.0)
             } else {
-                Point2::new(pos.x - 6.0 - text_size.x, pos.y - text_size.y / 2.0 - 3.0)
+                Point2::new(pos.x - 8.0 - text_size.x, pos.y - text_size.y / 2.0 - 3.0)
             };
             let shifted_pos = Point3::new(shifted_pos.x, shifted_pos.y, 0.2);
 
