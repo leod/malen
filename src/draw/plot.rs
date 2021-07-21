@@ -239,6 +239,10 @@ impl<'a> RenderCtx<'a> {
     }
 
     fn render_legend(&mut self) {
+        if self.plot.lines.is_empty() {
+            return;
+        }
+
         let mut width = (LEGEND_LINE_SIZE + LEGEND_TEXT_MARGIN) * self.plot.lines.len() as f32
             + LEGEND_ENTRY_MARGIN as f32 * ((self.plot.lines.len() - 1) as f32);
         let mut max_text_height = 0.0f32;
