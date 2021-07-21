@@ -52,7 +52,7 @@ impl Game {
         let font = Font::from_bytes(
             canvas,
             include_bytes!("../resources/Roboto-Regular.ttf").to_vec(),
-            60.0,
+            400.0,
         )?;
 
         let mut rng = rand::thread_rng();
@@ -292,6 +292,12 @@ impl Game {
                 self.shadow_map.shadow_map().borrow_texture().unwrap(),
             )?;
         }*/
+
+        /*canvas.debug_tex(
+            Point2::new(100.0, 100.0),
+            Vector2::new(320.0, 240.0),
+            self.font.texture(),
+        )?;*/
 
         Ok(())
     }
