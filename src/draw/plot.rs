@@ -184,7 +184,7 @@ impl<'a> RenderCtx<'a> {
             range.0 + tics - tics_rem
         };
 
-        while current_offset <= round_to_multiple(range.1) {
+        while current_offset <= range.1 {
             let text = &format!("{:.*}", tic_precision, current_offset);
             let text_size = self.font.text_size(11.0, &text);
 
