@@ -284,6 +284,7 @@ impl<'a> RenderCtx<'a> {
 
     fn render(&mut self) {
         self.render_background();
+        self.render_lines();
         self.render_outline();
         self.render_tics(
             self.x_range,
@@ -298,7 +299,6 @@ impl<'a> RenderCtx<'a> {
             false,
         );
         self.render_legend();
-        self.render_lines();
     }
 }
 
