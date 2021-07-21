@@ -16,7 +16,7 @@ const LEGEND_Y_OFFSET: f32 = 15.0;
 const FONT_SIZE: f32 = 11.0;
 
 #[derive(Debug, Clone)]
-pub struct LinePlotData {
+pub struct Line {
     pub caption: String,
     pub color: Color4,
     pub points: Vec<(f64, f64)>,
@@ -61,7 +61,7 @@ pub struct Plot {
     pub axis_color: Color4,
     pub background_color: Option<Color4>,
     pub text_color: Color4,
-    pub lines: Vec<LinePlotData>,
+    pub lines: Vec<Line>,
 }
 
 impl Plot {
