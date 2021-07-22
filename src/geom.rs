@@ -24,6 +24,13 @@ impl AxisRect {
             size,
         }
     }
+
+    pub fn translate(self, delta: Vector2<f32>) -> Self {
+        Self {
+            center: self.center + delta,
+            size: self.size,
+        }
+    }
 }
 
 pub fn matrix3_to_flat_array(m: &Matrix3<f32>) -> [f32; 9] {
