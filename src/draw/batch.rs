@@ -5,7 +5,7 @@ use nalgebra::{Point2, Point3};
 
 use crate::{
     draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
-    AaRect, Canvas, Color4, Error,
+    AxisRect, Canvas, Color4, Error,
 };
 
 pub struct DrawUnit<'a, V> {
@@ -242,7 +242,7 @@ impl Batch<Line<ColVertex>> {
 }
 
 impl TriBatch<TexVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AaRect) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AxisRect) {
         let first_idx = self.next_index();
 
         for corner_idx in 0..4 {
@@ -260,7 +260,7 @@ impl TriBatch<TexVertex> {
 }
 
 impl TriBatch<TexColVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AaRect, color: Color4) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AxisRect, color: Color4) {
         let first_idx = self.next_index();
 
         for corner_idx in 0..4 {

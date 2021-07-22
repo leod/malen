@@ -1,12 +1,12 @@
 use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 
 #[derive(Debug, Clone, Copy)]
-pub struct AaRect {
+pub struct AxisRect {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
 }
 
-impl AaRect {
+impl AxisRect {
     pub fn zero_to_one() -> Self {
         Self::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0))
     }
@@ -118,12 +118,12 @@ impl Screen {
         scale_and_flip_y * shift * scale_to_unit
     }
 
-    pub fn physical_rect(&self) -> AaRect {
-        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.physical_size))
+    pub fn physical_rect(&self) -> AxisRect {
+        AxisRect::from_top_left(Point2::origin(), nalgebra::convert(self.physical_size))
     }
 
-    pub fn logical_rect(&self) -> AaRect {
-        AaRect::from_top_left(Point2::origin(), nalgebra::convert(self.logical_size))
+    pub fn logical_rect(&self) -> AxisRect {
+        AxisRect::from_top_left(Point2::origin(), nalgebra::convert(self.logical_size))
     }
 }
 
