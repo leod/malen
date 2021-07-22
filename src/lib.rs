@@ -21,6 +21,6 @@ pub use canvas::Canvas;
 pub use color::{Color3, Color4};
 pub use draw::{Batch, Font, TextBatch, Texture};
 pub use error::Error;
-pub use geom::{AaRect, Camera, Screen};
+pub use geom::{AxisRect, Camera, Screen};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;

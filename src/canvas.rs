@@ -10,7 +10,7 @@ use nalgebra::{Point2, Vector2};
 use crate::input::EventHandlers;
 use crate::{
     draw::{TexColPass, TexColVertex, TriBatch},
-    util, AaRect, Color4, Error, Event, InputState, Screen,
+    util, AxisRect, Color4, Error, Event, InputState, Screen,
 };
 
 #[derive(Debug, Clone)]
@@ -212,9 +212,9 @@ impl Canvas {
 
         debug_tex_batch.clear();
         debug_tex_batch.push_quad(
-            &AaRect::from_top_left(pos, size).into(),
+            &AxisRect::from_top_left(pos, size).into(),
             0.0,
-            AaRect::zero_to_one(),
+            AxisRect::zero_to_one(),
             Color4::new(0.0, 1.0, 1.0, 1.0),
         );
         debug_tex_pass.draw(

@@ -11,13 +11,13 @@ use crate::{
     draw::{
         text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
     },
-    AaRect, Canvas, Color4, Error,
+    AxisRect, Canvas, Color4, Error,
 };
 
 pub type TextBatch = TriBatch<TexColVertex>;
 
 struct Glyph {
-    uv_rect: AaRect,
+    uv_rect: AxisRect,
 }
 
 pub struct Font {
@@ -188,8 +188,7 @@ impl Font {
         output.clear();
         for v in bitmap {
             let v = *v;
-            //output.extend_from_slice(&[255, 255, 255, v]);
-            output.extend_from_slice(&[v, v, v, v]);
+            output.extend_from_slice(&[255, 255, 255, v]);
         }
     }
 }
