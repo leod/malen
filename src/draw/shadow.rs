@@ -661,7 +661,7 @@ impl ShadowColPass {
                 fragment_shader: r#"
                 void main() {
                     vec3 light = texture(light_surface, v_tex_coords).rgb;
-                    vec3 reflect = ambient_light + light * v_color.rgb;
+                    vec3 reflect = (ambient_light + light) * v_color.rgb;
                     gl_FragColor = vec4(
                         pow(reflect, vec3(1.0/2.2)),
                         v_color.a
