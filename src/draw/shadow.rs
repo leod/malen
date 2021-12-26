@@ -13,7 +13,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
-    geom::matrix3_to_flat_array,
+    geom::matrix3_to_array,
     Canvas, Color3, Error, Screen,
 };
 
@@ -602,7 +602,7 @@ impl<'a> BuildShadowMap<'a> {
         self.this.light_surface_shader.bind();
         self.this.light_surface_shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(&transform)),
+            UniformValue::Matrix3(matrix3_to_array(&transform)),
         )?;
         self.this
             .light_surface_shader
@@ -691,7 +691,7 @@ impl ShadowColPass {
         self.shader.bind();
         self.shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(transform)),
+            UniformValue::Matrix3(matrix3_to_array(transform)),
         )?;
         self.shader
             .set_uniform("ambient_light", UniformValue::Vector3(ambient_light.into()))?;

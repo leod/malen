@@ -2,7 +2,7 @@ use nalgebra::{convert, Matrix2, Matrix3, Point2, Point3, Vector2};
 
 use crate::{
     draw::{ColPass, ColVertex, Font, LineBatch, TextBatch, TriBatch},
-    AxisRect, Canvas, Color4, Error,
+    Canvas, Color4, Error, Rect,
 };
 
 const AXIS_MARGIN: f64 = 70.0;
@@ -130,7 +130,7 @@ impl<'a> RenderCtx<'a> {
     fn render_background(&mut self) {
         if let Some(background_color) = self.plot.background_color {
             self.tri_batch.push_quad(
-                &AxisRect::from_top_left(Point2::origin(), convert(self.plot.size)).into(),
+                &Rect::from_top_left(Point2::origin(), convert(self.plot.size)).into(),
                 0.0,
                 background_color,
             );
@@ -139,7 +139,7 @@ impl<'a> RenderCtx<'a> {
 
     fn render_outline(&mut self) {
         self.line_batch.push_quad_outline(
-            &AxisRect::from_top_left(
+            &Rect::from_top_left(
                 convert(Point2::origin() + self.plot_offset),
                 convert(self.plot_size),
             )
