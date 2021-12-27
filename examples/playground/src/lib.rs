@@ -8,11 +8,11 @@ use malen::nalgebra::{Point2, Point3, Vector2};
 
 use malen::{
     draw::{
-        ColPass, ColVertex, Font, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
-        TextBatch, TriBatch,
+        ColPass, ColVertex, Light, LineBatch, OccluderBatch, Quad, ShadowColPass, ShadowMap,
+        TriBatch,
     },
     golem::depth::{DepthTestFunction, DepthTestMode},
-    Camera, Canvas, Color3, Color4, Error, InputState, Key,
+    Camera, Canvas, Color3, Color4, Error, Font, InputState, Key, TextBatch,
 };
 
 struct Wall {
