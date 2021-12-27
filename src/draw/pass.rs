@@ -6,7 +6,7 @@ use nalgebra::Matrix3;
 
 use crate::{
     draw::{ColVertex, DrawUnit, TexColVertex, Vertex},
-    geom::matrix3_to_array,
+    math::matrix3_to_array,
     Canvas, Error,
 };
 
