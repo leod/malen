@@ -1,8 +1,8 @@
 use nalgebra::{convert, Matrix2, Matrix3, Point2, Point3, Vector2};
 
 use crate::{
-    draw::{ColPass, ColVertex, Font, LineBatch, TextBatch, TriBatch},
-    Canvas, Color4, Error, Rect,
+    draw::{ColPass, ColVertex, LineBatch, TriBatch},
+    Canvas, Color4, Error, Font, Rect, TextBatch,
 };
 
 const AXIS_MARGIN: f64 = 70.0;
