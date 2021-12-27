@@ -13,7 +13,7 @@ use nalgebra::{Matrix3, Point2, Vector2, Vector3};
 
 use crate::{
     draw::{Batch, ColVertex, DrawUnit, Geometry, Quad, TriBatch, Vertex},
-    geom::matrix3_to_array,
+    math::matrix3_to_array,
     Canvas, Color3, Error, Screen,
 };
 
