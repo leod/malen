@@ -4,8 +4,6 @@ use glow::HasContext;
 
 use crate::{gl, Color4};
 
-// Borrowing heavily from the awesome golem library
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Blend {
     pub equation: BlendEquation,
