@@ -11,6 +11,7 @@ pub struct VertexBuffer<V> {
     gl: Rc<gl::Context>,
     vao: <glow::Context as HasContext>::VertexArray,
     buffer: <glow::Context as HasContext>::Buffer,
+    len: usize,
     _phantom: PhantomData<V>,
 }
 
@@ -26,17 +27,24 @@ impl<V: Vertex> VertexBuffer<V> {
 
         set_vertex_attribs::<V>(gl);
 
-        unsafe {
-            gl.bind_vertex_array(None);
-            gl.bind_buffer(glow::ARRAY_BUFFER, None);
-        }
-
         Ok(Self {
             gl,
-            buffer,
             vao,
+            buffer,
+            len: 0,
             _phantom: PhantomData,
         })
+    }
+
+    pub fn set_data(&mut self, data: &[V]) {
+        let data_u8 = bytemuck::cast_slice(data);
+
+        // TODO: Prevent implicit synchronization somehow.
+        // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
+        unsafe {
+            self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
+            self.gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, glow::STREAM_DRAW);
+        }
     }
 }
 
