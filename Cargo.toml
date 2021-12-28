@@ -2,7 +2,7 @@
 name = "malen"
 version = "0.1.0"
 authors = ["Leonard Dahlmann <leo.dahlmann@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,7 +12,9 @@ thiserror = "1.0"
 wasm-bindgen = "0.2"
 nalgebra = "0.23"
 fontdue = "0.5"
+bytemuck = "1.7"
 
+glow = "0.11"
 golem = { git = "https://github.com/ryanisaacg/golem.git", features = ["web-sys"] }
 
 [dependencies.web-sys]

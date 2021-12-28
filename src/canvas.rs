@@ -1,16 +1,16 @@
+use std::rc::Rc;
+
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
 
-use golem::{
-    glow::{self, HasContext},
-    GolemError, Texture,
-};
+use glow::HasContext;
+use golem::{GolemError, Texture};
 use nalgebra::{Point2, Vector2};
 
 use crate::input::EventHandlers;
 use crate::{
     draw::{TexColPass, TexColVertex, TriBatch},
-    util, Color4, Error, Event, InputState, Rect, Screen,
+    gl, util, Color4, Error, Event, InputState, Rect, Screen,
 };
 
 #[derive(Debug, Clone)]
@@ -19,10 +19,9 @@ pub struct CanvasCaps {
 }
 
 impl CanvasCaps {
-    fn new(glow_ctx: &glow::Context) -> Self {
+    fn new(gl: Rc<gl::Context>) -> Self {
         let max_texture_size = unsafe {
-            (glow::MAX_TEXTURE_SIZE - 1)
-                .min(glow_ctx.get_parameter_i32(glow::MAX_TEXTURE_SIZE) as u32)
+            (glow::MAX_TEXTURE_SIZE - 1).min(gl.get_parameter_i32(glow::MAX_TEXTURE_SIZE) as u32)
         };
 
         CanvasCaps { max_texture_size }
@@ -30,8 +29,9 @@ impl CanvasCaps {
 }
 
 pub struct Canvas {
+    html_element: HtmlCanvasElement,
+    gl: Rc<gl::Context>,
     caps: CanvasCaps,
-    canvas: HtmlCanvasElement,
     golem_ctx: golem::Context,
     event_handlers: EventHandlers,
     input_state: InputState,
@@ -65,28 +65,30 @@ impl Canvas {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn from_element(canvas: HtmlCanvasElement) -> Result<Self, Error> {
-        let event_handlers = EventHandlers::new(canvas.clone())?;
+    pub fn from_element(html_element: HtmlCanvasElement) -> Result<Self, Error> {
+        let event_handlers = EventHandlers::new(html_element.clone())?;
         let input_state = InputState::default();
 
-        let webgl_ctx = canvas
+        let webgl_context = html_element
             .get_context("webgl")
             .map_err(|e| Error::GetContext(e.as_string().unwrap_or("error".into())))?
             .ok_or(Error::InitializeWebGl)?
             .dyn_into::<WebGlRenderingContext>()
             .map_err(|_| Error::InitializeWebGl)?;
-        let glow_ctx = glow::Context::from_webgl1_context(webgl_ctx);
-        let caps = CanvasCaps::new(&glow_ctx);
-        let golem_ctx = golem::Context::from_glow(glow_ctx)?;
+        let glow_context = glow::Context::from_webgl1_context(webgl_context);
+        let gl = Rc::new(gl::Context::new(glow_context));
+        let caps = CanvasCaps::new(gl);
+        let golem_ctx = golem::Context::from_glow(glow_context)?;
 
         // Make the canvas focusable.
-        canvas.set_attribute("tabIndex", "1").unwrap();
+        html_element.set_attribute("tabIndex", "1").unwrap();
 
-        let logical_size = Vector2::new(canvas.width(), canvas.height());
+        let logical_size = Vector2::new(html_element.width(), html_element.height());
 
         let mut canvas = Self {
+            html_element,
+            gl,
             caps,
-            canvas,
             golem_ctx,
             event_handlers,
             input_state,
@@ -102,12 +104,16 @@ impl Canvas {
         Ok(canvas)
     }
 
-    pub fn caps(&self) -> &CanvasCaps {
-        &self.caps
+    pub fn html_element(&self) -> HtmlCanvasElement {
+        self.html_element.clone()
     }
 
-    pub fn canvas(&self) -> HtmlCanvasElement {
-        self.canvas.clone()
+    pub fn gl(&self) -> Rc<gl::Context> {
+        self.gl
+    }
+
+    pub fn caps(&self) -> &CanvasCaps {
+        &self.caps
     }
 
     pub fn golem_ctx(&self) -> &golem::Context {
@@ -121,7 +127,7 @@ impl Canvas {
     pub fn screen(&self) -> Screen {
         Screen {
             logical_size: self.logical_size,
-            physical_size: Vector2::new(self.canvas.width(), self.canvas.height()),
+            physical_size: Vector2::new(self.html_element.width(), self.html_element.height()),
             device_pixel_ratio: util::device_pixel_ratio(),
         }
     }
@@ -146,7 +152,7 @@ impl Canvas {
             .active_element()
             .unwrap();
 
-        &active_element == AsRef::<web_sys::Element>::as_ref(&self.canvas)
+        &active_element == AsRef::<web_sys::Element>::as_ref(&self.html_element)
     }
 
     pub fn clear(&self, color: Color4) {
@@ -161,7 +167,7 @@ impl Canvas {
     }
 
     pub fn resize(&mut self, logical_size: Vector2<u32>) {
-        util::set_canvas_size(&self.canvas, logical_size);
+        util::set_canvas_size(&self.html_element, logical_size);
         self.set_viewport(Point2::origin(), self.screen().physical_size);
         self.logical_size = logical_size;
     }

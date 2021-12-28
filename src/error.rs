@@ -19,6 +19,12 @@ pub enum Error {
     #[error("error from golem crate: {0}")]
     Golem(GolemError),
 
+    #[error("OpenGL (glow) error: {0}")]
+    Glow(String),
+
+    #[error("OpenGL error: {0}")]
+    OpenGL(String),
+
     #[error("could not get WebGL1 context")]
     GetContext(String),
 

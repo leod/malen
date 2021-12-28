@@ -4,6 +4,7 @@
 mod canvas;
 mod color;
 mod error;
+mod gl;
 mod input;
 mod main_loop;
 mod text;
