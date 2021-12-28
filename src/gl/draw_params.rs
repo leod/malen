@@ -2,13 +2,22 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use crate::gl::{self, Blend};
+use crate::gl::{self, Blend, DepthTest};
 
-// Borrowing *heavily* from the awesome glium and golem libraries here
+#[derive(Clone, Debug, PartialEq)]
+pub struct DrawParams {
+    blend: Option<Blend>,
+    depth_test: Option<DepthTest>,
+}
 
-pub struct DrawParams {}
+pub fn set_draw_params(gl: Rc<gl::Context>, draw_params: &DrawParams) {
+    // TODO: We may eventually need to implement some caching here.
 
-pub fn set_blend(gl: Rc<gl::Context>, blend: Option<Blend>) {
+    set_blend(gl, draw_params.blend);
+    set_depth_test(gl, draw_params.depth_test);
+}
+
+fn set_blend(gl: Rc<gl::Context>, blend: Option<Blend>) {
     match blend {
         None => unsafe {
             gl.disable(glow::BLEND);
@@ -56,5 +65,24 @@ pub fn set_blend(gl: Rc<gl::Context>, blend: Option<Blend>) {
                 );
             }
         }
+    }
+}
+
+fn set_depth_test(gl: Rc<gl::Context>, depth_test: Option<DepthTest>) {
+    match depth_test {
+        None => unsafe {
+            gl.disable(glow::DEPTH_TEST);
+        },
+        Some(DepthTest {
+            func,
+            range_near,
+            range_far,
+            write,
+        }) => unsafe {
+            gl.enable(glow::DEPTH_TEST);
+            gl.depth_func(func.to_gl());
+            gl.depth_range_f32(range_near, range_far);
+            gl.depth_mask(write);
+        },
     }
 }
