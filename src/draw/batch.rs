@@ -3,10 +3,8 @@ use std::marker::PhantomData;
 use golem::{ElementBuffer, ShaderProgram, VertexBuffer};
 use nalgebra::{Point2, Point3};
 
-use crate::{
-    Canvas, Color4, Error, Rect,
-};
-use super::{DrawUnit, ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex};
+use super::{ColVertex, DrawUnit, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex};
+use crate::{Canvas, Color4, Error, Rect};
 
 #[derive(Default)]
 struct Scratch {
