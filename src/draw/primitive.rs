@@ -1,7 +1,7 @@
 use golem::{Attribute, AttributeType, Dimension};
 use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
-use crate::{AxisRect, Color4};
+use crate::{Color4, Rect};
 
 pub use golem::GeometryMode;
 
@@ -178,8 +178,8 @@ impl Quad {
     }
 }
 
-impl From<AxisRect> for Quad {
-    fn from(rect: AxisRect) -> Quad {
+impl From<Rect> for Quad {
+    fn from(rect: Rect) -> Quad {
         Quad::axis_aligned(rect.center, rect.size)
     }
 }

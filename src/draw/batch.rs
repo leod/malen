@@ -1,76 +1,12 @@
 use std::marker::PhantomData;
 
-use golem::{ElementBuffer, GeometryMode, ShaderProgram, VertexBuffer};
+use golem::{ElementBuffer, ShaderProgram, VertexBuffer};
 use nalgebra::{Point2, Point3};
 
 use crate::{
-    draw::{ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex},
-    AxisRect, Canvas, Color4, Error,
+    Canvas, Color4, Error, Rect,
 };
-
-pub struct DrawUnit<'a, V> {
-    vertices: &'a VertexBuffer,
-    elements: &'a ElementBuffer,
-    first_element: usize,
-    num_elements: usize,
-    geometry_mode: GeometryMode,
-    _phantom: PhantomData<V>,
-}
-
-impl<'a, V> DrawUnit<'a, V> {
-    pub unsafe fn from_buffers_unchecked(
-        vertices: &'a VertexBuffer,
-        elements: &'a ElementBuffer,
-        first_element: usize,
-        num_elements: usize,
-        geometry_mode: GeometryMode,
-    ) -> Self {
-        Self {
-            vertices,
-            elements,
-            first_element,
-            num_elements,
-            geometry_mode,
-            _phantom: PhantomData,
-        }
-    }
-
-    pub fn draw(&self, shader: &ShaderProgram) -> Result<(), Error> {
-        // TODO: I believe this is safe, because Batch in its construction
-        // makes sure that each element points to a valid index in the vertex
-        // buffer. We need to verify this though. We also need to verify if
-        // golem::ShaderProgram::draw has any additional requirements for
-        // safety.
-        Ok(unsafe {
-            shader.draw(
-                self.vertices,
-                self.elements,
-                self.first_element..self.num_elements,
-                self.geometry_mode,
-            )
-        }?)
-    }
-
-    pub fn vertices(&self) -> &'a VertexBuffer {
-        self.vertices
-    }
-
-    pub fn elements(&self) -> &'a ElementBuffer {
-        self.elements
-    }
-
-    pub fn first_element(&self) -> usize {
-        self.first_element
-    }
-
-    pub fn num_elements(&self) -> usize {
-        self.num_elements
-    }
-
-    pub fn geometry_mode(&self) -> GeometryMode {
-        self.geometry_mode
-    }
-}
+use super::{DrawUnit, ColVertex, Geometry, Line, Quad, TexColVertex, TexVertex, Triangle, Vertex};
 
 #[derive(Default)]
 struct Scratch {
@@ -242,7 +178,7 @@ impl Batch<Line<ColVertex>> {
 }
 
 impl TriBatch<TexVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AxisRect) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect) {
         let first_idx = self.next_index();
 
         for corner_idx in 0..4 {
@@ -260,7 +196,7 @@ impl TriBatch<TexVertex> {
 }
 
 impl TriBatch<TexColVertex> {
-    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: AxisRect, color: Color4) {
+    pub fn push_quad(&mut self, quad: &Quad, z: f32, uv_rect: Rect, color: Color4) {
         let first_idx = self.next_index();
 
         for corner_idx in 0..4 {

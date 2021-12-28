@@ -7,17 +7,16 @@ use fontdue::{
 use golem::blend::BlendMode;
 use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
+use super::packer::ShelfPacker;
 use crate::{
-    draw::{
-        text::packer::ShelfPacker, DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch,
-    },
-    AxisRect, Canvas, Color4, Error,
+    draw::{DrawUnit, Quad, TexColPass, TexColVertex, Texture, TriBatch},
+    Canvas, Color4, Error, Rect,
 };
 
 pub type TextBatch = TriBatch<TexColVertex>;
 
 struct Glyph {
-    uv_rect: AxisRect,
+    uv_rect: Rect,
 }
 
 pub struct Font {

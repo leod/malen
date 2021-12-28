@@ -6,7 +6,7 @@ use nalgebra::Matrix3;
 
 use crate::{
     draw::{ColVertex, DrawUnit, TexColVertex, Vertex},
-    geom::matrix3_to_flat_array,
+    math::matrix3_to_array,
     Canvas, Error,
 };
 
@@ -54,7 +54,7 @@ impl ColPass {
         self.shader.bind();
         self.shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(transform)),
+            UniformValue::Matrix3(matrix3_to_array(transform)),
         )?;
 
         draw_unit.draw(&self.shader)
@@ -113,7 +113,7 @@ impl TexColPass {
         self.shader.bind();
         self.shader.set_uniform(
             "mat_projection_view",
-            UniformValue::Matrix3(matrix3_to_flat_array(transform)),
+            UniformValue::Matrix3(matrix3_to_array(transform)),
         )?;
         self.shader.set_uniform("my_tex", UniformValue::Int(1))?;
 
