@@ -25,14 +25,14 @@ impl<V: Vertex> VertexBuffer<V> {
         }
 
         for (index, attribute) in V::attributes().into_iter().enumerate() {
-            unsafe {
-                gl.enable_vertex_attrib_array(index as u32);
-            }
-
             assert!(
                 attribute.offset + attribute.num_elements * attribute.element_type.size()
                     <= std::mem::size_of::<V>()
             );
+
+            unsafe {
+                gl.enable_vertex_attrib_array(index as u32);
+            }
 
             match attribute.element_type {
                 ElementType::Float => unsafe {

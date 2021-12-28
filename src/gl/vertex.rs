@@ -17,7 +17,7 @@ pub struct Attribute {
 }
 
 pub trait Vertex: Pod {
-    fn attributes() -> &'static [Attribute];
+    fn attributes() -> Vec<Attribute>;
 }
 
 pub fn attribute<T: DataType>(name: &'static str, offset: usize) -> Attribute {
