@@ -2,7 +2,7 @@ use bytemuck::Pod;
 use nalgebra::{Matrix2, Matrix3, Matrix4, Vector2, Vector3, Vector4};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ElementType {
+pub enum ValueType {
     Float,
     Int,
 }
@@ -12,7 +12,7 @@ pub struct Attribute {
     pub name: &'static str,
     pub offset: usize,
     pub glsl_type_name: &'static str,
-    pub element_type: ElementType,
+    pub element_type: ValueType,
     pub num_elements: usize,
 }
 
@@ -30,18 +30,18 @@ pub fn attribute<T: DataType>(name: &'static str, offset: usize) -> Attribute {
     }
 }
 
-impl ElementType {
+impl ValueType {
     pub fn to_gl(self) -> u32 {
         match self {
-            ElementType::Float => glow::FLOAT,
-            ElementType::Int => glow::INT,
+            ValueType::Float => glow::FLOAT,
+            ValueType::Int => glow::INT,
         }
     }
 
     pub fn size(self) -> usize {
         match self {
-            ElementType::Float => std::mem::size_of::<f32>(),
-            ElementType::Int => std::mem::size_of::<i32>(),
+            ValueType::Float => std::mem::size_of::<f32>(),
+            ValueType::Int => std::mem::size_of::<i32>(),
         }
     }
 }
@@ -54,7 +54,7 @@ impl Attribute {
 
 pub trait DataType {
     fn glsl_name() -> &'static str;
-    fn element_type() -> ElementType;
+    fn element_type() -> ValueType;
     fn num_elements() -> usize;
 }
 
@@ -65,8 +65,8 @@ macro_rules! impl_data_type {
                 stringify!($name)
             }
 
-            fn element_type() -> crate::gl::ElementType {
-                crate::gl::ElementType::$element_type
+            fn element_type() -> crate::gl::ValueType {
+                crate::gl::ValueType::$element_type
             }
 
             fn num_elements() -> usize {

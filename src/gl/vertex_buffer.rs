@@ -3,7 +3,7 @@ use std::{marker::PhantomData, rc::Rc};
 use glow::HasContext;
 
 use crate::{
-    gl::{self, ElementType, Vertex},
+    gl::{self, ValueType, Vertex},
     Error,
 };
 
@@ -11,12 +11,11 @@ pub struct VertexBuffer<V> {
     gl: Rc<gl::Context>,
     vao: <glow::Context as HasContext>::VertexArray,
     buffer: <glow::Context as HasContext>::Buffer,
-    len: usize,
     _phantom: PhantomData<V>,
 }
 
 impl<V: Vertex> VertexBuffer<V> {
-    pub fn new(gl: Rc<gl::Context>) -> Result<Self, Error> {
+    pub fn new_dynamic(gl: Rc<gl::Context>) -> Result<Self, Error> {
         let vao = unsafe { gl.create_vertex_array() }.map_err(Error::Glow)?;
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
@@ -31,9 +30,21 @@ impl<V: Vertex> VertexBuffer<V> {
             gl,
             vao,
             buffer,
-            len: 0,
             _phantom: PhantomData,
         })
+    }
+
+    pub fn new_static(gl: Rc<gl::Context>, data: &[V]) -> Result<Self, Error> {
+        let vertex_buffer = Self::new_dynamic(gl)?;
+
+        let data_u8 = bytemuck::cast_slice(data);
+        unsafe {
+            vertex_buffer
+                .gl
+                .buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, glow::STATIC_DRAW);
+        }
+
+        Ok(vertex_buffer)
     }
 
     pub fn set_data(&mut self, data: &[V]) {
@@ -43,7 +54,8 @@ impl<V: Vertex> VertexBuffer<V> {
         // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
         unsafe {
             self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
-            self.gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, glow::STREAM_DRAW);
+            self.gl
+                .buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, glow::STREAM_DRAW);
         }
     }
 }
@@ -60,7 +72,7 @@ fn set_vertex_attribs<V: Vertex>(gl: Rc<gl::Context>) {
         }
 
         match attribute.element_type {
-            ElementType::Float => unsafe {
+            ValueType::Float => unsafe {
                 gl.vertex_attrib_pointer_f32(
                     index as u32,
                     attribute.num_elements as i32,
@@ -70,7 +82,7 @@ fn set_vertex_attribs<V: Vertex>(gl: Rc<gl::Context>) {
                     attribute.offset as i32,
                 );
             },
-            ElementType::Int => unsafe {
+            ValueType::Int => unsafe {
                 gl.vertex_attrib_pointer_i32(
                     index as u32,
                     attribute.num_elements as i32,
