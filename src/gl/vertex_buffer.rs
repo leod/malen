@@ -24,38 +24,7 @@ impl<V: Vertex> VertexBuffer<V> {
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
         }
 
-        for (index, attribute) in V::attributes().into_iter().enumerate() {
-            assert!(
-                attribute.offset + attribute.num_elements * attribute.element_type.size()
-                    <= std::mem::size_of::<V>()
-            );
-
-            unsafe {
-                gl.enable_vertex_attrib_array(index as u32);
-            }
-
-            match attribute.element_type {
-                ElementType::Float => unsafe {
-                    gl.vertex_attrib_pointer_f32(
-                        index as u32,
-                        attribute.num_elements as i32,
-                        attribute.element_type.to_gl(),
-                        false,
-                        std::mem::size_of::<V>() as i32,
-                        attribute.offset as i32,
-                    );
-                },
-                ElementType::Int => unsafe {
-                    gl.vertex_attrib_pointer_i32(
-                        index as u32,
-                        attribute.num_elements as i32,
-                        attribute.element_type.to_gl(),
-                        std::mem::size_of::<V>() as i32,
-                        attribute.offset as i32,
-                    );
-                },
-            }
-        }
+        set_vertex_attribs::<V>(gl);
 
         unsafe {
             gl.bind_vertex_array(None);
@@ -68,6 +37,41 @@ impl<V: Vertex> VertexBuffer<V> {
             vao,
             _phantom: PhantomData,
         })
+    }
+}
+
+fn set_vertex_attribs<V: Vertex>(gl: Rc<gl::Context>) {
+    for (index, attribute) in V::attributes().iter().enumerate() {
+        assert!(
+            attribute.offset + attribute.num_elements * attribute.element_type.size()
+                <= std::mem::size_of::<V>()
+        );
+
+        unsafe {
+            gl.enable_vertex_attrib_array(index as u32);
+        }
+
+        match attribute.element_type {
+            ElementType::Float => unsafe {
+                gl.vertex_attrib_pointer_f32(
+                    index as u32,
+                    attribute.num_elements as i32,
+                    attribute.element_type.to_gl(),
+                    false,
+                    std::mem::size_of::<V>() as i32,
+                    attribute.offset as i32,
+                );
+            },
+            ElementType::Int => unsafe {
+                gl.vertex_attrib_pointer_i32(
+                    index as u32,
+                    attribute.num_elements as i32,
+                    attribute.element_type.to_gl(),
+                    std::mem::size_of::<V>() as i32,
+                    attribute.offset as i32,
+                );
+            },
+        }
     }
 }
 
