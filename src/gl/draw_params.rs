@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use crate::gl::{self, Blend, DepthTest};
+use super::{Blend, Context, DepthTest};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DrawParams {
@@ -10,14 +10,14 @@ pub struct DrawParams {
     depth_test: Option<DepthTest>,
 }
 
-pub fn set_draw_params(gl: Rc<gl::Context>, draw_params: &DrawParams) {
+pub fn set_draw_params(gl: Rc<Context>, draw_params: &DrawParams) {
     // TODO: We may eventually need to implement some caching here.
 
     set_blend(gl, draw_params.blend);
     set_depth_test(gl, draw_params.depth_test);
 }
 
-fn set_blend(gl: Rc<gl::Context>, blend: Option<Blend>) {
+fn set_blend(gl: Rc<Context>, blend: Option<Blend>) {
     match blend {
         None => unsafe {
             gl.disable(glow::BLEND);
@@ -68,7 +68,7 @@ fn set_blend(gl: Rc<gl::Context>, blend: Option<Blend>) {
     }
 }
 
-fn set_depth_test(gl: Rc<gl::Context>, depth_test: Option<DepthTest>) {
+fn set_depth_test(gl: Rc<Context>, depth_test: Option<DepthTest>) {
     match depth_test {
         None => unsafe {
             gl.disable(glow::DEPTH_TEST);

@@ -10,6 +10,7 @@ use nalgebra::{Point2, Vector2};
 use crate::input::EventHandlers;
 use crate::{
     draw::{TexColPass, TexColVertex, TriBatch},
+    error::CanvasInitError,
     gl, util, Color4, Error, Event, InputState, Rect, Screen,
 };
 
@@ -42,15 +43,15 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn from_element_id(id: &str) -> Result<Self, Error> {
+    pub fn from_element_id(id: &str) -> Result<Self, CanvasInitError> {
         let canvas = web_sys::window()
-            .ok_or(Error::NoWindow)?
+            .ok_or(CanvasInitError::NoWindow)?
             .document()
-            .ok_or(Error::NoDocument)?
+            .ok_or(CanvasInitError::NoDocument)?
             .get_element_by_id(id)
-            .ok_or_else(|| Error::InvalidElementId(id.into()))?
+            .ok_or_else(|| CanvasInitError::InvalidElementId(id.into()))?
             .dyn_into::<HtmlCanvasElement>()
-            .map_err(|_| Error::ElementIsNotCanvas(id.into()))?;
+            .map_err(|_| CanvasInitError::ElementIsNotCanvas(id.into()))?;
 
         Self::from_element(canvas)
     }
@@ -65,16 +66,16 @@ impl Canvas {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn from_element(html_element: HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn from_element(html_element: HtmlCanvasElement) -> Result<Self, CanvasInitError> {
         let event_handlers = EventHandlers::new(html_element.clone())?;
         let input_state = InputState::default();
 
         let webgl_context = html_element
             .get_context("webgl")
-            .map_err(|e| Error::GetContext(e.as_string().unwrap_or("error".into())))?
-            .ok_or(Error::InitializeWebGl)?
+            .map_err(|e| CanvasInitError::GetContext(e.as_string().unwrap_or("error".into())))?
+            .ok_or(CanvasInitError::InitializeWebGl)?
             .dyn_into::<WebGlRenderingContext>()
-            .map_err(|_| Error::InitializeWebGl)?;
+            .map_err(|_| CanvasInitError::InitializeWebGl)?;
         let glow_context = glow::Context::from_webgl1_context(webgl_context);
         let gl = Rc::new(gl::Context::new(glow_context));
         let caps = CanvasCaps::new(gl);
