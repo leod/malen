@@ -13,8 +13,9 @@ wasm-bindgen = "0.2"
 nalgebra = "0.23"
 fontdue = "0.5"
 bytemuck = "1.7"
-
+crevice = { version = "0.8", features = ["nalgebra"] }
 glow = "0.11"
+
 golem = { git = "https://github.com/ryanisaacg/golem.git", features = ["web-sys"] }
 
 [dependencies.web-sys]

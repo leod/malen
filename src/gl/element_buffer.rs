@@ -32,10 +32,6 @@ impl<E: Element> ElementBuffer<E> {
     pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
-        unsafe {
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(buffer));
-        }
-
         Ok(Self {
             gl,
             buffer,
@@ -45,20 +41,21 @@ impl<E: Element> ElementBuffer<E> {
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[E]) -> Result<Self, Error> {
-        let mut vertex_buffer = Self::new_dynamic(gl)?;
+        let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         let data_u8 = bytemuck::cast_slice(data);
         unsafe {
-            vertex_buffer.gl.buffer_data_u8_slice(
-                glow::ELEMENT_ARRAY_BUFFER,
-                data_u8,
-                glow::STATIC_DRAW,
-            );
+            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(buffer));
+            gl.buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, glow::STATIC_DRAW);
+            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
         }
 
-        vertex_buffer.len = data.len();
-
-        Ok(vertex_buffer)
+        Ok(Self {
+            gl,
+            buffer,
+            len: data.len(),
+            _phantom: PhantomData,
+        })
     }
 
     pub fn set_data(&mut self, data: &[E]) {
