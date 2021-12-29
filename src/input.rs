@@ -7,7 +7,7 @@ use std::{
 use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
 
-use crate::Error;
+use crate::error::CanvasInitError;
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -62,7 +62,7 @@ pub struct EventHandlers {
 }
 
 impl EventHandlers {
-    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, CanvasInitError> {
         let state = Rc::new(RefCell::new(SharedState::default()));
 
         let on_focus = EventListener::new_consume(&canvas, "focus", {
@@ -113,7 +113,7 @@ impl EventHandlers {
     }
 }
 
-/// Event handlers without automatic clean up, inspired by
+/// Event handlers with automatic clean up, inspired by
 /// <https://github.com/rustwasm/gloo/issues/30>.
 struct EventListener<T> {
     element: web_sys::EventTarget,

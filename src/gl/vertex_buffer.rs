@@ -2,20 +2,17 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use crate::{
-    gl::{self, ValueType, Vertex},
-    Error,
-};
+use super::{Context, Error, ValueType, Vertex};
 
 pub struct VertexBuffer<V> {
-    gl: Rc<gl::Context>,
+    gl: Rc<Context>,
     vao: <glow::Context as HasContext>::VertexArray,
     buffer: <glow::Context as HasContext>::Buffer,
     _phantom: PhantomData<V>,
 }
 
 impl<V: Vertex> VertexBuffer<V> {
-    pub fn new_dynamic(gl: Rc<gl::Context>) -> Result<Self, Error> {
+    pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
         let vao = unsafe { gl.create_vertex_array() }.map_err(Error::Glow)?;
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
@@ -34,7 +31,7 @@ impl<V: Vertex> VertexBuffer<V> {
         })
     }
 
-    pub fn new_static(gl: Rc<gl::Context>, data: &[V]) -> Result<Self, Error> {
+    pub fn new_static(gl: Rc<Context>, data: &[V]) -> Result<Self, Error> {
         let vertex_buffer = Self::new_dynamic(gl)?;
 
         let data_u8 = bytemuck::cast_slice(data);
@@ -60,7 +57,7 @@ impl<V: Vertex> VertexBuffer<V> {
     }
 }
 
-fn set_vertex_attribs<V: Vertex>(gl: Rc<gl::Context>) {
+fn set_vertex_attribs<V: Vertex>(gl: Rc<Context>) {
     for (index, attribute) in V::attributes().iter().enumerate() {
         assert!(
             attribute.offset + attribute.num_elements * attribute.element_type.size()

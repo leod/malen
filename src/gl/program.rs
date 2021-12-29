@@ -2,13 +2,10 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use crate::{
-    gl::{self, Attribute, Vertex},
-    Error,
-};
+use super::{Attribute, Context, Error, Vertex};
 
 pub struct Program<V> {
-    gl: Rc<gl::Context>,
+    gl: Rc<Context>,
     program: <glow::Context as HasContext>::Program,
     _phantom: PhantomData<V>,
 }
@@ -16,11 +13,7 @@ pub struct Program<V> {
 impl<U: Vertex, V: Vertex> Program<(U, V)> {}
 
 impl<V: Vertex> Program<V> {
-    pub fn new(
-        gl: Rc<gl::Context>,
-        vertex_source: &str,
-        fragment_source: &str,
-    ) -> Result<Self, Error> {
+    pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
         let program = create_program(gl, &V::attributes(), vertex_source, fragment_source)?;
 
         Ok(Self {
@@ -32,7 +25,7 @@ impl<V: Vertex> Program<V> {
 }
 
 fn create_program(
-    gl: Rc<gl::Context>,
+    gl: Rc<Context>,
     attributes: &[Attribute],
     vertex_source: &str,
     fragment_source: &str,

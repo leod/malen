@@ -3,7 +3,7 @@ use std::{marker::PhantomData, rc::Rc};
 use bytemuck::Pod;
 use glow::HasContext;
 
-use crate::{gl, Error};
+use super::{Context, Error};
 
 pub trait Element: Pod {}
 
@@ -12,13 +12,13 @@ impl Element for u32 {}
 impl Element for u16 {}
 
 pub struct ElementBuffer<E> {
-    gl: Rc<gl::Context>,
+    gl: Rc<Context>,
     buffer: <glow::Context as HasContext>::Buffer,
     _phantom: PhantomData<E>,
 }
 
 impl<E: Element> ElementBuffer<E> {
-    pub fn new_dynamic(gl: Rc<gl::Context>) -> Result<Self, Error> {
+    pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         unsafe {
@@ -32,7 +32,7 @@ impl<E: Element> ElementBuffer<E> {
         })
     }
 
-    pub fn new_static(gl: Rc<gl::Context>, data: &[E]) -> Result<Self, Error> {
+    pub fn new_static(gl: Rc<Context>, data: &[E]) -> Result<Self, Error> {
         let vertex_buffer = Self::new_dynamic(gl)?;
 
         let data_u8 = bytemuck::cast_slice(data);

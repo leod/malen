@@ -1,8 +1,4 @@
-use std::rc::Rc;
-
-use glow::HasContext;
-
-use crate::{gl, Color4};
+use crate::Color4;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Blend {
