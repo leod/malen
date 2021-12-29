@@ -10,7 +10,17 @@ pub struct Program<V> {
     _phantom: PhantomData<V>,
 }
 
-impl<U: Vertex, V: Vertex> Program<(U, V)> {}
+impl<V> Program<V> {
+    pub fn gl(&self) -> Rc<Context> {
+        self.gl.clone()
+    }
+
+    pub fn bind(&self) {
+        unsafe {
+            self.gl.use_program(Some(self.program));
+        }
+    }
+}
 
 impl<V: Vertex> Program<V> {
     pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
@@ -35,9 +45,12 @@ fn create_program(
     let sources = [
         (
             glow::VERTEX_SHADER,
-            generate_vertex_source(attributes, vertex_source),
+            SOURCE_HEADER.to_owned() + &vertex_source_header(attributes) + vertex_source,
         ),
-        (glow::FRAGMENT_SHADER, fragment_source.to_owned()),
+        (
+            glow::FRAGMENT_SHADER,
+            SOURCE_HEADER.to_owned() + fragment_source,
+        ),
     ];
 
     let shaders = sources
@@ -92,14 +105,15 @@ fn create_program(
     Ok(program)
 }
 
-fn generate_vertex_source(attributes: &[Attribute], vertex_source: &str) -> String {
+const SOURCE_HEADER: &'static str = "#version 300 es\n";
+
+fn vertex_source_header(attributes: &[Attribute]) -> String {
     attributes
         .iter()
         .map(Attribute::glsl_string)
         .collect::<Vec<_>>()
         .join("\n")
         + "\n"
-        + vertex_source
 }
 
 impl<V> Drop for Program<V> {

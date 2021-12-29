@@ -57,6 +57,19 @@ impl<V: Vertex> VertexBuffer<V> {
     }
 }
 
+impl<V> VertexBuffer<V> {
+    pub fn gl(&self) -> Rc<Context> {
+        self.gl.clone()
+    }
+
+    pub(crate) fn bind(&self) {
+        unsafe {
+            self.gl.bind_vertex_array(Some(self.vao));
+            self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
+        }
+    }
+}
+
 fn set_vertex_attribs<V: Vertex>(gl: Rc<Context>) {
     for (index, attribute) in V::attributes().iter().enumerate() {
         assert!(
