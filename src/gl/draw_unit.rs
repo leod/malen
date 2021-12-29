@@ -1,4 +1,4 @@
-use std::{rc::Rc, ops::Range};
+use std::{ops::Range, rc::Rc};
 
 use super::{Context, ElementBuffer, VertexBuffer};
 
