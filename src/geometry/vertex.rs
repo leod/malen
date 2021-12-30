@@ -1,9 +1,12 @@
 use nalgebra::{Point2, Point3};
 
-use bytemuck_derive::{Pod, Zeroable};
 use bytemuck::{offset_of, Zeroable};
+use bytemuck_derive::{Pod, Zeroable};
 
-use crate::{Color4, gl::{attribute, Vertex, Attribute}};
+use crate::{
+    gl::{attribute, Attribute, Vertex},
+    Color4,
+};
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
@@ -31,7 +34,7 @@ impl Vertex for SpriteVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
             attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Point2<f32>>("v_uv", offset_of!(Self::zeroed(), Self, uv))
+            attribute::<Point2<f32>>("v_uv", offset_of!(Self::zeroed(), Self, uv)),
         ]
     }
 }
@@ -41,7 +44,7 @@ impl Vertex for ColoredSpriteVertex {
         vec![
             attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
             attribute::<Point2<f32>>("v_uv", offset_of!(Self::zeroed(), Self, uv)),
-            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color))
+            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color)),
         ]
     }
 }
@@ -50,7 +53,7 @@ impl Vertex for ColoredVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
             attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color))
+            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color)),
         ]
     }
 }

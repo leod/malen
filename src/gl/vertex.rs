@@ -1,5 +1,5 @@
 use bytemuck::Pod;
-use nalgebra::{Point2, Matrix2, Matrix3, Matrix4, Vector2, Vector3, Point3, Point4, Vector4};
+use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vector3, Vector4};
 
 use crate::Color4;
 

@@ -1,6 +1,9 @@
-use nalgebra::Point2;
+use nalgebra::{Point2, Point3};
 
-use crate::{Rect, RotatedRect, Color4, gl::{Vertex, PrimitiveMode}};
+use crate::{
+    gl::{PrimitiveMode, Vertex},
+    Color4, Rect, RotatedRect,
+};
 
 use super::SpriteVertex;
 
@@ -8,11 +11,9 @@ pub trait PrimitiveTag {
     fn primitive_mode() -> PrimitiveMode;
 }
 
-pub struct TriangleTag {
-}
+pub struct TriangleTag {}
 
-pub struct LineTag {
-}
+pub struct LineTag {}
 
 pub trait Geometry<Tag: PrimitiveTag> {
     type Vertex: Vertex;
@@ -37,9 +38,9 @@ pub struct ColoredSprite {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ColoredRotatedRect {
-   pub rect: RotatedRect,
-   pub z: f32,
-   pub color: Color4,
+    pub rect: RotatedRect,
+    pub z: f32,
+    pub color: Color4,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -62,11 +63,28 @@ impl PrimitiveTag for LineTag {
     }
 }
 
+fn triangle_indices(start_index: u32) -> [u32; 6] {
+    [
+        start_index,
+        start_index + 1,
+        start_index + 2,
+        start_index + 2,
+        start_index + 3,
+        start_index + 0,
+    ]
+}
+
 impl Geometry<TriangleTag> for Sprite {
     type Vertex = SpriteVertex;
 
     fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
-        let corners = self.rect.corners();
-        let uv_corners = self.uv.corners();
+        elements.extend_from_slice(&triangle_indices(vertices.len() as u32));
+
+        for (p, uv) in self.rect.corners().iter().zip(self.uv.corners()) {
+            vertices.push(SpriteVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                uv,
+            });
+        }
     }
 }
