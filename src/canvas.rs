@@ -78,8 +78,16 @@ impl Canvas {
             .map_err(|_| CanvasInitError::InitializeWebGl)?;
         let glow_context = glow::Context::from_webgl1_context(webgl_context);
         let gl = Rc::new(gl::Context::new(glow_context));
-        let caps = CanvasCaps::new(gl);
-        let golem_ctx = golem::Context::from_glow(glow_context)?;
+        let caps = CanvasCaps::new(gl.clone());
+
+        let webgl_context_tmp = html_element
+            .get_context("webgl")
+            .map_err(|e| CanvasInitError::GetContext(e.as_string().unwrap_or("error".into())))?
+            .ok_or(CanvasInitError::InitializeWebGl)?
+            .dyn_into::<WebGlRenderingContext>()
+            .map_err(|_| CanvasInitError::InitializeWebGl)?;
+        let glow_context_tmp = golem::glow::Context::from_webgl1_context(webgl_context_tmp);
+        let golem_ctx = golem::Context::from_glow(glow_context_tmp).map_err(CanvasInitError::Golem)?;
 
         // Make the canvas focusable.
         html_element.set_attribute("tabIndex", "1").unwrap();
@@ -110,7 +118,7 @@ impl Canvas {
     }
 
     pub fn gl(&self) -> Rc<gl::Context> {
-        self.gl
+        self.gl.clone()
     }
 
     pub fn caps(&self) -> &CanvasCaps {

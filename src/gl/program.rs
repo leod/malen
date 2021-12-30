@@ -24,7 +24,7 @@ impl<V> Program<V> {
 
 impl<V: Vertex> Program<V> {
     pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
-        let program = create_program(gl, &V::attributes(), vertex_source, fragment_source)?;
+        let program = create_program(gl.clone(), &V::attributes(), vertex_source, fragment_source)?;
 
         Ok(Self {
             gl,
@@ -55,8 +55,8 @@ fn create_program(
 
     let shaders = sources
         .iter()
-        .map(|&(shader_type, shader_source)| {
-            let shader = unsafe { gl.create_shader(shader_type) }.map_err(Error::Glow)?;
+        .map(|(shader_type, shader_source)| {
+            let shader = unsafe { gl.create_shader(*shader_type) }.map_err(Error::Glow)?;
 
             unsafe {
                 gl.shader_source(shader, &shader_source);

@@ -1,5 +1,7 @@
 use bytemuck::Pod;
-use nalgebra::{Matrix2, Matrix3, Matrix4, Vector2, Vector3, Vector4};
+use nalgebra::{Point2, Matrix2, Matrix3, Matrix4, Vector2, Vector3, Point3, Point4, Vector4};
+
+use crate::Color4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValueType {
@@ -80,13 +82,19 @@ impl_data_type!(f32, float, Float, 1);
 impl_data_type!(i32, int, Int, 1);
 
 impl_data_type!(Vector2<f32>, vec2, Float, 2);
+impl_data_type!(Point2<f32>, vec2, Float, 2);
 impl_data_type!(Vector2<i32>, ivec2, Int, 2);
+impl_data_type!(Point2<i32>, ivec2, Int, 2);
 
 impl_data_type!(Vector3<f32>, vec3, Float, 3);
+impl_data_type!(Point3<f32>, vec3, Float, 3);
 impl_data_type!(Vector3<i32>, ivec3, Int, 3);
+impl_data_type!(Point3<i32>, ivec3, Int, 3);
 
 impl_data_type!(Vector4<f32>, vec4, Float, 4);
+impl_data_type!(Point4<f32>, vec4, Float, 4);
 impl_data_type!(Vector4<i32>, ivec4, Int, 4);
+impl_data_type!(Point4<i32>, ivec4, Int, 4);
 
 impl_data_type!(Matrix2<f32>, mat2, Float, 2 * 2);
 impl_data_type!(Matrix2<i32>, imat2, Int, 2 * 2);
@@ -96,3 +104,5 @@ impl_data_type!(Matrix3<i32>, imat3, Int, 3 * 3);
 
 impl_data_type!(Matrix4<f32>, mat4, Float, 4 * 4);
 impl_data_type!(Matrix4<i32>, imat4, Int, 4 * 4);
+
+impl_data_type!(Color4, vec4, Float, 4);

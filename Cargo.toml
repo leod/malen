@@ -10,9 +10,10 @@ edition = "2021"
 log = "0.4"
 thiserror = "1.0"
 wasm-bindgen = "0.2"
-nalgebra = "0.23"
+nalgebra = { version = "0.29", features = ["convert-bytemuck"] }
 fontdue = "0.5"
 bytemuck = "1.7"
+bytemuck_derive = "1.0"
 crevice = { version = "0.8", features = ["nalgebra"] }
 glow = "0.11"
 
