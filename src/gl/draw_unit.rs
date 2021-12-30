@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use super::{Context, ElementBuffer, VertexBuffer};
+use super::{Context, ElementBuffer, VertexArray, VertexBuffer};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveMode {
@@ -9,41 +9,41 @@ pub enum PrimitiveMode {
 }
 
 pub struct DrawUnit<'a, V, E> {
-    vertex_buffer: &'a VertexBuffer<V>,
-    element_buffer: &'a ElementBuffer<E>,
+    vertex_array: &'a VertexArray<V, E>,
     primitive_mode: PrimitiveMode,
     element_range: Range<usize>,
 }
 
 impl<'a, V, E> DrawUnit<'a, V, E> {
     pub fn new(
-        vertex_buffer: &'a VertexBuffer<V>,
-        element_buffer: &'a ElementBuffer<E>,
+        vertex_array: &'a VertexArray<V, E>,
         primitive_mode: PrimitiveMode,
         element_range: Range<usize>,
     ) -> Self {
-        assert!(Rc::ptr_eq(&vertex_buffer.gl(), &element_buffer.gl()));
         assert!(element_range.start <= element_range.end);
-        assert!(element_range.end <= element_buffer.len());
+        assert!(element_range.end <= vertex_array.element_buffer().len());
 
         Self {
-            vertex_buffer,
-            element_buffer,
+            vertex_array,
             primitive_mode,
             element_range,
         }
     }
 
     pub fn gl(&self) -> Rc<Context> {
-        self.vertex_buffer.gl()
+        self.vertex_array.gl()
     }
 
-    pub fn vertex_buffer(&self) -> &'a VertexBuffer<V> {
-        self.vertex_buffer
+    pub fn vertex_array(&self) -> &'a VertexArray<V, E> {
+        self.vertex_array
     }
 
-    pub fn element_buffer(&self) -> &'a ElementBuffer<E> {
-        self.element_buffer
+    pub fn vertex_buffer(&self) -> Rc<VertexBuffer<V>> {
+        self.vertex_array.vertex_buffer()
+    }
+
+    pub fn element_buffer(&self) -> Rc<ElementBuffer<E>> {
+        self.vertex_array.element_buffer()
     }
 
     pub fn primitive_mode(&self) -> PrimitiveMode {
@@ -55,8 +55,7 @@ impl<'a, V, E> DrawUnit<'a, V, E> {
     }
 
     pub fn bind(&self) {
-        self.vertex_buffer.bind();
-        self.element_buffer.bind();
+        self.vertex_array.bind();
     }
 }
 

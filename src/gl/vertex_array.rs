@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use super::{Context, VertexBuffer, ElementBuffer, Vertex, ValueType, Error};
+use super::{Context, ElementBuffer, Error, ValueType, Vertex, VertexBuffer};
 
 pub struct VertexArray<V, E> {
     vertex_buffer: Rc<VertexBuffer<V>>,
