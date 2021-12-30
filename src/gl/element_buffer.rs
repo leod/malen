@@ -28,7 +28,10 @@ pub struct ElementBuffer<E> {
     _phantom: PhantomData<E>,
 }
 
-impl<E: Element> ElementBuffer<E> {
+impl<E> ElementBuffer<E>
+where
+    E: Element,
+{
     pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
@@ -47,14 +50,14 @@ impl<E: Element> ElementBuffer<E> {
         Ok(vertex_buffer)
     }
 
-    pub fn set_data(&mut self, data: &[E]) {
+    pub fn set_data(&self, data: &[E]) {
         // TODO: Prevent implicit synchronization somehow.
         // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 
         self.set_data_with_usage(data, glow::STREAM_DRAW);
     }
 
-    fn set_data_with_usage(&mut self, data: &[E], usage: u32) {
+    fn set_data_with_usage(&self, data: &[E], usage: u32) {
         let data_u8 = bytemuck::cast_slice(data);
         unsafe {
             self.gl
