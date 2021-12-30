@@ -10,6 +10,7 @@ mod draw_unit;
 mod element_buffer;
 mod error;
 mod program;
+mod vertex_array;
 mod vertex_buffer;
 
 pub use blend::{Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp};
@@ -22,4 +23,5 @@ pub use element_buffer::{Element, ElementBuffer};
 pub use error::Error;
 pub use program::Program;
 pub use vertex::{attribute, Attribute, DataType, ValueType, Vertex};
+pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;

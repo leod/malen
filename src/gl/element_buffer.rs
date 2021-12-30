@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, rc::Rc};
+use std::{cell::Cell, marker::PhantomData, rc::Rc};
 
 use bytemuck::Pod;
 use glow::HasContext;
@@ -23,8 +23,8 @@ impl Element for u16 {
 
 pub struct ElementBuffer<E> {
     gl: Rc<Context>,
-    buffer: <glow::Context as HasContext>::Buffer,
-    len: usize,
+    pub(super) buffer: <glow::Context as HasContext>::Buffer,
+    len: Cell<usize>,
     _phantom: PhantomData<E>,
 }
 
@@ -35,42 +35,33 @@ impl<E: Element> ElementBuffer<E> {
         Ok(Self {
             gl,
             buffer,
-            len: 0,
+            len: Cell::new(0),
             _phantom: PhantomData,
         })
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[E]) -> Result<Self, Error> {
-        let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
+        let mut vertex_buffer = Self::new_dynamic(gl)?;
+        vertex_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
 
-        let data_u8 = bytemuck::cast_slice(data);
-        unsafe {
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(buffer));
-            gl.buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, glow::STATIC_DRAW);
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, None);
-        }
-
-        Ok(Self {
-            gl,
-            buffer,
-            len: data.len(),
-            _phantom: PhantomData,
-        })
+        Ok(vertex_buffer)
     }
 
     pub fn set_data(&mut self, data: &[E]) {
-        let data_u8 = bytemuck::cast_slice(data);
-
         // TODO: Prevent implicit synchronization somehow.
         // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
+
+        self.set_data_with_usage(data, glow::STREAM_DRAW);
+    }
+
+    fn set_data_with_usage(&mut self, data: &[E], usage: u32) {
+        let data_u8 = bytemuck::cast_slice(data);
         unsafe {
             self.gl
                 .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.buffer));
             self.gl
-                .buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, glow::STREAM_DRAW);
+                .buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, usage);
         }
-
-        self.len = data.len();
     }
 }
 
@@ -80,14 +71,7 @@ impl<E> ElementBuffer<E> {
     }
 
     pub fn len(&self) -> usize {
-        self.len
-    }
-
-    pub(crate) fn bind(&self) {
-        unsafe {
-            self.gl
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.buffer));
-        }
+        self.len.get()
     }
 }
 
