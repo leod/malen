@@ -51,7 +51,7 @@ impl<'a, V, E> DrawUnit<'a, V, E> {
     }
 
     pub fn element_range(&self) -> Range<usize> {
-        self.element_range
+        self.element_range.clone()
     }
 
     pub fn bind(&self) {

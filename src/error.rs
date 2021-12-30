@@ -23,6 +23,9 @@ pub enum CanvasInitError {
 
     #[error("could not initialize WebGL1")]
     InitializeWebGl,
+
+    #[error("error from golem crate: {0}")]
+    Golem(GolemError),
 }
 
 #[derive(Error, Debug)]

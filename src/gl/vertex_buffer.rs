@@ -21,7 +21,7 @@ impl<V: Vertex> VertexBuffer<V> {
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
         }
 
-        set_vertex_attribs::<V>(gl);
+        set_vertex_attribs::<V>(&*gl);
 
         unsafe {
             gl.bind_vertex_array(None);
@@ -71,7 +71,7 @@ impl<V> VertexBuffer<V> {
     }
 }
 
-fn set_vertex_attribs<V: Vertex>(gl: Rc<Context>) {
+fn set_vertex_attribs<V: Vertex>(gl: &Context) {
     for (index, attribute) in V::attributes().iter().enumerate() {
         assert!(
             attribute.offset + attribute.num_elements * attribute.element_type.size()
