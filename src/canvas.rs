@@ -87,7 +87,8 @@ impl Canvas {
             .dyn_into::<WebGlRenderingContext>()
             .map_err(|_| CanvasInitError::InitializeWebGl)?;
         let glow_context_tmp = golem::glow::Context::from_webgl1_context(webgl_context_tmp);
-        let golem_ctx = golem::Context::from_glow(glow_context_tmp).map_err(CanvasInitError::Golem)?;
+        let golem_ctx =
+            golem::Context::from_glow(glow_context_tmp).map_err(CanvasInitError::Golem)?;
 
         // Make the canvas focusable.
         html_element.set_attribute("tabIndex", "1").unwrap();
