@@ -49,15 +49,8 @@ impl<P, V> GeometryBuffer<P, V>
 where
     V: Vertex,
 {
-    pub fn upload(
-        &mut self,
-        vertex_buffer: &mut VertexBuffer<V>,
-        element_buffer: &mut ElementBuffer<u32>,
-    ) {
+    pub fn upload(&mut self, vertex_buffer: &VertexBuffer<V>, element_buffer: &ElementBuffer<u32>) {
         vertex_buffer.set_data(&self.vertices);
         element_buffer.set_data(&self.elements);
-
-        self.vertices.clear();
-        self.elements.clear();
     }
 }

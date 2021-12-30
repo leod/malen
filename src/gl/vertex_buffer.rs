@@ -10,7 +10,10 @@ pub struct VertexBuffer<V> {
     _phantom: PhantomData<V>,
 }
 
-impl<V: Vertex> VertexBuffer<V> {
+impl<V> VertexBuffer<V>
+where
+    V: Vertex,
+{
     pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
         let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
@@ -28,14 +31,14 @@ impl<V: Vertex> VertexBuffer<V> {
         Ok(vertex_buffer)
     }
 
-    pub fn set_data(&mut self, data: &[V]) {
+    pub fn set_data(&self, data: &[V]) {
         // TODO: Prevent implicit synchronization somehow.
         // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 
         self.set_data_with_usage(data, glow::STREAM_DRAW);
     }
 
-    fn set_data_with_usage(&mut self, data: &[V], usage: u32) {
+    fn set_data_with_usage(&self, data: &[V], usage: u32) {
         let data_u8 = bytemuck::cast_slice(data);
         unsafe {
             self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
