@@ -4,9 +4,12 @@ mod geometry;
 mod vertex;
 
 pub use batch::{
-    ColoredLineBatch, ColoredSpriteBatch, ColoredTriangleBatch, GeometryBatch, LineBatch,
-    SpriteBatch, TriangleBatch,
+    ColorLineBatch, ColorSpriteBatch, ColorTriangleBatch, GeometryBatch, LineBatch, SpriteBatch,
+    TriangleBatch,
 };
 pub use buffer::GeometryBuffer;
-pub use geometry::{Geometry, LineTag, PrimitiveTag, TriangleTag};
-pub use vertex::{ColoredSpriteVertex, ColoredVertex, SpriteVertex};
+pub use geometry::{
+    ColorLine, ColorRect, ColorRotatedRect, ColorSprite, Geometry, LineTag, PrimitiveTag, Sprite,
+    TriangleTag,
+};
+pub use vertex::{ColorSpriteVertex, ColorVertex, SpriteVertex};

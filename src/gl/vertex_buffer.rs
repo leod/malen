@@ -25,7 +25,7 @@ where
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[V]) -> Result<Self, Error> {
-        let mut vertex_buffer = Self::new_dynamic(gl)?;
+        let vertex_buffer = Self::new_dynamic(gl)?;
         vertex_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
 
         Ok(vertex_buffer)

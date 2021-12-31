@@ -141,7 +141,7 @@ impl Canvas {
         self.logical_size = logical_size;
     }
 
-    pub fn resize_full(&mut self) {
+    pub fn resize_fill(&mut self) {
         // A collection of anti-patterns [1] recommends using
         // clientWidth/clientHeight and CSS for resizing. I have not been able
         // to get this to work yet.

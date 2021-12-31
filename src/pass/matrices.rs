@@ -1,12 +1,12 @@
 use crevice::{glsl::GlslStruct, std140::AsStd140};
-use nalgebra::Matrix4;
+use nalgebra::Matrix3;
 
 use crate::gl::UniformBlock;
 
-#[derive(Debug, Copy, Clone, AsStd140, GlslStruct)]
+#[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct Matrices {
-    pub projection: Matrix4<f32>,
-    pub view: Matrix4<f32>,
+    pub projection: Matrix3<f32>,
+    pub view: Matrix3<f32>,
 }
 
 impl UniformBlock for Matrices {

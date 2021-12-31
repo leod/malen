@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     geometry::SpriteVertex,
-    gl::{self, DrawParams, DrawUnit, Program, UniformBuffer},
+    gl::{self, DrawParams, DrawUnit, Element, Program, UniformBuffer},
 };
 
 use super::Matrices;
@@ -24,12 +24,14 @@ impl SpritePass {
         Ok(Self { program })
     }
 
-    pub fn draw(
+    pub fn draw<E>(
         &self,
         matrices: &UniformBuffer<Matrices>,
-        draw_unit: DrawUnit<SpriteVertex, u32>,
+        draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
-    ) {
+    ) where
+        E: Element,
+    {
         gl::draw(&self.program, matrices, draw_unit, params);
     }
 }

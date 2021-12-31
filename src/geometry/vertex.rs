@@ -17,7 +17,7 @@ pub struct SpriteVertex {
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
-pub struct ColoredSpriteVertex {
+pub struct ColorSpriteVertex {
     pub position: Point3<f32>,
     pub uv: Point2<f32>,
     pub color: Color4,
@@ -25,7 +25,7 @@ pub struct ColoredSpriteVertex {
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
-pub struct ColoredVertex {
+pub struct ColorVertex {
     pub position: Point3<f32>,
     pub color: Color4,
 }
@@ -33,27 +33,27 @@ pub struct ColoredVertex {
 impl Vertex for SpriteVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
-            attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Point2<f32>>("v_uv", offset_of!(Self::zeroed(), Self, uv)),
+            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
+            attribute::<Point2<f32>>("a_uv", offset_of!(Self::zeroed(), Self, uv)),
         ]
     }
 }
 
-impl Vertex for ColoredSpriteVertex {
+impl Vertex for ColorSpriteVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
-            attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Point2<f32>>("v_uv", offset_of!(Self::zeroed(), Self, uv)),
-            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color)),
+            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
+            attribute::<Point2<f32>>("a_uv", offset_of!(Self::zeroed(), Self, uv)),
+            attribute::<Color4>("a_color", offset_of!(Self::zeroed(), Self, color)),
         ]
     }
 }
 
-impl Vertex for ColoredVertex {
+impl Vertex for ColorVertex {
     fn attributes() -> Vec<Attribute> {
         vec![
-            attribute::<Point3<f32>>("v_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Color4>("v_color", offset_of!(Self::zeroed(), Self, color)),
+            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
+            attribute::<Color4>("a_color", offset_of!(Self::zeroed(), Self, color)),
         ]
     }
 }

@@ -23,11 +23,11 @@ pub enum InitError {
     InitializeWebGl,
 
     #[error("GL error: {0}")]
-    OpenGL(gl::Error),
+    OpenGL(#[from] gl::Error),
 }
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("GL error: {0}")]
-    OpenGL(gl::Error),
+    OpenGL(#[from] gl::Error),
 }

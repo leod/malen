@@ -2,7 +2,7 @@ use glow::HasContext;
 
 use super::{Blend, Context, DepthTest};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct DrawParams {
     blend: Option<Blend>,
     depth_test: Option<DepthTest>,
