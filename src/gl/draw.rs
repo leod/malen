@@ -4,7 +4,7 @@ use glow::HasContext;
 
 use super::{draw_params::set_draw_params, DrawParams, DrawUnit, Element, Program, Vertex};
 
-pub fn draw<V, E>(program: &Program<V>, draw_unit: &DrawUnit<V, E>, draw_params: &DrawParams)
+pub fn draw<V, E>(program: &Program<V>, draw_unit: DrawUnit<V, E>, draw_params: &DrawParams)
 where
     V: Vertex,
     E: Element,

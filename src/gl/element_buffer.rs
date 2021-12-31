@@ -59,6 +59,7 @@ where
 
     fn set_data_with_usage(&self, data: &[E], usage: u32) {
         let data_u8 = bytemuck::cast_slice(data);
+
         unsafe {
             self.gl
                 .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.buffer));
