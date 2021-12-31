@@ -9,11 +9,10 @@ mod geometry;
 mod gl;
 mod input;
 mod main_loop;
-mod text;
+//mod text;
 
 pub(crate) mod util;
 
-pub mod draw;
 pub mod math;
 
 // Re-export dependencies that occur in our public API.
@@ -23,9 +22,7 @@ pub use nalgebra;
 pub use canvas::Canvas;
 pub use color::{Color3, Color4};
 pub use context::Context;
-pub use draw::{Batch, Texture};
 pub use error::Error;
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
 pub use math::{Camera, Rect, RotatedRect, Screen};
-pub use text::{Font, TextBatch};

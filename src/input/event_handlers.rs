@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
 
-use crate::error::CanvasInitError;
+use crate::error::InitError;
 
 use super::{Event, EventListener, Key};
 
@@ -21,7 +21,7 @@ pub struct EventHandlers {
 }
 
 impl EventHandlers {
-    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, CanvasInitError> {
+    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, InitError> {
         let state = Rc::new(RefCell::new(SharedState::default()));
 
         let on_focus = EventListener::new_consume(&canvas, "focus", {
