@@ -22,6 +22,16 @@ pub trait UniformBlocks {
     fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program);
 }
 
+impl UniformBlocks for () {
+    const NUM_BLOCKS: usize = 0;
+
+    fn glsl_definitions() -> String {
+        String::new()
+    }
+
+    fn bind_to_program(_gl: &Context, _program: <glow::Context as HasContext>::Program) {}
+}
+
 impl<U> UniformBlocks for U
 where
     U: UniformBlock,
@@ -91,6 +101,12 @@ where
             );
         }
     }
+}
+
+impl UniformBuffers for () {
+    type UniformBlocks = ();
+
+    fn bind(&self) {}
 }
 
 impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
