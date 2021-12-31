@@ -18,10 +18,7 @@ pub trait UniformBuffers {
 pub trait UniformBlocks {
     const NUM_BLOCKS: usize;
 
-    type UniformBuffers: UniformBuffers;
-
     fn glsl_definitions() -> String;
-
     fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program);
 }
 
@@ -30,8 +27,6 @@ where
     U: UniformBlock,
 {
     const NUM_BLOCKS: usize = 1;
-
-    type UniformBuffers = UniformBuffer<U>;
 
     fn glsl_definitions() -> String {
         glsl_definition::<U>()
@@ -55,8 +50,6 @@ where
     U2: UniformBlock,
 {
     const NUM_BLOCKS: usize = 2;
-
-    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>);
 
     fn glsl_definitions() -> String {
         U1::glsl_definitions() + &glsl_definition::<U2>()
@@ -83,8 +76,6 @@ where
 {
     const NUM_BLOCKS: usize = 2;
 
-    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>, UniformBuffer<U3>);
-
     fn glsl_definitions() -> String {
         <(U1, U2)>::glsl_definitions() + &glsl_definition::<U3>()
     }
@@ -102,7 +93,7 @@ where
     }
 }
 
-impl<U> UniformBuffers for UniformBuffer<U>
+impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
 where
     U: UniformBlock,
 {
@@ -116,7 +107,7 @@ where
     }
 }
 
-impl<U1, U2> UniformBuffers for (UniformBuffer<U1>, UniformBuffer<U2>)
+impl<'a, U1, U2> UniformBuffers for (&'a UniformBuffer<U1>, &'a UniformBuffer<U2>)
 where
     U1: UniformBlock,
     U2: UniformBlock,
@@ -137,7 +128,12 @@ where
     }
 }
 
-impl<U1, U2, U3> UniformBuffers for (UniformBuffer<U1>, UniformBuffer<U2>, UniformBuffer<U3>)
+impl<'a, U1, U2, U3> UniformBuffers
+    for (
+        &'a UniformBuffer<U1>,
+        &'a UniformBuffer<U2>,
+        &'a UniformBuffer<U3>,
+    )
 where
     U1: UniformBlock,
     U2: UniformBlock,
