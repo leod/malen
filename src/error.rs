@@ -1,11 +1,9 @@
 use thiserror::Error;
 
-use golem::GolemError;
-
 use crate::gl;
 
 #[derive(Error, Debug)]
-pub enum CanvasInitError {
+pub enum InitError {
     #[error("no window")]
     NoWindow,
 
@@ -23,18 +21,12 @@ pub enum CanvasInitError {
 
     #[error("could not initialize WebGL1")]
     InitializeWebGl,
-
-    #[error("error from golem crate: {0}")]
-    Golem(GolemError),
 }
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("error from golem crate: {0}")]
-    Golem(GolemError),
-
     #[error("GL error: {0}")]
-    Gl(gl::Error),
+    OpenGL(gl::Error),
 
     #[error("Failed to load font")]
     Font(String),
