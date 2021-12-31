@@ -132,7 +132,9 @@ impl Canvas {
     }
 
     pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
-        //unimplemented!();
+        unsafe {
+            self.gl.viewport(lower_left.x as i32, lower_left.y as i32, size.x as i32, size.y as i32);
+        }
     }
 
     pub fn resize(&mut self, logical_size: Vector2<u32>) {
