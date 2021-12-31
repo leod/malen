@@ -13,7 +13,7 @@ pub fn draw<U, B, V, E>(
     draw_unit: DrawUnit<V, E>,
     draw_params: &DrawParams,
 ) where
-    U: UniformBlocks<UniformBuffers = B>,
+    U: UniformBlocks,
     B: UniformBuffers<UniformBlocks = U>,
     V: Vertex,
     E: Element,

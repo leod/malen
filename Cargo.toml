@@ -14,8 +14,11 @@ nalgebra = { version = "0.25.4", features = ["convert-bytemuck"] }
 fontdue = "0.5"
 bytemuck = "1.7"
 bytemuck_derive = "1.0"
-crevice = { version = "0.8", features = ["nalgebra"] }
 glow = "0.11"
+
+# Downgrade nalgebra for VS Code
+#crevice = { version = "0.8", features = ["nalgebra"] }
+crevice = { git = "https://github.com/leod/crevice.git", branch = "nalgebra-0.25.4", features = ["nalgebra"] }
 
 [dependencies.web-sys]
 version = "0.3"

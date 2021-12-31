@@ -21,13 +21,13 @@ pub enum InitError {
 
     #[error("could not initialize WebGL1")]
     InitializeWebGl,
+
+    #[error("GL error: {0}")]
+    OpenGL(gl::Error),
 }
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("GL error: {0}")]
     OpenGL(gl::Error),
-
-    #[error("Failed to load font")]
-    Font(String),
 }

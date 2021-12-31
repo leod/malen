@@ -36,16 +36,6 @@ where
             dirty: false,
         })
     }
-
-    pub fn flush(&mut self) {
-        if self.dirty {
-            self.buffer.upload(
-                &*self.vertex_array.vertex_buffer(),
-                &*self.vertex_array.element_buffer(),
-            );
-            self.dirty = false;
-        }
-    }
 }
 
 impl<P, V> GeometryBatch<P, V>
@@ -58,8 +48,14 @@ where
         self.dirty = true;
     }
 
-    pub fn flushed_draw_unit(&mut self) -> DrawUnit<V, u32> {
-        self.flush();
+    pub fn draw_unit(&mut self) -> DrawUnit<V, u32> {
+        if self.dirty {
+            self.buffer.upload(
+                &*self.vertex_array.vertex_buffer(),
+                &*self.vertex_array.element_buffer(),
+            );
+            self.dirty = false;
+        }
 
         DrawUnit::new(
             &self.vertex_array,
@@ -73,18 +69,5 @@ impl<P, V> GeometryBatch<P, V> {
     pub fn clear(&mut self) {
         self.buffer.clear();
         self.dirty = true;
-    }
-}
-
-impl<P, V> GeometryBatch<P, V>
-where
-    P: PrimitiveTag,
-{
-    pub fn draw_unit(&self) -> DrawUnit<V, u32> {
-        DrawUnit::new(
-            &self.vertex_array,
-            P::primitive_mode(),
-            0..self.vertex_array.element_buffer().len(),
-        )
     }
 }

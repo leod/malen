@@ -9,6 +9,7 @@ mod geometry;
 mod gl;
 mod input;
 mod main_loop;
+mod pass;
 //mod text;
 
 pub(crate) mod util;
@@ -23,6 +24,7 @@ pub use canvas::Canvas;
 pub use color::{Color3, Color4};
 pub use context::Context;
 pub use error::Error;
+pub use gl::{DrawParams, UniformBuffer};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
 pub use math::{Camera, Rect, RotatedRect, Screen};
