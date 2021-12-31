@@ -28,13 +28,7 @@ where
     V: Vertex,
 {
     pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
-        let program = create_program(
-            gl.clone(),
-            &U::glsl_definitions(),
-            &V::attributes(),
-            vertex_source,
-            fragment_source,
-        )?;
+        let program = create_program::<U>(&*gl, &V::attributes(), vertex_source, fragment_source)?;
 
         Ok(Self {
             gl,
@@ -44,9 +38,8 @@ where
     }
 }
 
-fn create_program(
-    gl: Rc<Context>,
-    uniform_blocks: &str,
+fn create_program<U: UniformBlocks>(
+    gl: &Context,
     attributes: &[Attribute],
     vertex_source: &str,
     fragment_source: &str,
@@ -57,13 +50,13 @@ fn create_program(
         (
             glow::VERTEX_SHADER,
             SOURCE_HEADER.to_owned()
-                + uniform_blocks
+                + &U::glsl_definitions()
                 + &vertex_source_header(attributes)
                 + vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
-            SOURCE_HEADER.to_owned() + uniform_blocks + fragment_source,
+            SOURCE_HEADER.to_owned() + &U::glsl_definitions() + fragment_source,
         ),
     ];
 
@@ -95,6 +88,8 @@ fn create_program(
             gl.bind_attrib_location(program, index as u32, attribute.name);
         }
     }
+
+    U::bind_to_program(gl, program);
 
     unsafe {
         gl.link_program(program);

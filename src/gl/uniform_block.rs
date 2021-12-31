@@ -15,6 +15,93 @@ pub trait UniformBuffers {
     fn bind(&self);
 }
 
+pub trait UniformBlocks {
+    const NUM_BLOCKS: usize;
+
+    type UniformBuffers: UniformBuffers;
+
+    fn glsl_definitions() -> String;
+
+    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program);
+}
+
+impl<U> UniformBlocks for U
+where
+    U: UniformBlock,
+{
+    const NUM_BLOCKS: usize = 1;
+
+    type UniformBuffers = UniformBuffer<U>;
+
+    fn glsl_definitions() -> String {
+        glsl_definition::<U>()
+    }
+
+    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
+        unsafe {
+            gl.uniform_block_binding(
+                program,
+                gl.get_uniform_block_index(program, U::INSTANCE_NAME)
+                    .unwrap(),
+                0,
+            );
+        }
+    }
+}
+
+impl<U1, U2> UniformBlocks for (U1, U2)
+where
+    U1: UniformBlock,
+    U2: UniformBlock,
+{
+    const NUM_BLOCKS: usize = 2;
+
+    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>);
+
+    fn glsl_definitions() -> String {
+        U1::glsl_definitions() + &glsl_definition::<U2>()
+    }
+
+    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
+        unsafe {
+            U1::bind_to_program(gl, program);
+            gl.uniform_block_binding(
+                program,
+                gl.get_uniform_block_index(program, U2::INSTANCE_NAME)
+                    .unwrap(),
+                1,
+            );
+        }
+    }
+}
+
+impl<U1, U2, U3> UniformBlocks for (U1, U2, U3)
+where
+    U1: UniformBlock,
+    U2: UniformBlock,
+    U3: UniformBlock,
+{
+    const NUM_BLOCKS: usize = 2;
+
+    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>, UniformBuffer<U3>);
+
+    fn glsl_definitions() -> String {
+        <(U1, U2)>::glsl_definitions() + &glsl_definition::<U3>()
+    }
+
+    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
+        unsafe {
+            <(U1, U2)>::bind_to_program(gl, program);
+            gl.uniform_block_binding(
+                program,
+                gl.get_uniform_block_index(program, U2::INSTANCE_NAME)
+                    .unwrap(),
+                2,
+            );
+        }
+    }
+}
+
 impl<U> UniformBuffers for UniformBuffer<U>
 where
     U: UniformBlock,
@@ -73,56 +160,6 @@ where
                 .gl()
                 .bind_buffer_base(glow::UNIFORM_BUFFER, 2, Some(self.2.buffer));
         }
-    }
-}
-
-pub trait UniformBlocks {
-    const NUM_BLOCKS: usize;
-
-    type UniformBuffers: UniformBuffers;
-
-    fn glsl_definitions() -> String;
-}
-
-impl<U> UniformBlocks for U
-where
-    U: UniformBlock,
-{
-    const NUM_BLOCKS: usize = 1;
-
-    type UniformBuffers = UniformBuffer<U>;
-
-    fn glsl_definitions() -> String {
-        glsl_definition::<U>()
-    }
-}
-
-impl<U1, U2> UniformBlocks for (U1, U2)
-where
-    U1: UniformBlock,
-    U2: UniformBlock,
-{
-    const NUM_BLOCKS: usize = 2;
-
-    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>);
-
-    fn glsl_definitions() -> String {
-        glsl_definition::<U1>() + &glsl_definition::<U2>()
-    }
-}
-
-impl<U1, U2, U3> UniformBlocks for (U1, U2, U3)
-where
-    U1: UniformBlock,
-    U2: UniformBlock,
-    U3: UniformBlock,
-{
-    const NUM_BLOCKS: usize = 2;
-
-    type UniformBuffers = (UniformBuffer<U1>, UniformBuffer<U2>, UniformBuffer<U3>);
-
-    fn glsl_definitions() -> String {
-        glsl_definition::<U1>() + &glsl_definition::<U2>() + &glsl_definition::<U3>()
     }
 }
 
