@@ -2,15 +2,15 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use super::{Attribute, Context, Error, Vertex};
+use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
-pub struct Program<V> {
+pub struct Program<U, V> {
     gl: Rc<Context>,
     program: <glow::Context as HasContext>::Program,
-    _phantom: PhantomData<V>,
+    _phantom: PhantomData<(U, V)>,
 }
 
-impl<V> Program<V> {
+impl<U, V> Program<U, V> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
@@ -22,9 +22,19 @@ impl<V> Program<V> {
     }
 }
 
-impl<V: Vertex> Program<V> {
+impl<U, V> Program<U, V>
+where
+    U: UniformBlocks,
+    V: Vertex,
+{
     pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
-        let program = create_program(gl.clone(), &V::attributes(), vertex_source, fragment_source)?;
+        let program = create_program(
+            gl.clone(),
+            &U::glsl_definitions(),
+            &V::attributes(),
+            vertex_source,
+            fragment_source,
+        )?;
 
         Ok(Self {
             gl,
@@ -36,6 +46,7 @@ impl<V: Vertex> Program<V> {
 
 fn create_program(
     gl: Rc<Context>,
+    uniform_blocks: &str,
     attributes: &[Attribute],
     vertex_source: &str,
     fragment_source: &str,
@@ -45,11 +56,14 @@ fn create_program(
     let sources = [
         (
             glow::VERTEX_SHADER,
-            SOURCE_HEADER.to_owned() + &vertex_source_header(attributes) + vertex_source,
+            SOURCE_HEADER.to_owned()
+                + uniform_blocks
+                + &vertex_source_header(attributes)
+                + vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
-            SOURCE_HEADER.to_owned() + fragment_source,
+            SOURCE_HEADER.to_owned() + uniform_blocks + fragment_source,
         ),
     ];
 
@@ -116,7 +130,7 @@ fn vertex_source_header(attributes: &[Attribute]) -> String {
         + "\n"
 }
 
-impl<V> Drop for Program<V> {
+impl<U, V> Drop for Program<U, V> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_program(self.program);

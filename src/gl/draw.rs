@@ -2,10 +2,19 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use super::{draw_params::set_draw_params, DrawParams, DrawUnit, Element, Program, Vertex};
+use super::{
+    draw_params::set_draw_params, uniform_block::UniformBuffers, DrawParams, DrawUnit, Element,
+    Program, UniformBlocks, Vertex,
+};
 
-pub fn draw<V, E>(program: &Program<V>, draw_unit: DrawUnit<V, E>, draw_params: &DrawParams)
-where
+pub fn draw<U, B, V, E>(
+    program: &Program<U, V>,
+    uniforms: B,
+    draw_unit: DrawUnit<V, E>,
+    draw_params: &DrawParams,
+) where
+    U: UniformBlocks<UniformBuffers = B>,
+    B: UniformBuffers<UniformBlocks = U>,
     V: Vertex,
     E: Element,
 {
@@ -16,6 +25,7 @@ where
     set_draw_params(&*gl, draw_params);
 
     program.bind();
+    uniforms.bind();
     draw_unit.bind();
 
     let range = draw_unit.element_range();

@@ -2,13 +2,7 @@ use std::rc::Rc;
 
 use web_sys::HtmlCanvasElement;
 
-use crate::{
-    canvas::CanvasCaps,
-    error::InitError,
-    gl,
-    input::{EventHandlers, InputState},
-    Canvas,
-};
+use crate::{error::InitError, gl, input::InputState, Canvas};
 
 pub struct Context {
     canvas: Canvas,
