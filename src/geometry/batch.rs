@@ -3,8 +3,8 @@ use std::rc::Rc;
 use crate::gl::{self, DrawUnit, ElementBuffer, Vertex, VertexArray, VertexBuffer};
 
 use super::{
-    ColoredSpriteVertex, ColoredVertex, Geometry, GeometryBuffer, LineTag, PrimitiveTag,
-    SpriteVertex, TriangleTag,
+    ColorSpriteVertex, ColorVertex, Geometry, GeometryBuffer, LineTag, PrimitiveTag, SpriteVertex,
+    TriangleTag,
 };
 
 pub struct GeometryBatch<P, V> {
@@ -17,9 +17,9 @@ pub type TriangleBatch<V> = GeometryBatch<TriangleTag, V>;
 pub type LineBatch<V> = GeometryBatch<LineTag, V>;
 
 pub type SpriteBatch = TriangleBatch<SpriteVertex>;
-pub type ColoredSpriteBatch = TriangleBatch<ColoredSpriteVertex>;
-pub type ColoredTriangleBatch = TriangleBatch<ColoredVertex>;
-pub type ColoredLineBatch = LineBatch<ColoredVertex>;
+pub type ColorSpriteBatch = TriangleBatch<ColorSpriteVertex>;
+pub type ColorTriangleBatch = TriangleBatch<ColorVertex>;
+pub type ColorLineBatch = LineBatch<ColorVertex>;
 
 impl<P, V> GeometryBatch<P, V>
 where

@@ -8,7 +8,7 @@ pub struct InputState {
 }
 
 impl InputState {
-    pub(crate) fn on_event(&mut self, event: &Event) {
+    pub(crate) fn handle_event(&mut self, event: &Event) {
         match event {
             Event::Unfocused => {
                 self.pressed_keys.clear();

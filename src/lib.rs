@@ -5,16 +5,16 @@ mod canvas;
 mod color;
 mod context;
 mod error;
-mod geometry;
-mod gl;
 mod input;
 mod main_loop;
-mod pass;
 //mod text;
 
 pub(crate) mod util;
 
+pub mod geometry;
+pub mod gl;
 pub mod math;
+pub mod pass;
 
 // Re-export dependencies that occur in our public API.
 pub use glow;
@@ -23,7 +23,7 @@ pub use nalgebra;
 pub use canvas::Canvas;
 pub use color::{Color3, Color4};
 pub use context::Context;
-pub use error::Error;
+pub use error::{Error, InitError};
 pub use gl::{DrawParams, UniformBuffer};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;

@@ -4,11 +4,11 @@ use web_sys::HtmlCanvasElement;
 
 use crate::{
     error::InitError,
-    geometry::SpriteBatch,
-    gl,
+    geometry::{ColorVertex, GeometryBatch, PrimitiveTag, SpriteVertex},
+    gl::{self, DrawUnit, Element},
     input::InputState,
-    pass::{Matrices, SpritePass},
-    Canvas, DrawParams, UniformBuffer,
+    pass::{ColorPass, Matrices, SpritePass},
+    Canvas, Color4, DrawParams, Event, Screen, UniformBuffer,
 };
 
 pub struct Context {
@@ -16,6 +16,7 @@ pub struct Context {
     input_state: InputState,
 
     sprite_pass: SpritePass,
+    color_pass: ColorPass,
 }
 
 impl Context {
@@ -29,12 +30,14 @@ impl Context {
 
     pub fn from_canvas(canvas: Canvas) -> Result<Self, InitError> {
         let input_state = InputState::default();
-        let sprite_pass = SpritePass::new(canvas.gl().clone()).map_err(InitError::OpenGL)?;
+        let sprite_pass = SpritePass::new(canvas.gl().clone())?;
+        let color_pass = ColorPass::new(canvas.gl().clone())?;
 
         Ok(Context {
             canvas,
             input_state,
             sprite_pass,
+            color_pass,
         })
     }
 
@@ -54,12 +57,47 @@ impl Context {
         &self.sprite_pass
     }
 
-    pub fn draw_sprite_batch(
+    pub fn color_pass(&self) -> &ColorPass {
+        &self.color_pass
+    }
+
+    pub fn screen(&self) -> Screen {
+        self.canvas.screen()
+    }
+
+    pub fn clear(&self, color: Color4) {
+        self.canvas.clear(color);
+    }
+
+    pub fn resize_fill(&mut self) {
+        self.canvas.resize_fill();
+    }
+
+    pub fn pop_event(&mut self) -> Option<Event> {
+        let event = self.canvas.pop_event()?;
+        self.input_state.handle_event(&event);
+        Some(event)
+    }
+
+    pub fn draw_sprites<E>(
         &self,
         matrices: &UniformBuffer<Matrices>,
-        batch: &mut SpriteBatch,
+        draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
-    ) {
-        self.sprite_pass.draw(matrices, batch.draw_unit(), params);
+    ) where
+        E: Element,
+    {
+        self.sprite_pass.draw(matrices, draw_unit, params);
+    }
+
+    pub fn draw_colors<E>(
+        &self,
+        matrices: &UniformBuffer<Matrices>,
+        draw_unit: DrawUnit<ColorVertex, E>,
+        params: &DrawParams,
+    ) where
+        E: Element,
+    {
+        self.color_pass.draw(matrices, draw_unit, params);
     }
 }
