@@ -19,8 +19,8 @@ where
         let callback = Closure::wrap(Box::new(f) as Box<dyn FnMut(T)>);
 
         element
-            .add_event_listener_with_callback(kind, &callback.as_ref().unchecked_ref())
-            .expect(&format!("Failed to add event listener for kind {}", kind));
+            .add_event_listener_with_callback(kind, callback.as_ref().unchecked_ref())
+            .unwrap_or_else(|_| panic!("Failed to add event listener for kind {}", kind));
 
         Self {
             element: element.clone(),
@@ -49,9 +49,6 @@ impl<T> Drop for EventListener<T> {
     fn drop(&mut self) {
         self.element
             .remove_event_listener_with_callback(self.kind, self.callback.as_ref().unchecked_ref())
-            .expect(&format!(
-                "Failed to remove event listener for kind {}",
-                self.kind
-            ));
+            .unwrap_or_else(|_| panic!("Failed to remove event listener for kind {}", self.kind));
     }
 }

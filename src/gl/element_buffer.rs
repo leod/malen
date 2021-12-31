@@ -79,6 +79,10 @@ impl<E> ElementBuffer<E> {
     pub fn len(&self) -> usize {
         self.len.get()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<E> Drop for ElementBuffer<E> {

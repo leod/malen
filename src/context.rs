@@ -30,8 +30,8 @@ impl Context {
 
     pub fn from_canvas(canvas: Canvas) -> Result<Self, InitError> {
         let input_state = InputState::default();
-        let sprite_pass = SpritePass::new(canvas.gl().clone())?;
-        let color_pass = ColorPass::new(canvas.gl().clone())?;
+        let sprite_pass = SpritePass::new(canvas.gl())?;
+        let color_pass = ColorPass::new(canvas.gl())?;
 
         Ok(Context {
             canvas,
