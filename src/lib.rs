@@ -3,6 +3,7 @@
 
 mod canvas;
 mod color;
+mod context;
 mod error;
 mod geometry;
 mod gl;
@@ -21,6 +22,7 @@ pub use nalgebra;
 
 pub use canvas::Canvas;
 pub use color::{Color3, Color4};
+pub use context::Context;
 pub use draw::{Batch, Texture};
 pub use error::Error;
 pub use input::{Event, InputState, Key};
