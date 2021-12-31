@@ -2,8 +2,6 @@ use std::{cell::RefCell, rc::Rc};
 
 use wasm_bindgen::{closure::Closure, JsCast};
 
-use crate::Error;
-
 /// Run the `malen` main loop.
 ///
 /// The callback is called once per frame, and it is passed the following

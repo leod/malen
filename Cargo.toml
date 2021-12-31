@@ -23,7 +23,7 @@ crevice = { git = "https://github.com/leod/crevice.git", branch = "nalgebra-0.25
 [dependencies.web-sys]
 version = "0.3"
 features = [
-    "WebGlRenderingContext",
+    "WebGl2RenderingContext",
     "HtmlCanvasElement",
     "Window",
     "KeyboardEvent",

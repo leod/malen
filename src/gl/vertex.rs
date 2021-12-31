@@ -50,7 +50,7 @@ impl ValueType {
 
 impl Attribute {
     pub fn glsl_string(&self) -> String {
-        format!("in {} {}", self.glsl_type_name, self.name)
+        format!("in {} {};\n", self.glsl_type_name, self.name)
     }
 }
 

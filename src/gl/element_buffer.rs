@@ -66,6 +66,8 @@ where
             self.gl
                 .buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, usage);
         }
+
+        self.len.set(data.len());
     }
 }
 

@@ -25,8 +25,8 @@ where
 
         unsafe {
             gl.bind_vertex_array(Some(vao));
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(vertex_buffer.buffer));
-            gl.bind_buffer(glow::ARRAY_BUFFER, Some(element_buffer.buffer));
+            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.buffer));
+            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.buffer));
         }
 
         set_vertex_attribs::<V>(&*gl);
