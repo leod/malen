@@ -21,5 +21,5 @@ pub fn set_canvas_style_property(canvas: &HtmlCanvasElement, property: &str, val
     let style = canvas.style();
     style
         .set_property(property, value)
-        .expect(&format!("Failed to set {}", property));
+        .unwrap_or_else(|_| panic!("Failed to set {}", property));
 }

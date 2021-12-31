@@ -66,7 +66,7 @@ fn create_program<U: UniformBlocks>(
             let shader = unsafe { gl.create_shader(*shader_type) }.map_err(Error::Glow)?;
 
             unsafe {
-                gl.shader_source(shader, &shader_source);
+                gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
 
                 log::info!("{}", shader_source);
@@ -105,7 +105,7 @@ fn create_program<U: UniformBlocks>(
         }
     }
 
-    for (index, attribute) in attributes.into_iter().enumerate() {
+    for (index, attribute) in attributes.iter().enumerate() {
         unsafe {
             gl.bind_attrib_location(program, index as u32, attribute.name);
         }
@@ -116,7 +116,7 @@ fn create_program<U: UniformBlocks>(
     Ok(program)
 }
 
-const SOURCE_HEADER: &'static str = "#version 300 es\nprecision highp float;\n";
+const SOURCE_HEADER: &str = "#version 300 es\nprecision highp float;\n";
 
 fn vertex_source_header(attributes: &[Attribute]) -> String {
     attributes

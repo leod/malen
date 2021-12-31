@@ -61,7 +61,7 @@ impl Canvas {
 
         let webgl_context = element
             .get_context("webgl2")
-            .map_err(|e| InitError::GetContext(e.as_string().unwrap_or("error".into())))?
+            .map_err(|e| InitError::GetContext(e.as_string().unwrap_or_else(|| "error".into())))?
             .ok_or(InitError::InitializeWebGl)?
             .dyn_into::<WebGl2RenderingContext>()
             .map_err(|_| InitError::InitializeWebGl)?;

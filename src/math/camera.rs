@@ -28,7 +28,7 @@ impl Camera {
             angle: 0.0,
             zoom: 1.0,
         }
-        .to_matrix(&screen)
+        .to_matrix(screen)
     }
 
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
