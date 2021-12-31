@@ -46,8 +46,7 @@ where
         unsafe {
             gl.uniform_block_binding(
                 program,
-                gl.get_uniform_block_index(program, U::INSTANCE_NAME)
-                    .unwrap(),
+                gl.get_uniform_block_index(program, U::NAME).unwrap(),
                 0,
             );
         }

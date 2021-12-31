@@ -16,8 +16,12 @@ impl SpritePass {
         let program = Program::new(
             gl,
             r#"
+            void main() {
+            }
             "#,
             r#"
+            void main() {
+            }
             "#,
         )?;
 

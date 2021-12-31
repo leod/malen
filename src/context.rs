@@ -4,7 +4,7 @@ use web_sys::HtmlCanvasElement;
 
 use crate::{
     error::InitError,
-    geometry::{ColorVertex, GeometryBatch, PrimitiveTag, SpriteVertex},
+    geometry::{ColorVertex, SpriteVertex},
     gl::{self, DrawUnit, Element},
     input::InputState,
     pass::{ColorPass, Matrices, SpritePass},

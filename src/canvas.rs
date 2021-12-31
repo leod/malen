@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGlRenderingContext};
+use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 
 use glow::HasContext;
 use nalgebra::{Point2, Vector2};
 
 use crate::input::EventHandlers;
-use crate::{error::InitError, gl, util, Color4, Event, InputState, Screen};
+use crate::{error::InitError, gl, util, Color4, Event, Screen};
 
 #[derive(Debug, Clone)]
 pub struct CanvasCaps {
@@ -60,12 +60,12 @@ impl Canvas {
         let event_handlers = EventHandlers::new(element.clone())?;
 
         let webgl_context = element
-            .get_context("webgl")
+            .get_context("webgl2")
             .map_err(|e| InitError::GetContext(e.as_string().unwrap_or("error".into())))?
             .ok_or(InitError::InitializeWebGl)?
-            .dyn_into::<WebGlRenderingContext>()
+            .dyn_into::<WebGl2RenderingContext>()
             .map_err(|_| InitError::InitializeWebGl)?;
-        let glow_context = glow::Context::from_webgl1_context(webgl_context);
+        let glow_context = glow::Context::from_webgl2_context(webgl_context);
         let gl = Rc::new(gl::Context::new(glow_context));
         let caps = CanvasCaps::new(gl.clone());
 
@@ -128,11 +128,11 @@ impl Canvas {
     }
 
     pub fn clear(&self, color: Color4) {
-        unimplemented!();
+        //unimplemented!();
     }
 
     pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
-        unimplemented!();
+        //unimplemented!();
     }
 
     pub fn resize(&mut self, logical_size: Vector2<u32>) {

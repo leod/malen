@@ -174,7 +174,7 @@ impl Game {
 pub fn main() {
     console_error_panic_hook::set_once();
     console_log::init_with_level(log::Level::Debug).unwrap();
-    log::info!("Hi, starting the example");
+    log::info!("Starting the malen example");
 
     let mut context = Context::from_canvas_element_id("canvas").unwrap();
     log::info!("Initialized malen context");
@@ -187,10 +187,10 @@ pub fn main() {
         while let Some(event) = context.pop_event() {
             match event {
                 Focused => {
-                    log::info!("got focus");
+                    log::info!("Canvas got focus");
                 }
                 Unfocused => {
-                    log::info!("lost focus");
+                    log::info!("Canvas lost focus");
                 }
                 _ => (),
             }

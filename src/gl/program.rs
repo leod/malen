@@ -50,8 +50,8 @@ fn create_program<U: UniformBlocks>(
         (
             glow::VERTEX_SHADER,
             SOURCE_HEADER.to_owned()
-                + &U::glsl_definitions()
                 + &vertex_source_header(attributes)
+                + &U::glsl_definitions()
                 + vertex_source,
         ),
         (
@@ -69,6 +69,8 @@ fn create_program<U: UniformBlocks>(
                 gl.shader_source(shader, &shader_source);
                 gl.compile_shader(shader);
 
+                log::info!("{}", shader_source);
+
                 if !gl.get_shader_compile_status(shader) {
                     return Err(Error::OpenGL(format!(
                         "Shader failed to compile: {}",
@@ -82,14 +84,6 @@ fn create_program<U: UniformBlocks>(
             Ok(shader)
         })
         .collect::<Result<Vec<_>, Error>>()?;
-
-    for (index, attribute) in attributes.into_iter().enumerate() {
-        unsafe {
-            gl.bind_attrib_location(program, index as u32, attribute.name);
-        }
-    }
-
-    U::bind_to_program(gl, program);
 
     unsafe {
         gl.link_program(program);
@@ -111,17 +105,25 @@ fn create_program<U: UniformBlocks>(
         }
     }
 
+    for (index, attribute) in attributes.into_iter().enumerate() {
+        unsafe {
+            gl.bind_attrib_location(program, index as u32, attribute.name);
+        }
+    }
+
+    U::bind_to_program(gl, program);
+
     Ok(program)
 }
 
-const SOURCE_HEADER: &'static str = "#version 300 es\n";
+const SOURCE_HEADER: &'static str = "#version 300 es\nprecision highp float;\n";
 
 fn vertex_source_header(attributes: &[Attribute]) -> String {
     attributes
         .iter()
         .map(Attribute::glsl_string)
         .collect::<Vec<_>>()
-        .join("\n")
+        .join("")
         + "\n"
 }
 
