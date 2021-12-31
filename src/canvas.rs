@@ -133,14 +133,27 @@ impl Canvas {
 
     pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
         unsafe {
-            self.gl.viewport(lower_left.x as i32, lower_left.y as i32, size.x as i32, size.y as i32);
+            self.gl.viewport(
+                lower_left.x as i32,
+                lower_left.y as i32,
+                size.x as i32,
+                size.y as i32,
+            );
         }
     }
 
     pub fn resize(&mut self, logical_size: Vector2<u32>) {
-        util::set_canvas_size(&self.element, logical_size);
-        self.set_viewport(Point2::origin(), self.screen().physical_size);
-        self.logical_size = logical_size;
+        if logical_size != self.logical_size {
+            util::set_canvas_size(&self.element, logical_size);
+            self.set_viewport(Point2::origin(), self.screen().physical_size);
+            self.logical_size = logical_size;
+
+            log::info!(
+                "Resized [logical_size={}, physical_size={}]",
+                logical_size,
+                self.screen().physical_size
+            );
+        }
     }
 
     pub fn resize_fill(&mut self) {
