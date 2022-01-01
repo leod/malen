@@ -4,8 +4,8 @@ use super::{Blend, Context, DepthTest};
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct DrawParams {
-    blend: Option<Blend>,
-    depth_test: Option<DepthTest>,
+    pub blend: Option<Blend>,
+    pub depth_test: Option<DepthTest>,
 }
 
 pub fn set_draw_params(gl: &Context, draw_params: &DrawParams) {

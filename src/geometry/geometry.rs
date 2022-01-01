@@ -110,3 +110,18 @@ impl Geometry<TriangleTag> for ColorRect {
         }
     }
 }
+
+impl Geometry<TriangleTag> for ColorRotatedRect {
+    type Vertex = ColorVertex;
+
+    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+        elements.extend_from_slice(&triangle_indices(vertices.len() as u32));
+
+        for p in self.rect.corners() {
+            vertices.push(ColorVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                color: self.color,
+            });
+        }
+    }
+}
