@@ -1,14 +1,14 @@
-use malen::DrawParams;
 use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use malen::nalgebra::{Point2, Vector2};
-
 use malen::{
     geometry::{ColorRect, ColorTriangleBatch},
+    gl,
+    glow::HasContext,
+    nalgebra::{Point2, Vector2},
     pass::Matrices,
-    Camera, Color4, Context, Error, InitError, InputState, Key, Rect, UniformBuffer,
+    Camera, Color4, Context, DrawParams, Error, InitError, InputState, Key, Rect, UniformBuffer,
 };
 
 struct Wall {
@@ -180,17 +180,32 @@ pub fn main() {
     log::info!("Initialized malen context");
 
     let mut game = Game::new(&context).unwrap();
+    game.render();
+
+    let mut gl_timer = gl::Timer::new(context.gl(), 60);
 
     malen::main_loop(move |timestamp_secs, _running| {
-        use malen::Event::*;
+        coarse_prof::profile!("frame");
 
         while let Some(event) = context.pop_event() {
+            use malen::Event::*;
+
             match event {
                 Focused => {
                     log::info!("Canvas got focus");
                 }
                 Unfocused => {
                     log::info!("Canvas lost focus");
+                }
+                KeyPressed(Key::P) => {
+                    let mut buffer = std::io::Cursor::new(Vec::new());
+                    coarse_prof::write(&mut buffer).unwrap();
+                    coarse_prof::reset();
+                    log::info!(
+                        "Profiling: {}",
+                        std::str::from_utf8(buffer.get_ref()).unwrap()
+                    );
+                    log::info!("GL timer: {:?}", gl_timer.timing_info(),);
                 }
                 _ => (),
             }
@@ -199,7 +214,9 @@ pub fn main() {
         context.resize_fill();
 
         game.state.update(timestamp_secs, context.input_state());
-        game.render();
+
+        gl_timer.start_draw();
         game.draw(&context).unwrap();
+        gl_timer.end_draw();
     });
 }

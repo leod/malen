@@ -28,6 +28,7 @@ class HttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         '.wasm': 'application/wasm',
     }
 
+socketserver.TCPServer.allow_reuse_address = True
 httpd = socketserver.TCPServer(("0.0.0.0", PORT), HttpRequestHandler)
 
 try:
