@@ -26,3 +26,23 @@ Run:
 (cd static && python3 -m http.server)
 ```
 (or using any other HTTP server)
+
+### Windows Setup
+
+The `openssl-sys` dependency of `wasm-pack` can be quite a pain on Windows.
+
+There are many different installation instructions flying around. This one actually worked for me
+(for `openssl-sys v0.9.72`):
+1. Install `Win64 OpenSSL v1.1.1m` from http://slproweb.com/products/Win32OpenSSL.html to `C:\OpenSSL-Win64`.
+2. Download `cacert.pem` to `C:\OpenSSL-Win64\certs` (creating a new directory `certs`).
+3. In PowerShell, set environment variables as follows:
+   ```
+   $env:OPENSSL_DIR="C:\OpenSSL-Win64"
+   $env:SSL_CERT_FILE="C:\OpenSSL-Win64\certs\cacert.pem"
+   $env:OPENSSL_NO_VENDOR=1
+   ```
+   Then run:
+   ```
+   cargo install wasm-pack --target-dir tmp-wasm-pack-cache
+   ```
+   (the cache directory is not needed, but allows for faster iteration if compilation fails.)
