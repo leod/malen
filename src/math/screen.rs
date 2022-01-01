@@ -4,11 +4,8 @@ use super::Rect;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Screen {
-    pub logical_size: Vector2<u32>,
-
-    /// The screen size in physical pixels.
+    pub logical_size: Vector2<f64>,
     pub physical_size: Vector2<u32>,
-
     pub device_pixel_ratio: f64,
 }
 

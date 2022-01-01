@@ -3,6 +3,7 @@
 
 mod canvas;
 mod color;
+mod config;
 mod context;
 mod error;
 mod input;
@@ -20,8 +21,9 @@ pub mod pass;
 pub use glow;
 pub use nalgebra;
 
-pub use canvas::Canvas;
+pub use canvas::{Canvas, CanvasSizeConfig};
 pub use color::{Color3, Color4};
+pub use config::Config;
 pub use context::Context;
 pub use error::{Error, InitError};
 pub use gl::{DrawParams, UniformBuffer};
