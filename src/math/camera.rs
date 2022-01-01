@@ -2,7 +2,7 @@ use nalgebra::{Matrix3, Point2, Vector2};
 
 use super::{translate_rotate_scale, Screen};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 /// Parameters that define a two-dimensional camera transformation.
 pub struct Camera {
     /// The center position of the camera.
@@ -19,7 +19,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn screen_view_matrix(screen: &Screen) -> Matrix3<f32> {
+    pub fn screen_view_matrix(screen: Screen) -> Matrix3<f32> {
         Self {
             center: Point2::new(
                 screen.logical_size.x as f32 / 2.0,
@@ -28,12 +28,12 @@ impl Camera {
             angle: 0.0,
             zoom: 1.0,
         }
-        .to_matrix(screen)
+        .matrix(screen)
     }
 
     /// Build a 3x3 matrix with homogeneous coordinates to represent the
     /// transformation from world space to camera space.
-    pub fn to_matrix(&self, screen: &Screen) -> Matrix3<f32> {
+    pub fn matrix(&self, screen: Screen) -> Matrix3<f32> {
         // It's a bit easier to first consider the camera space -> world space
         // transformation C2W and then take the inverse to get W2C. For C2W, we
         // first need to scale with S / rotate with R (order shouldn't matter
@@ -55,5 +55,15 @@ impl Camera {
             -self.angle,
             Vector2::new(self.zoom, self.zoom),
         )
+    }
+
+    pub fn inverse_matrix(&self, screen: Screen) -> Matrix3<f32> {
+        // TODO: Inverse can be constructed much more efficiently here.
+
+        // Non-invertibility should happen only in degenerate situations such as
+        // zoom being zero.
+        self.matrix(screen)
+            .try_inverse()
+            .unwrap_or_else(|| Matrix3::identity())
     }
 }

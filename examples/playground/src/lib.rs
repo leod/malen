@@ -7,7 +7,7 @@ use malen::{
     nalgebra::{Point2, Vector2},
     pass::Matrices,
     Camera, CanvasSizeConfig, Color4, Config, Context, DrawParams, Error, InitError, InputState,
-    Key, Rect, UniformBuffer,
+    Key, Rect, Screen, UniformBuffer,
 };
 
 struct Wall {
@@ -20,10 +20,15 @@ struct Enemy {
     angle: f32,
 }
 
+struct Player {
+    pos: Point2<f32>,
+    angle: f32,
+}
+
 struct State {
     walls: Vec<Wall>,
     enemies: Vec<Enemy>,
-    player_pos: Point2<f32>,
+    player: Player,
     last_timestamp_secs: Option<f64>,
 }
 
@@ -69,12 +74,23 @@ impl State {
         Self {
             walls,
             enemies,
-            player_pos: Point2::origin(),
+            player: Player {
+                pos: Point2::origin(),
+                angle: 0.0,
+            },
             last_timestamp_secs: None,
         }
     }
 
-    pub fn update(&mut self, timestamp_secs: f64, input_state: &InputState) {
+    pub fn camera(&self) -> Camera {
+        Camera {
+            center: self.player.pos,
+            zoom: 1.0,
+            angle: 0.0,
+        }
+    }
+
+    pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
             .last_timestamp_secs
             .map_or(0.0, |last_timestamp_secs| {
@@ -98,8 +114,18 @@ impl State {
         }
         if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player_pos += dt_secs * 500.0 * player_dir;
+            self.player.pos += dt_secs * 500.0 * player_dir;
         }
+
+        self.player.angle = {
+            let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
+            let mouse_world_pos = self
+                .camera()
+                .inverse_matrix(screen)
+                .transform_point(&mouse_logical_pos);
+            let offset = mouse_world_pos - self.player.pos;
+            offset.y.atan2(offset.x)
+        };
 
         for (i, thingy) in self.enemies.iter_mut().enumerate() {
             let mut delta = 0.2 * std::f32::consts::PI * dt_secs;
@@ -156,11 +182,12 @@ impl Game {
             })
         }
 
-        self.color_triangles.push(ColorRect {
+        self.color_triangles.push(ColorRotatedRect {
             rect: Rect {
-                center: self.state.player_pos,
+                center: self.state.player.pos,
                 size: Vector2::new(50.0, 50.0),
-            },
+            }
+            .rotate(self.state.player.angle),
             z: 0.5,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
         });
@@ -168,14 +195,8 @@ impl Game {
 
     pub fn draw(&mut self, context: &Context) -> Result<(), Error> {
         let screen = context.screen();
-        let camera = Camera {
-            center: self.state.player_pos,
-            zoom: 1.0,
-            angle: 0.0,
-        };
-
         self.matrices.set_data(Matrices {
-            view: camera.to_matrix(&screen),
+            view: self.state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
 
@@ -238,7 +259,8 @@ pub fn main() {
             }
         }
 
-        game.state.update(timestamp_secs, context.input_state());
+        game.state
+            .update(timestamp_secs, context.screen(), context.input_state());
         game.render();
 
         gl_timer.start_draw();
