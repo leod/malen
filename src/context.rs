@@ -8,7 +8,7 @@ use crate::{
     gl::{self, DrawUnit, Element},
     input::InputState,
     pass::{ColorPass, Matrices, SpritePass},
-    Canvas, Color4, DrawParams, Event, Screen, UniformBuffer,
+    Canvas, Color4, Config, DrawParams, Event, Screen, UniformBuffer,
 };
 
 pub struct Context {
@@ -20,15 +20,24 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn from_canvas_element_id(id: &str) -> Result<Self, InitError> {
-        Self::from_canvas(Canvas::from_element_id(id)?)
+    pub fn from_canvas_element_id(id: &str, config: Config) -> Result<Self, InitError> {
+        Self::from_canvas(
+            Canvas::from_element_id(id, config.canvas_size.clone())?,
+            config,
+        )
     }
 
-    pub fn from_canvas_element(html_element: HtmlCanvasElement) -> Result<Self, InitError> {
-        Self::from_canvas(Canvas::from_element(html_element)?)
+    pub fn from_canvas_element(
+        html_element: HtmlCanvasElement,
+        config: Config,
+    ) -> Result<Self, InitError> {
+        Self::from_canvas(
+            Canvas::from_element(html_element, config.canvas_size.clone())?,
+            config,
+        )
     }
 
-    pub fn from_canvas(canvas: Canvas) -> Result<Self, InitError> {
+    fn from_canvas(canvas: Canvas, _: Config) -> Result<Self, InitError> {
         let input_state = InputState::default();
         let sprite_pass = SpritePass::new(canvas.gl())?;
         let color_pass = ColorPass::new(canvas.gl())?;
@@ -67,10 +76,6 @@ impl Context {
 
     pub fn clear(&self, color: Color4) {
         self.canvas.clear(color);
-    }
-
-    pub fn resize_fill(&mut self) {
-        self.canvas.resize_fill();
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {

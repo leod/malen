@@ -6,7 +6,8 @@ use malen::{
     gl::{self, DepthTest},
     nalgebra::{Point2, Vector2},
     pass::Matrices,
-    Camera, Color4, Context, DrawParams, Error, InitError, InputState, Key, Rect, UniformBuffer,
+    Camera, CanvasSizeConfig, Color4, Config, Context, DrawParams, Error, InitError, InputState,
+    Key, Rect, UniformBuffer,
 };
 
 struct Wall {
@@ -198,7 +199,12 @@ pub fn main() {
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Starting the malen example");
 
-    let mut context = Context::from_canvas_element_id("canvas").unwrap();
+    let config = Config {
+        canvas_size: CanvasSizeConfig::Fill,
+        //canvas_size: CanvasSizeConfig::LogicalSize(Vector2::new(640, 480)),
+    };
+
+    let mut context = Context::from_canvas_element_id("canvas", config).unwrap();
     log::info!("Initialized malen context");
 
     let mut game = Game::new(&context).unwrap();
@@ -231,8 +237,6 @@ pub fn main() {
                 _ => (),
             }
         }
-
-        context.resize_fill();
 
         game.state.update(timestamp_secs, context.input_state());
         game.render();

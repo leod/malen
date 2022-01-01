@@ -24,16 +24,22 @@ impl CanvasCaps {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum CanvasSizeConfig {
+    LogicalSize(Vector2<u32>),
+    Fill,
+}
+
 pub struct Canvas {
     element: HtmlCanvasElement,
     gl: Rc<gl::Context>,
     caps: CanvasCaps,
     event_handlers: EventHandlers,
-    logical_size: Vector2<u32>,
+    logical_size: Vector2<f64>,
 }
 
 impl Canvas {
-    pub fn from_element_id(id: &str) -> Result<Self, InitError> {
+    pub fn from_element_id(id: &str, size_config: CanvasSizeConfig) -> Result<Self, InitError> {
         let canvas = web_sys::window()
             .ok_or(InitError::NoWindow)?
             .document()
@@ -43,11 +49,11 @@ impl Canvas {
             .dyn_into::<HtmlCanvasElement>()
             .map_err(|_| InitError::ElementIsNotCanvas(id.into()))?;
 
-        Self::from_element(canvas)
+        Self::from_element(canvas, size_config)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn from_element(_: HtmlCanvasElement) -> Result<Self, Error> {
+    pub fn from_element(_: HtmlCanvasElement, _: CanvasSize) -> Result<Self, Error> {
         // This is only in here as a workaround for the fact that Visual Studio
         // Code ignores our target setting in .cargo/config.toml for some
         // reason. Then, `glow::Context::from_webgl1_context` is not defined
@@ -56,7 +62,10 @@ impl Canvas {
     }
 
     #[cfg(target_arch = "wasm32")]
-    pub fn from_element(element: HtmlCanvasElement) -> Result<Self, InitError> {
+    pub fn from_element(
+        element: HtmlCanvasElement,
+        size_config: CanvasSizeConfig,
+    ) -> Result<Self, InitError> {
         let event_handlers = EventHandlers::new(element.clone())?;
 
         let webgl_context = element
@@ -69,22 +78,22 @@ impl Canvas {
         let gl = Rc::new(gl::Context::new(glow_context));
         let caps = CanvasCaps::new(gl.clone());
 
-        // Make the canvas focusable.
-        element.set_attribute("tabIndex", "1").unwrap();
+        util::make_canvas_focusable(&element);
 
-        let logical_size = Vector2::new(element.width(), element.height());
+        // Prevent scrollbar.
+        util::set_canvas_style_property(&element, "display", "block");
+
+        let initial_logical_size = Vector2::new(element.width(), element.height());
 
         let mut canvas = Self {
             element,
             gl,
             caps,
             event_handlers,
-            logical_size,
+            logical_size: nalgebra::convert(initial_logical_size),
         };
 
-        // Make sure that the physical canvas size is correct (adjusting for the
-        // screen's DPI).
-        canvas.resize(logical_size);
+        canvas.set_size_config(size_config);
 
         Ok(canvas)
     }
@@ -110,8 +119,7 @@ impl Canvas {
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {
-        // FIXME: Resize handling
-        self.resize(self.logical_size);
+        self.adjust_sizes();
 
         self.event_handlers.pop_event()
     }
@@ -142,41 +150,63 @@ impl Canvas {
         }
     }
 
-    pub fn resize(&mut self, logical_size: Vector2<u32>) {
-        if logical_size != self.logical_size {
-            util::set_canvas_size(&self.element, logical_size);
-            self.set_viewport(Point2::origin(), self.screen().physical_size);
-            self.logical_size = logical_size;
+    pub fn set_size_config(&mut self, size_config: CanvasSizeConfig) {
+        match size_config {
+            CanvasSizeConfig::LogicalSize(logical_size) => {
+                util::set_canvas_logical_size(&self.element, logical_size);
+                util::set_canvas_physical_size(
+                    &self.element,
+                    util::logical_to_physical_size(logical_size),
+                );
 
-            log::info!(
-                "Resized [logical_size={}, physical_size={}]",
-                logical_size,
-                self.screen().physical_size
-            );
+                self.logical_size = nalgebra::convert(logical_size);
+
+                log::info!(
+                    "Set CanvasSizeConfig::LogicalSize [logical_size={}, physical_size={}]",
+                    self.logical_size,
+                    self.screen().physical_size
+                );
+            }
+            CanvasSizeConfig::Fill => {
+                util::set_canvas_logical_size_fill(&self.element);
+
+                self.adjust_sizes();
+
+                log::info!(
+                    "Set CanvasSizeConfig::Fill [logical_size={}, physical_size={}]",
+                    self.logical_size,
+                    self.screen().physical_size
+                );
+            }
         }
+
+        self.set_viewport(Point2::origin(), self.screen().physical_size);
     }
 
-    pub fn resize_fill(&mut self) {
-        // A collection of anti-patterns [1] recommends using
-        // clientWidth/clientHeight and CSS for resizing. I have not been able
-        // to get this to work yet.
-        //
-        // [1] https://webglfundamentals.org/webgl/lessons/webgl-anti-patterns.html
-        //let width = self.canvas.client_width().max(0) as u32;
-        //let height = self.canvas.client_height().max(0) as u32;
+    fn adjust_sizes(&mut self) {
+        // https://webgl2fundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
 
-        let window = web_sys::window().expect("Failed to obtain window");
-        let width = window
-            .inner_width()
-            .expect("Failed to obtain innerWidth")
-            .as_f64()
-            .unwrap_or(640.0) as u32;
-        let height = window
-            .inner_height()
-            .expect("Failed to obtain innerHeight")
-            .as_f64()
-            .unwrap_or(480.0) as u32;
+        let device_pixel_ratio = util::device_pixel_ratio();
+        let bounding_rect = self.element.get_bounding_client_rect();
 
-        self.resize(Vector2::new(width, height));
+        self.logical_size = Vector2::new(bounding_rect.width(), bounding_rect.height());
+        let physical_size = Vector2::new(
+            (self.logical_size.x * device_pixel_ratio).round() as u32,
+            (self.logical_size.y * device_pixel_ratio).round() as u32,
+        );
+
+        let need_resize =
+            self.element.width() != physical_size.x || self.element.height() != physical_size.y;
+
+        if need_resize {
+            util::set_canvas_physical_size(&self.element, physical_size);
+            self.set_viewport(Point2::origin(), physical_size);
+
+            log::info!(
+                "Resized canvas physical size [logical_size={}, physical_size={}]",
+                self.logical_size,
+                physical_size,
+            );
+        }
     }
 }

@@ -30,6 +30,8 @@ features = [
     "Event",
     "FocusEvent",
     "CssStyleDeclaration",
+    "Element",
+    "DomRect",
 ]
 
 [workspace]
