@@ -1,11 +1,9 @@
 use rand::Rng;
-use rand_distr::{Distribution, Normal};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
-    geometry::{ColorRect, ColorTriangleBatch},
-    gl,
-    glow::HasContext,
+    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch},
+    gl::{self, DepthTest},
     nalgebra::{Point2, Vector2},
     pass::Matrices,
     Camera, Color4, Context, DrawParams, Error, InitError, InputState, Key, Rect, UniformBuffer,
@@ -17,7 +15,7 @@ struct Wall {
 }
 
 struct Enemy {
-    center: Point2<f32>,
+    pos: Point2<f32>,
     angle: f32,
 }
 
@@ -30,26 +28,38 @@ struct State {
 
 impl State {
     pub fn new() -> Self {
+        let map_size = 2048.0;
+        let num_walls = 50;
+        let num_enemies = 30;
+
         let mut rng = rand::thread_rng();
-        let normal = Normal::new(200.0, 150.0).unwrap();
-        let walls = (0..50)
+        let walls = (0..num_walls)
             .map(|_| {
-                let center =
-                    Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
-                let size = Vector2::new(normal.sample(&mut rng), normal.sample(&mut rng));
+                let center = Point2::new(rng.gen(), rng.gen()) * 2.0 * map_size
+                    - Vector2::new(1.0, 1.0) * map_size;
+
+                let choice = rng.gen_range(0, 3);
+                let size = match choice {
+                    0 => {
+                        let x = rng.gen_range(50.0, 500.0);
+                        Vector2::new(x, x)
+                    }
+                    1 => Vector2::new(50.0, rng.gen_range(100.0, 1000.0)),
+                    2 => Vector2::new(rng.gen_range(100.0, 1000.0), 50.0),
+                    _ => unreachable!(),
+                };
 
                 Wall { center, size }
             })
             .collect();
 
-        let num_enemies = 30;
         let enemies = (0..num_enemies)
             .map(|_| {
-                let center =
-                    Point2::new(rng.gen(), rng.gen()) * 4096.0 - Vector2::new(1.0, 1.0) * 2048.0;
+                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * map_size
+                    - Vector2::new(1.0, 1.0) * map_size;
 
                 Enemy {
-                    center,
+                    pos,
                     angle: rng.gen::<f32>() * std::f32::consts::PI,
                 }
             })
@@ -129,7 +139,7 @@ impl Game {
                     center: wall.center,
                     size: wall.size,
                 },
-                z: 0.0,
+                z: 1.0,
                 color: Color4::new(0.2, 0.2, 0.8, 1.0),
             });
         }
@@ -137,13 +147,22 @@ impl Game {
         for enemy in &self.state.enemies {
             self.color_triangles.push(ColorRect {
                 rect: Rect {
-                    center: enemy.center,
+                    center: enemy.pos,
                     size: Vector2::new(30.0, 30.0),
                 },
                 z: 0.0,
-                color: Color4::new(0.2, 0.8, 0.2, 1.0),
+                color: Color4::new(0.8, 0.2, 0.2, 1.0),
             })
         }
+
+        self.color_triangles.push(ColorRect {
+            rect: Rect {
+                center: self.state.player_pos,
+                size: Vector2::new(50.0, 50.0),
+            },
+            z: 0.5,
+            color: Color4::new(0.2, 0.8, 0.2, 1.0),
+        });
     }
 
     pub fn draw(&mut self, context: &Context) -> Result<(), Error> {
@@ -163,7 +182,10 @@ impl Game {
         context.draw_colors(
             &self.matrices,
             self.color_triangles.draw_unit(),
-            &DrawParams::default(),
+            &DrawParams {
+                depth_test: Some(DepthTest::default()),
+                ..DrawParams::default()
+            },
         );
 
         Ok(())
@@ -180,7 +202,6 @@ pub fn main() {
     log::info!("Initialized malen context");
 
     let mut game = Game::new(&context).unwrap();
-    game.render();
 
     let mut gl_timer = gl::Timer::new(context.gl(), 60);
 
@@ -214,6 +235,7 @@ pub fn main() {
         context.resize_fill();
 
         game.state.update(timestamp_secs, context.input_state());
+        game.render();
 
         gl_timer.start_draw();
         game.draw(&context).unwrap();
