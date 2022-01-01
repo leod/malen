@@ -12,20 +12,14 @@ Build and run using the [`Makefile`](Makefile):
 make run
 ```
 
+Then open http://localhost:8080/ in a browser.
+
 ### Step by step
 If the `Makefile` does not work for you, you can run the steps manually.
 
-Build:
 ```
-wasm-pack build --target web --no-typescript
-cp static/* pkg/
+wasm-pack build --target web --no-typescript ; cp static/* pkg/ ; python3 server.py pkg
 ```
-
-Run:
-```
-(cd static && python3 -m http.server)
-```
-(or using any other HTTP server)
 
 ### Windows Setup
 
