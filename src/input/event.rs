@@ -1,11 +1,14 @@
 use web_sys::KeyboardEvent;
 
+use nalgebra::Point2;
+
 #[derive(Debug, Clone)]
 pub enum Event {
     Focused,
     Unfocused,
     KeyPressed(Key),
     KeyReleased(Key),
+    MouseMoved(Point2<f64>),
 }
 
 /// A key that can be pressed.

@@ -32,6 +32,7 @@ features = [
     "CssStyleDeclaration",
     "Element",
     "DomRect",
+    "MouseEvent",
 ]
 
 [workspace]

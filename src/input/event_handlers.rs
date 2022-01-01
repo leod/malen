@@ -1,6 +1,7 @@
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
-use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
+use nalgebra::Point2;
+use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent, MouseEvent};
 
 use crate::error::InitError;
 
@@ -18,6 +19,7 @@ pub struct EventHandlers {
     _on_blur: EventListener<FocusEvent>,
     _on_key_down: EventListener<KeyboardEvent>,
     _on_key_release: EventListener<KeyboardEvent>,
+    _on_mouse_move: EventListener<MouseEvent>,
 }
 
 impl EventHandlers {
@@ -58,12 +60,30 @@ impl EventHandlers {
             }
         });
 
+        let on_mouse_move = EventListener::new_consume(&canvas, "mousemove", {
+            let state = state.clone();
+            let canvas = canvas.clone();
+            move |event: MouseEvent| {
+                // https://stackoverflow.com/a/42315942
+                let bounding_rect = canvas.get_bounding_client_rect();
+                let logical_pos = Point2::new(
+                    event.client_x() as f64 - bounding_rect.left(),
+                    event.client_y() as f64 - bounding_rect.top(),
+                );
+                state
+                    .borrow_mut()
+                    .events
+                    .push_back(Event::MouseMoved(logical_pos));
+            }
+        });
+
         Ok(Self {
             state,
             _on_focus: on_focus,
             _on_blur: on_blur,
             _on_key_down: on_key_down,
             _on_key_release: on_key_release,
+            _on_mouse_move: on_mouse_move,
         })
     }
 
