@@ -6,7 +6,7 @@ use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
 pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
-    program: <glow::Context as HasContext>::Program,
+    program: glow::Program,
     _phantom: PhantomData<(U, V)>,
 }
 
@@ -103,6 +103,13 @@ fn create_program<U: UniformBlocks, const S: usize>(
         })
         .collect::<Result<Vec<_>, Error>>()?;
 
+    // Binding attributes must be done before linking.
+    for (index, attribute) in attributes.iter().enumerate() {
+        unsafe {
+            gl.bind_attrib_location(program, index as u32, attribute.name);
+        }
+    }
+
     unsafe {
         gl.link_program(program);
 
@@ -123,21 +130,18 @@ fn create_program<U: UniformBlocks, const S: usize>(
         }
     }
 
-    for (index, attribute) in attributes.iter().enumerate() {
-        unsafe {
-            gl.bind_attrib_location(program, index as u32, attribute.name);
-        }
-    }
-
+    // Set texture uniforms.
     for (i, sampler) in def.samplers.iter().enumerate() {
-        unsafe {
-            gl.uniform_1_i32(
-                Some(&gl.get_uniform_location(program, sampler).unwrap()),
-                i as i32,
-            );
+        if let Some(location) = unsafe { gl.get_uniform_location(program, sampler) } {
+            unsafe {
+                gl.uniform_1_i32(Some(&location), i as i32);
+            }
+        } else {
+            log::info!("Sampler `{}` (offset {}) is unused", sampler, i);
         }
     }
 
+    // Setting uniform block binding locations should be done after linking.
     U::bind_to_program(gl, program);
 
     Ok(program)

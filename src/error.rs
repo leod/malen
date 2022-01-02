@@ -1,8 +1,8 @@
 use thiserror::Error;
 
-use crate::gl;
+use crate::gl::{self, NewTextureError};
 
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug)]
 pub enum InitError {
     #[error("no window")]
     NoWindow,
@@ -24,6 +24,9 @@ pub enum InitError {
 
     #[error("GL error: {0}")]
     OpenGL(#[from] gl::Error),
+
+    #[error("New texture error: {0}")]
+    NewTextureError(#[from] NewTextureError),
 }
 
 #[derive(Error, Debug)]
