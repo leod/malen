@@ -4,12 +4,13 @@ use glow::HasContext;
 
 use super::{
     draw_params::set_draw_params, uniform_block::UniformBuffers, DrawParams, DrawUnit, Element,
-    Program, Vertex,
+    Program, Texture, Vertex,
 };
 
-pub fn draw<U, V, E>(
-    program: &Program<U::UniformBlocks, V>,
+pub fn draw<U, V, E, const S: usize>(
+    program: &Program<U::UniformBlocks, V, S>,
     uniforms: U,
+    samplers: [&Texture; S],
     draw_unit: DrawUnit<V, E>,
     draw_params: &DrawParams,
 ) where
