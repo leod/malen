@@ -51,9 +51,9 @@ fn create_program<U: UniformBlocks, const S: usize>(
 ) -> Result<<glow::Context as HasContext>::Program, Error> {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
-    let samplers = def
+    let sampler_definitions = def
         .samplers
-        .map(|name| format!("uniform sampler2D {};", name))
+        .map(|sampler| format!("uniform sampler2D {};", sampler))
         .join("\n");
 
     let sources = [
@@ -62,14 +62,21 @@ fn create_program<U: UniformBlocks, const S: usize>(
             SOURCE_HEADER.to_owned()
                 + &vertex_source_header(attributes)
                 + &U::glsl_definitions()
-                + &samplers
+                + &sampler_definitions
                 + def.vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
-            SOURCE_HEADER.to_owned() + &U::glsl_definitions() + &samplers + def.fragment_source,
+            SOURCE_HEADER.to_owned()
+                + &U::glsl_definitions()
+                + &sampler_definitions
+                + def.fragment_source,
         ),
     ];
+
+    // TODO:
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#compile_shaders_and_link_programs_in_parallel
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_check_shader_compile_status_unless_linking_fails
 
     let shaders = sources
         .iter()
@@ -119,6 +126,15 @@ fn create_program<U: UniformBlocks, const S: usize>(
     for (index, attribute) in attributes.iter().enumerate() {
         unsafe {
             gl.bind_attrib_location(program, index as u32, attribute.name);
+        }
+    }
+
+    for (i, sampler) in def.samplers.iter().enumerate() {
+        unsafe {
+            gl.uniform_1_i32(
+                Some(&gl.get_uniform_location(program, sampler).unwrap()),
+                i as i32,
+            );
         }
     }
 

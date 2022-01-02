@@ -156,6 +156,9 @@ impl Texture {
             }
         }
 
+        // TODO:
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_assume_you_can_render_into_float_textures
+
         let texture = unsafe { gl.create_texture() }.map_err(super::Error::Glow)?;
 
         unsafe {
@@ -169,6 +172,10 @@ impl Texture {
 
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
+    }
+
+    pub fn size(&self) -> Vector2<u32> {
+        self.size
     }
 }
 
