@@ -52,7 +52,7 @@ fn bind_samplers<const S: usize>(gl: Rc<Context>, samplers: [&Texture; S]) {
 
         unsafe {
             gl.active_texture(glow::TEXTURE0 + i as u32);
-            gl.bind_texture(glow::TEXTURE_2D, Some(sampler.texture));
+            gl.bind_texture(glow::TEXTURE_2D, Some(sampler.id()));
         }
     }
 

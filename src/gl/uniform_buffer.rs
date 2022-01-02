@@ -7,7 +7,7 @@ use super::{Context, Error};
 
 pub struct UniformBuffer<U> {
     gl: Rc<Context>,
-    pub(super) buffer: <glow::Context as HasContext>::Buffer,
+    id: <glow::Context as HasContext>::Buffer,
     _phantom: PhantomData<U>,
 }
 
@@ -16,10 +16,10 @@ where
     U: AsStd140,
 {
     pub fn new(gl: Rc<Context>, uniform: U) -> Result<Self, Error> {
-        let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
+        let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
         let uniform_buffer = UniformBuffer {
             gl,
-            buffer,
+            id,
             _phantom: PhantomData,
         };
 
@@ -33,7 +33,7 @@ where
         let data_u8 = bytemuck::bytes_of(&data_std140);
 
         unsafe {
-            self.gl.bind_buffer(glow::UNIFORM_BUFFER, Some(self.buffer));
+            self.gl.bind_buffer(glow::UNIFORM_BUFFER, Some(self.id));
             self.gl
                 .buffer_data_u8_slice(glow::UNIFORM_BUFFER, data_u8, glow::STREAM_DRAW);
         }
@@ -44,12 +44,16 @@ impl<U> UniformBuffer<U> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
+
+    pub fn id(&self) -> glow::Buffer {
+        self.id
+    }
 }
 
 impl<U> Drop for UniformBuffer<U> {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_buffer(self.buffer);
+            self.gl.delete_buffer(self.id);
         }
     }
 }

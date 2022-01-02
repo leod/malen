@@ -6,7 +6,7 @@ use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
 pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
-    program: glow::Program,
+    id: glow::Program,
     _phantom: PhantomData<(U, V)>,
 }
 
@@ -17,8 +17,12 @@ impl<U, V, const S: usize> Program<U, V, S> {
 
     pub fn bind(&self) {
         unsafe {
-            self.gl.use_program(Some(self.program));
+            self.gl.use_program(Some(self.id));
         }
+    }
+
+    pub fn id(&self) -> glow::Program {
+        self.id
     }
 }
 
@@ -34,11 +38,11 @@ where
     V: Vertex,
 {
     pub fn new(gl: Rc<Context>, def: ProgramDef<S>) -> Result<Self, Error> {
-        let program = create_program::<U, S>(&*gl, &V::attributes(), def)?;
+        let id = create_program::<U, S>(&*gl, &V::attributes(), def)?;
 
         Ok(Self {
             gl,
-            program,
+            id,
             _phantom: PhantomData,
         })
     }
@@ -48,7 +52,7 @@ fn create_program<U: UniformBlocks, const S: usize>(
     gl: &Context,
     attributes: &[Attribute],
     def: ProgramDef<S>,
-) -> Result<<glow::Context as HasContext>::Program, Error> {
+) -> Result<glow::Program, Error> {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
     let sampler_definitions = def
@@ -164,7 +168,7 @@ fn vertex_source_header(attributes: &[Attribute]) -> String {
 impl<U, V, const S: usize> Drop for Program<U, V, S> {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_program(self.program);
+            self.gl.delete_program(self.id);
         }
     }
 }

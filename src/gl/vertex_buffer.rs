@@ -6,7 +6,7 @@ use super::{Context, Error, Vertex};
 
 pub struct VertexBuffer<V> {
     gl: Rc<Context>,
-    pub(super) buffer: <glow::Context as HasContext>::Buffer,
+    id: glow::Buffer,
     _phantom: PhantomData<V>,
 }
 
@@ -15,11 +15,11 @@ where
     V: Vertex,
 {
     pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
-        let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
+        let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         Ok(Self {
             gl,
-            buffer,
+            id,
             _phantom: PhantomData,
         })
     }
@@ -42,7 +42,7 @@ where
         let data_u8 = bytemuck::cast_slice(data);
 
         unsafe {
-            self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
+            self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.id));
             self.gl
                 .buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, usage);
         }
@@ -53,12 +53,16 @@ impl<V> VertexBuffer<V> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
+
+    pub fn id(&self) -> glow::Buffer {
+        self.id
+    }
 }
 
 impl<V> Drop for VertexBuffer<V> {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_buffer(self.buffer);
+            self.gl.delete_buffer(self.id);
         }
     }
 }

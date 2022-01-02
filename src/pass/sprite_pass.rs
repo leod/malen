@@ -64,7 +64,8 @@ impl SpritePass {
     where
         E: Element,
     {
-        if !self.sprite_infos.borrow().contains_key(&texture.texture) {
+        if !self.sprite_infos.borrow().contains_key(&texture.id()) {
+            // TODO: Fails if OpenGL reuses ids -- need to introduce our own unique IDs
             // TODO: Max size for sprite info cache
             let buffer = UniformBuffer::new(
                 self.program.gl(),
@@ -72,13 +73,11 @@ impl SpritePass {
                     size: texture.size().cast::<f32>(),
                 },
             )?;
-            self.sprite_infos
-                .borrow_mut()
-                .insert(texture.texture, buffer);
+            self.sprite_infos.borrow_mut().insert(texture.id(), buffer);
         }
 
         let sprite_infos_borrow = self.sprite_infos.borrow();
-        let sprite_info = sprite_infos_borrow.get(&texture.texture).unwrap();
+        let sprite_info = sprite_infos_borrow.get(&texture.id()).unwrap();
 
         gl::draw(
             &self.program,
