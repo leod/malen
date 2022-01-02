@@ -40,3 +40,11 @@ There are many different installation instructions flying around. This one actua
    cargo install wasm-pack --target-dir tmp-wasm-pack-cache
    ```
    (the cache directory is not needed, but allows for faster iteration if compilation fails.)
+
+## Resource Credits
+
+- [`04muroch256.png`](resources/04muroch256.png)
+
+   Author: Tiziana
+
+   URL: https://opengameart.org/content/grey-stone-wall-256px
