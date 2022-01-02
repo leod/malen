@@ -23,7 +23,7 @@ impl Element for u16 {
 
 pub struct ElementBuffer<E> {
     gl: Rc<Context>,
-    pub(super) buffer: <glow::Context as HasContext>::Buffer,
+    id: glow::Buffer,
     len: Cell<usize>,
     _phantom: PhantomData<E>,
 }
@@ -33,21 +33,21 @@ where
     E: Element,
 {
     pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
-        let buffer = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
+        let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         Ok(Self {
             gl,
-            buffer,
+            id,
             len: Cell::new(0),
             _phantom: PhantomData,
         })
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[E]) -> Result<Self, Error> {
-        let vertex_buffer = Self::new_dynamic(gl)?;
-        vertex_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
+        let element_buffer = Self::new_dynamic(gl)?;
+        element_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
 
-        Ok(vertex_buffer)
+        Ok(element_buffer)
     }
 
     pub fn set_data(&self, data: &[E]) {
@@ -62,7 +62,7 @@ where
 
         unsafe {
             self.gl
-                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.buffer));
+                .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.id));
             self.gl
                 .buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, data_u8, usage);
         }
@@ -74,6 +74,10 @@ where
 impl<E> ElementBuffer<E> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
+    }
+
+    pub fn id(&self) -> glow::Buffer {
+        self.id
     }
 
     pub fn len(&self) -> usize {
@@ -88,7 +92,7 @@ impl<E> ElementBuffer<E> {
 impl<E> Drop for ElementBuffer<E> {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_buffer(self.buffer);
+            self.gl.delete_buffer(self.id);
         }
     }
 }

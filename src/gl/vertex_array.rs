@@ -7,7 +7,7 @@ use super::{AttributeValueType, Context, ElementBuffer, Error, Vertex, VertexBuf
 pub struct VertexArray<V, E> {
     vertex_buffer: Rc<VertexBuffer<V>>,
     element_buffer: Rc<ElementBuffer<E>>,
-    vao: <glow::Context as HasContext>::VertexArray,
+    id: glow::VertexArray,
 }
 
 impl<V, E> VertexArray<V, E>
@@ -21,12 +21,12 @@ where
         let gl = vertex_buffer.gl();
         assert!(Rc::ptr_eq(&gl, &element_buffer.gl()));
 
-        let vao = unsafe { vertex_buffer.gl().create_vertex_array() }.map_err(Error::Glow)?;
+        let id = unsafe { vertex_buffer.gl().create_vertex_array() }.map_err(Error::Glow)?;
 
         unsafe {
-            gl.bind_vertex_array(Some(vao));
-            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.buffer));
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.buffer));
+            gl.bind_vertex_array(Some(id));
+            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.id()));
+            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.id()));
         }
 
         set_vertex_attribs::<V>(&*gl);
@@ -38,7 +38,7 @@ where
         Ok(Self {
             vertex_buffer,
             element_buffer,
-            vao,
+            id,
         })
     }
 }
@@ -56,9 +56,13 @@ impl<V, E> VertexArray<V, E> {
         self.element_buffer.clone()
     }
 
+    pub fn id(&self) -> glow::VertexArray {
+        self.id
+    }
+
     pub fn bind(&self) {
         unsafe {
-            self.gl().bind_vertex_array(Some(self.vao));
+            self.gl().bind_vertex_array(Some(self.id));
         }
     }
 }
@@ -66,7 +70,7 @@ impl<V, E> VertexArray<V, E> {
 impl<V, E> Drop for VertexArray<V, E> {
     fn drop(&mut self) {
         unsafe {
-            self.gl().delete_vertex_array(self.vao);
+            self.gl().delete_vertex_array(self.id);
         }
     }
 }

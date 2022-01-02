@@ -61,7 +61,7 @@ pub enum TextureWrap {
 
 pub struct Texture {
     gl: Rc<Context>,
-    pub(crate) texture: <glow::Context as HasContext>::Texture,
+    id: glow::Texture,
     size: Vector2<u32>,
 }
 
@@ -159,19 +159,23 @@ impl Texture {
         // TODO:
         // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_assume_you_can_render_into_float_textures
 
-        let texture = unsafe { gl.create_texture() }.map_err(super::Error::Glow)?;
+        let id = unsafe { gl.create_texture() }.map_err(super::Error::Glow)?;
 
         unsafe {
-            gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+            gl.bind_texture(glow::TEXTURE_2D, Some(id));
         }
 
         set_texture_params(&*gl, params);
 
-        Ok(Self { gl, texture, size })
+        Ok(Self { gl, id, size })
     }
 
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
+    }
+
+    pub fn id(&self) -> glow::Texture {
+        self.id
     }
 
     pub fn size(&self) -> Vector2<u32> {
@@ -182,7 +186,7 @@ impl Texture {
 impl Drop for Texture {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_texture(self.texture);
+            self.gl.delete_texture(self.id);
         }
     }
 }

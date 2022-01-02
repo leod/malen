@@ -26,7 +26,7 @@ pub trait UniformBlocks {
     const NUM_BLOCKS: usize;
 
     fn glsl_definitions() -> String;
-    fn bind_to_program(gl: &Context, program: glow::Program);
+    fn bind_to_program(gl: &Context, id: glow::Program);
 }
 
 impl UniformBlocks for () {
@@ -36,7 +36,7 @@ impl UniformBlocks for () {
         String::new()
     }
 
-    fn bind_to_program(_gl: &Context, _program: glow::Program) {}
+    fn bind_to_program(_gl: &Context, _id: glow::Program) {}
 }
 
 impl<U> UniformBlocks for U
@@ -49,8 +49,8 @@ where
         glsl_definition::<U>()
     }
 
-    fn bind_to_program(gl: &Context, program: glow::Program) {
-        bind_uniform_block(gl, program, U::NAME, 0);
+    fn bind_to_program(gl: &Context, id: glow::Program) {
+        bind_uniform_block(gl, id, U::NAME, 0);
     }
 }
 
@@ -65,9 +65,9 @@ where
         U1::glsl_definitions() + &glsl_definition::<U2>()
     }
 
-    fn bind_to_program(gl: &Context, program: glow::Program) {
-        U1::bind_to_program(gl, program);
-        bind_uniform_block(gl, program, U2::NAME, 1);
+    fn bind_to_program(gl: &Context, id: glow::Program) {
+        U1::bind_to_program(gl, id);
+        bind_uniform_block(gl, id, U2::NAME, 1);
     }
 }
 
@@ -83,9 +83,9 @@ where
         <(U1, U2)>::glsl_definitions() + &glsl_definition::<U3>()
     }
 
-    fn bind_to_program(gl: &Context, program: glow::Program) {
-        <(U1, U2)>::bind_to_program(gl, program);
-        bind_uniform_block(gl, program, U3::NAME, 2);
+    fn bind_to_program(gl: &Context, id: glow::Program) {
+        <(U1, U2)>::bind_to_program(gl, id);
+        bind_uniform_block(gl, id, U3::NAME, 2);
     }
 }
 
@@ -104,7 +104,7 @@ where
     fn bind(&self) {
         unsafe {
             self.gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.id()));
         }
     }
 }
@@ -122,10 +122,10 @@ where
         unsafe {
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.id()));
         }
     }
 }
@@ -150,21 +150,21 @@ where
         unsafe {
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 2, Some(self.2.buffer));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, 2, Some(self.2.id()));
         }
     }
 }
 
-fn bind_uniform_block(gl: &Context, program: glow::Program, instance_name: &str, binding: u32) {
-    if let Some(index) = unsafe { gl.get_uniform_block_index(program, instance_name) } {
+fn bind_uniform_block(gl: &Context, id: glow::Program, instance_name: &str, binding: u32) {
+    if let Some(index) = unsafe { gl.get_uniform_block_index(id, instance_name) } {
         unsafe {
-            gl.uniform_block_binding(program, index, binding);
+            gl.uniform_block_binding(id, index, binding);
         }
     } else {
         log::info!("Uniform block `{}` is unused", instance_name);
