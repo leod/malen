@@ -4,7 +4,7 @@ use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vecto
 use crate::Color4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ValueType {
+pub enum AttributeValueType {
     Float,
     Int,
 }
@@ -14,7 +14,7 @@ pub struct Attribute {
     pub name: &'static str,
     pub offset: usize,
     pub glsl_type_name: &'static str,
-    pub element_type: ValueType,
+    pub element_type: AttributeValueType,
     pub num_elements: usize,
 }
 
@@ -32,18 +32,18 @@ pub fn attribute<T: DataType>(name: &'static str, offset: usize) -> Attribute {
     }
 }
 
-impl ValueType {
+impl AttributeValueType {
     pub fn to_gl(self) -> u32 {
         match self {
-            ValueType::Float => glow::FLOAT,
-            ValueType::Int => glow::INT,
+            AttributeValueType::Float => glow::FLOAT,
+            AttributeValueType::Int => glow::INT,
         }
     }
 
     pub fn size(self) -> usize {
         match self {
-            ValueType::Float => std::mem::size_of::<f32>(),
-            ValueType::Int => std::mem::size_of::<i32>(),
+            AttributeValueType::Float => std::mem::size_of::<f32>(),
+            AttributeValueType::Int => std::mem::size_of::<i32>(),
         }
     }
 }
@@ -56,7 +56,7 @@ impl Attribute {
 
 pub trait DataType {
     fn glsl_name() -> &'static str;
-    fn element_type() -> ValueType;
+    fn element_type() -> AttributeValueType;
     fn num_elements() -> usize;
 }
 
@@ -67,8 +67,8 @@ macro_rules! impl_data_type {
                 stringify!($name)
             }
 
-            fn element_type() -> crate::gl::ValueType {
-                crate::gl::ValueType::$element_type
+            fn element_type() -> crate::gl::AttributeValueType {
+                crate::gl::AttributeValueType::$element_type
             }
 
             fn num_elements() -> usize {

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum Error {
     #[error("OpenGL (glow) error: {0}")]
     Glow(String),

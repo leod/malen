@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use super::{Context, ElementBuffer, Error, ValueType, Vertex, VertexBuffer};
+use super::{AttributeValueType, Context, ElementBuffer, Error, Vertex, VertexBuffer};
 
 pub struct VertexArray<V, E> {
     vertex_buffer: Rc<VertexBuffer<V>>,
@@ -83,7 +83,7 @@ fn set_vertex_attribs<V: Vertex>(gl: &Context) {
         }
 
         match attribute.element_type {
-            ValueType::Float => unsafe {
+            AttributeValueType::Float => unsafe {
                 gl.vertex_attrib_pointer_f32(
                     index as u32,
                     attribute.num_elements as i32,
@@ -93,7 +93,7 @@ fn set_vertex_attribs<V: Vertex>(gl: &Context) {
                     attribute.offset as i32,
                 );
             },
-            ValueType::Int => unsafe {
+            AttributeValueType::Int => unsafe {
                 gl.vertex_attrib_pointer_i32(
                     index as u32,
                     attribute.num_elements as i32,

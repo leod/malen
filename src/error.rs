@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::gl;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum InitError {
     #[error("no window")]
     NoWindow,
