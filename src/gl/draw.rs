@@ -4,17 +4,16 @@ use glow::HasContext;
 
 use super::{
     draw_params::set_draw_params, uniform_block::UniformBuffers, DrawParams, DrawUnit, Element,
-    Program, UniformBlocks, Vertex,
+    Program, Vertex,
 };
 
-pub fn draw<U, B, V, E>(
-    program: &Program<U, V>,
-    uniforms: B,
+pub fn draw<U, V, E>(
+    program: &Program<U::UniformBlocks, V>,
+    uniforms: U,
     draw_unit: DrawUnit<V, E>,
     draw_params: &DrawParams,
 ) where
-    U: UniformBlocks,
-    B: UniformBuffers<UniformBlocks = U>,
+    U: UniformBuffers,
     V: Vertex,
     E: Element,
 {
