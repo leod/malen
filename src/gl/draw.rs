@@ -38,6 +38,11 @@ pub fn draw<U, V, E, const S: usize>(
 
     unsafe {
         gl.draw_elements(mode, count as i32, element_type, offset as i32);
+
+        // It is important to unbind the vertex array here, so that buffer
+        // bindings later on (e.g. for mutating buffer contents) do not change
+        // the vertex array bindings.
+        gl.bind_vertex_array(None);
     }
 }
 

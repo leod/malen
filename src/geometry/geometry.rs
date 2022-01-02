@@ -23,16 +23,16 @@ pub trait Geometry<Tag: PrimitiveTag> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Sprite {
-    pub rect: RotatedRect,
+    pub rect: Rect,
     pub z: f32,
-    pub uv: Rect,
+    pub tex_rect: Rect,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct ColorSprite {
-    pub rect: RotatedRect,
+    pub rect: Rect,
     pub z: f32,
-    pub uv: Rect,
+    pub tex_rect: Rect,
     pub color: Color4,
 }
 
@@ -70,7 +70,7 @@ impl PrimitiveTag for LineTag {
     }
 }
 
-fn triangle_indices(start_index: u32) -> [u32; 6] {
+fn quad_indices(start_index: u32) -> [u32; 6] {
     [
         start_index,
         start_index + 1,
@@ -85,12 +85,12 @@ impl Geometry<TriangleTag> for Sprite {
     type Vertex = SpriteVertex;
 
     fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
-        elements.extend_from_slice(&triangle_indices(vertices.len() as u32));
+        elements.extend_from_slice(&quad_indices(vertices.len() as u32));
 
-        for (p, uv) in self.rect.corners().iter().zip(self.uv.corners()) {
+        for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
             vertices.push(SpriteVertex {
                 position: Point3::new(p.x, p.y, self.z),
-                uv,
+                tex_coords,
             });
         }
     }
@@ -100,7 +100,7 @@ impl Geometry<TriangleTag> for ColorRect {
     type Vertex = ColorVertex;
 
     fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
-        elements.extend_from_slice(&triangle_indices(vertices.len() as u32));
+        elements.extend_from_slice(&quad_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {
@@ -115,7 +115,7 @@ impl Geometry<TriangleTag> for ColorRotatedRect {
     type Vertex = ColorVertex;
 
     fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
-        elements.extend_from_slice(&triangle_indices(vertices.len() as u32));
+        elements.extend_from_slice(&quad_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {

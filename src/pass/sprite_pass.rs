@@ -24,11 +24,25 @@ impl SpritePass {
         let program_def = ProgramDef {
             samplers: ["sprite"],
             vertex_source: r#"
+                out vec2 v_tex_coords;
+
                 void main() {
+                    vec3 position = matrices.projection
+                        * matrices.view
+                        * vec3(a_position.xy, 1.0);
+
+                    gl_Position = vec4(position.xy, a_position.z, 1.0);
+
+                    v_tex_coords = a_tex_coords;
                 }
             "#,
             fragment_source: r#"
+                in vec2 v_tex_coords;
+                out vec4 f_color;
+
                 void main() {
+                    vec2 uv = v_tex_coords / sprite_info.size;
+                    f_color = texture(sprite, uv);
                 }
             "#,
         };

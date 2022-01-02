@@ -136,7 +136,11 @@ impl Canvas {
     }
 
     pub fn clear(&self, color: Color4) {
-        //unimplemented!();
+        unsafe {
+            self.gl.clear_color(color.r, color.g, color.b, color.a);
+            self.gl
+                .clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+        }
     }
 
     pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
