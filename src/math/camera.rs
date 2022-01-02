@@ -64,6 +64,6 @@ impl Camera {
         // zoom being zero.
         self.matrix(screen)
             .try_inverse()
-            .unwrap_or_else(|| Matrix3::identity())
+            .unwrap_or_else(Matrix3::identity)
     }
 }

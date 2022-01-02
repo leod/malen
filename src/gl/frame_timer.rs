@@ -57,15 +57,12 @@ impl FrameTimer {
             return;
         }
 
-        match unsafe { self.gl.create_query() } {
-            Ok(query) => {
-                unsafe {
-                    self.gl.begin_query(glow::TIME_ELAPSED, query);
-                }
-
-                self.last_query = Some(query);
+        if let Ok(query) = unsafe { self.gl.create_query() } {
+            unsafe {
+                self.gl.begin_query(glow::TIME_ELAPSED, query);
             }
-            Err(_) => return,
+
+            self.last_query = Some(query);
         }
     }
 
