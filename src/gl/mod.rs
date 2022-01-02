@@ -10,10 +10,10 @@ mod draw_target;
 mod draw_unit;
 mod element_buffer;
 mod error;
+mod frame_timer;
 mod framebuffer;
 mod program;
 mod texture;
-mod timer;
 mod uniform_block;
 mod uniform_buffer;
 mod vertex_array;
@@ -28,12 +28,13 @@ pub use draw_target::DrawTarget;
 pub use draw_unit::{DrawUnit, PrimitiveMode};
 pub use element_buffer::{Element, ElementBuffer};
 pub use error::Error;
+pub use frame_timer::{FrameTimer, TimingInfo};
 pub use framebuffer::Framebuffer;
 pub use program::{Program, ProgramDef};
 pub use texture::{
-    Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
+    NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType,
+    TextureWrap,
 };
-pub use timer::{Timer, TimingInfo};
 pub use uniform_block::{UniformBlock, UniformBlocks};
 pub use uniform_buffer::UniformBuffer;
 pub use vertex::{attribute, Attribute, AttributeValueType, DataType, Vertex};

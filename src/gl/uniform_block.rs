@@ -6,7 +6,14 @@ use glow::HasContext;
 use super::{Context, UniformBuffer};
 
 pub trait UniformBlock: AsStd140 + GlslStruct {
+    // TODO: We should consider setting the instance name at runtime, similarly
+    //       to how sampler names are set in `ProgramDef`. This would allow
+    //       using the same UniformBlock for multiple inputs in the same
+    //       program.
     const INSTANCE_NAME: &'static str;
+
+    // TODO: We may want to allow customizing the bind point here to reduce
+    //       state changes. Not needed for now.
 }
 
 pub trait UniformBuffers {
@@ -19,7 +26,7 @@ pub trait UniformBlocks {
     const NUM_BLOCKS: usize;
 
     fn glsl_definitions() -> String;
-    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program);
+    fn bind_to_program(gl: &Context, program: glow::Program);
 }
 
 impl UniformBlocks for () {
@@ -29,7 +36,7 @@ impl UniformBlocks for () {
         String::new()
     }
 
-    fn bind_to_program(_gl: &Context, _program: <glow::Context as HasContext>::Program) {}
+    fn bind_to_program(_gl: &Context, _program: glow::Program) {}
 }
 
 impl<U> UniformBlocks for U
@@ -42,14 +49,8 @@ where
         glsl_definition::<U>()
     }
 
-    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
-        unsafe {
-            gl.uniform_block_binding(
-                program,
-                gl.get_uniform_block_index(program, U::NAME).unwrap(),
-                0,
-            );
-        }
+    fn bind_to_program(gl: &Context, program: glow::Program) {
+        bind_uniform_block(gl, program, U::NAME, 0);
     }
 }
 
@@ -64,16 +65,9 @@ where
         U1::glsl_definitions() + &glsl_definition::<U2>()
     }
 
-    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
-        unsafe {
-            U1::bind_to_program(gl, program);
-            gl.uniform_block_binding(
-                program,
-                gl.get_uniform_block_index(program, U2::INSTANCE_NAME)
-                    .unwrap(),
-                1,
-            );
-        }
+    fn bind_to_program(gl: &Context, program: glow::Program) {
+        U1::bind_to_program(gl, program);
+        bind_uniform_block(gl, program, U2::NAME, 1);
     }
 }
 
@@ -89,16 +83,9 @@ where
         <(U1, U2)>::glsl_definitions() + &glsl_definition::<U3>()
     }
 
-    fn bind_to_program(gl: &Context, program: <glow::Context as HasContext>::Program) {
-        unsafe {
-            <(U1, U2)>::bind_to_program(gl, program);
-            gl.uniform_block_binding(
-                program,
-                gl.get_uniform_block_index(program, U2::INSTANCE_NAME)
-                    .unwrap(),
-                2,
-            );
-        }
+    fn bind_to_program(gl: &Context, program: glow::Program) {
+        <(U1, U2)>::bind_to_program(gl, program);
+        bind_uniform_block(gl, program, U3::NAME, 2);
     }
 }
 
@@ -171,6 +158,16 @@ where
                 .gl()
                 .bind_buffer_base(glow::UNIFORM_BUFFER, 2, Some(self.2.buffer));
         }
+    }
+}
+
+fn bind_uniform_block(gl: &Context, program: glow::Program, instance_name: &str, binding: u32) {
+    if let Some(index) = unsafe { gl.get_uniform_block_index(program, instance_name) } {
+        unsafe {
+            gl.uniform_block_binding(program, index, binding);
+        }
+    } else {
+        log::info!("Uniform block `{}` is unused", instance_name);
     }
 }
 

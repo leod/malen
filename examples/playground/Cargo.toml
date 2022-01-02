@@ -15,7 +15,7 @@ wasm-bindgen = "0.2"
 console_log = "0.2"
 log = "0.4"
 console_error_panic_hook = "0.1"
-nalgebra = "0.23"
+nalgebra = "0.25.4"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
 coarse-prof = { git = "https://github.com/leod/coarse-prof" }
 instant = { version = "0.1", features = ["wasm-bindgen"] }

@@ -1,13 +1,12 @@
+use nalgebra::{Point2, Vector2};
 use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
-    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch},
-    gl::{self, DepthTest},
-    nalgebra::{Point2, Vector2},
-    pass::Matrices,
-    Camera, CanvasSizeConfig, Color4, Config, Context, DrawParams, Error, InitError, InputState,
-    Key, Rect, Screen, UniformBuffer,
+    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, SpriteBatch},
+    gl::{DepthTest, DrawParams, FrameTimer, UniformBuffer},
+    Camera, CanvasSizeConfig, Color4, Config, Context, Error, InitError, InputState, Key,
+    MatrixBlock, Rect, Screen,
 };
 
 struct Wall {
@@ -140,28 +139,35 @@ impl State {
 struct Game {
     state: State,
 
-    matrices: UniformBuffer<Matrices>,
-    color_triangles: ColorTriangleBatch,
+    //wall_texture: Texture,
+    matrix_buffer: UniformBuffer<MatrixBlock>,
+    color_batch: ColorTriangleBatch,
+    sprite_batch: SpriteBatch,
 }
 
 impl Game {
     pub fn new(context: &Context) -> Result<Game, InitError> {
         let state = State::new();
-        let matrices = UniformBuffer::new(context.gl(), Matrices::default())?;
-        let color_triangles = ColorTriangleBatch::new(context.gl())?;
+
+        //let wall_texture = Texture::from_encoded_bytes(context.gl(), include_bytes!("../resources/04muroch256.png"), TextureParams::default())?;
+        let matrix_buffer = UniformBuffer::new(context.gl(), MatrixBlock::default())?;
+        let color_batch = ColorTriangleBatch::new(context.gl())?;
+        let sprite_batch = SpriteBatch::new(context.gl())?;
 
         Ok(Game {
             state,
-            matrices,
-            color_triangles,
+            //wall_texture,
+            matrix_buffer,
+            color_batch,
+            sprite_batch,
         })
     }
 
     pub fn render(&mut self) {
-        self.color_triangles.clear();
+        self.color_batch.clear();
 
         for wall in &self.state.walls {
-            self.color_triangles.push(ColorRect {
+            self.color_batch.push(ColorRect {
                 rect: Rect {
                     center: wall.center,
                     size: wall.size,
@@ -172,7 +178,7 @@ impl Game {
         }
 
         for enemy in &self.state.enemies {
-            self.color_triangles.push(ColorRect {
+            self.color_batch.push(ColorRect {
                 rect: Rect {
                     center: enemy.pos,
                     size: Vector2::new(30.0, 30.0),
@@ -182,7 +188,7 @@ impl Game {
             })
         }
 
-        self.color_triangles.push(ColorRotatedRect {
+        self.color_batch.push(ColorRotatedRect {
             rect: Rect {
                 center: self.state.player.pos,
                 size: Vector2::new(50.0, 50.0),
@@ -195,15 +201,15 @@ impl Game {
 
     pub fn draw(&mut self, context: &Context) -> Result<(), Error> {
         let screen = context.screen();
-        self.matrices.set_data(Matrices {
+        self.matrix_buffer.set_data(MatrixBlock {
             view: self.state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
 
         context.clear(Color4::new(0.0, 0.0, 0.0, 1.0));
         context.draw_colors(
-            &self.matrices,
-            self.color_triangles.draw_unit(),
+            &self.matrix_buffer,
+            self.color_batch.draw_unit(),
             &DrawParams {
                 depth_test: Some(DepthTest::default()),
                 ..DrawParams::default()
@@ -230,7 +236,7 @@ pub fn main() {
 
     let mut game = Game::new(&context).unwrap();
 
-    let mut gl_timer = gl::Timer::new(context.gl(), 60);
+    let mut frame_timer = FrameTimer::new(context.gl(), 60);
 
     malen::main_loop(move |timestamp_secs, _running| {
         coarse_prof::profile!("frame");
@@ -253,7 +259,7 @@ pub fn main() {
                         "Profiling: {}",
                         std::str::from_utf8(buffer.get_ref()).unwrap()
                     );
-                    log::info!("GL timer: {:?}", gl_timer.timing_info(),);
+                    log::info!("Frame timer: {:?}", frame_timer.timing_info(),);
                 }
                 _ => (),
             }
@@ -263,8 +269,8 @@ pub fn main() {
             .update(timestamp_secs, context.screen(), context.input_state());
         game.render();
 
-        gl_timer.start_draw();
+        frame_timer.start_draw();
         game.draw(&context).unwrap();
-        gl_timer.end_draw();
+        frame_timer.end_draw();
     });
 }

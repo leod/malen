@@ -1,14 +1,22 @@
-use std::rc::Rc;
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
+
+use crevice::{glsl::GlslStruct, std140::AsStd140};
+use nalgebra::Vector2;
 
 use crate::{
     geometry::SpriteVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer},
+    gl::{
+        self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBlock,
+        UniformBuffer,
+    },
 };
 
-use super::Matrices;
+use super::MatrixBlock;
 
 pub struct SpritePass {
-    program: Program<Matrices, SpriteVertex, 1>,
+    program: Program<(MatrixBlock, SpriteInfoBlock), SpriteVertex, 1>,
+
+    sprite_infos: RefCell<BTreeMap<glow::Texture, UniformBuffer<SpriteInfoBlock>>>,
 }
 
 impl SpritePass {
@@ -26,18 +34,55 @@ impl SpritePass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self { program })
+        Ok(Self {
+            program,
+            sprite_infos: RefCell::new(BTreeMap::new()),
+        })
     }
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<Matrices>,
+        matrix_buffer: &UniformBuffer<MatrixBlock>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
-    ) where
+    ) -> Result<(), gl::Error>
+    where
         E: Element,
     {
-        gl::draw(&self.program, matrices, [texture], draw_unit, params);
+        if !self.sprite_infos.borrow().contains_key(&texture.texture) {
+            // TODO: Max size for sprite info cache
+            let buffer = UniformBuffer::new(
+                self.program.gl(),
+                SpriteInfoBlock {
+                    size: texture.size().cast::<f32>(),
+                },
+            )?;
+            self.sprite_infos
+                .borrow_mut()
+                .insert(texture.texture, buffer);
+        }
+
+        let sprite_infos_borrow = self.sprite_infos.borrow();
+        let sprite_info = sprite_infos_borrow.get(&texture.texture).unwrap();
+
+        gl::draw(
+            &self.program,
+            (matrix_buffer, sprite_info),
+            [texture],
+            draw_unit,
+            params,
+        );
+
+        Ok(())
     }
+}
+
+#[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
+struct SpriteInfoBlock {
+    size: Vector2<f32>,
+}
+
+impl UniformBlock for SpriteInfoBlock {
+    const INSTANCE_NAME: &'static str = "sprite_info";
 }

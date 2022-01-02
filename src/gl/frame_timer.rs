@@ -4,7 +4,7 @@ use glow::HasContext;
 
 use super::Context;
 
-pub struct Timer {
+pub struct FrameTimer {
     gl: Rc<Context>,
     max_samples: usize,
     is_supported: bool,
@@ -25,7 +25,7 @@ pub struct TimingInfo {
 
 // https://www.khronos.org/registry/webgl/extensions/EXT_disjoint_timer_query_webgl2/
 
-impl Timer {
+impl FrameTimer {
     pub fn new(gl: Rc<Context>, max_samples: usize) -> Self {
         let is_supported = gl
             .supported_extensions()
@@ -140,7 +140,7 @@ impl Timer {
     }
 }
 
-impl Drop for Timer {
+impl Drop for FrameTimer {
     fn drop(&mut self) {
         for query in &self.poll_queries {
             unsafe {

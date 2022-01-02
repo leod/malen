@@ -61,7 +61,7 @@ pub enum TextureWrap {
 
 pub struct Texture {
     gl: Rc<Context>,
-    pub(super) texture: <glow::Context as HasContext>::Texture,
+    pub(crate) texture: <glow::Context as HasContext>::Texture,
     size: Vector2<u32>,
 }
 
