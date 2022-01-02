@@ -131,6 +131,9 @@ fn create_program<U: UniformBlocks, const S: usize>(
     }
 
     // Set texture uniforms.
+    unsafe {
+        gl.use_program(Some(program));
+    }
     for (i, sampler) in def.samplers.iter().enumerate() {
         if let Some(location) = unsafe { gl.get_uniform_location(program, sampler) } {
             unsafe {

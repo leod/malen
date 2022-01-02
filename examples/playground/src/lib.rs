@@ -3,8 +3,8 @@ use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
-    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, SpriteBatch},
-    gl::{DepthTest, DrawParams, FrameTimer, UniformBuffer},
+    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
+    gl::{DepthTest, DrawParams, FrameTimer, Texture, TextureParams, UniformBuffer},
     Camera, CanvasSizeConfig, Color4, Config, Context, Error, InitError, InputState, Key,
     MatrixBlock, Rect, Screen,
 };
@@ -139,41 +139,46 @@ impl State {
 struct Game {
     state: State,
 
-    //wall_texture: Texture,
+    wall_texture: Texture,
     matrix_buffer: UniformBuffer<MatrixBlock>,
     color_batch: ColorTriangleBatch,
-    sprite_batch: SpriteBatch,
+    wall_sprite_batch: SpriteBatch,
 }
 
 impl Game {
     pub fn new(context: &Context) -> Result<Game, InitError> {
         let state = State::new();
 
-        //let wall_texture = Texture::from_encoded_bytes(context.gl(), include_bytes!("../resources/04muroch256.png"), TextureParams::default())?;
+        let wall_texture = Texture::from_encoded_bytes(
+            context.gl(),
+            include_bytes!("../resources/04muroch256.png"),
+            TextureParams::default(),
+        )?;
         let matrix_buffer = UniformBuffer::new(context.gl(), MatrixBlock::default())?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
-        let sprite_batch = SpriteBatch::new(context.gl())?;
+        let wall_sprite_batch = SpriteBatch::new(context.gl())?;
 
         Ok(Game {
             state,
-            //wall_texture,
+            wall_texture,
             matrix_buffer,
             color_batch,
-            sprite_batch,
+            wall_sprite_batch,
         })
     }
 
     pub fn render(&mut self) {
         self.color_batch.clear();
+        self.wall_sprite_batch.clear();
 
         for wall in &self.state.walls {
-            self.color_batch.push(ColorRect {
+            self.wall_sprite_batch.push(Sprite {
                 rect: Rect {
                     center: wall.center,
                     size: wall.size,
                 },
-                z: 1.0,
-                color: Color4::new(0.2, 0.2, 0.8, 1.0),
+                tex_rect: Rect::from_bottom_left(Point2::origin(), wall.size),
+                z: 0.2,
             });
         }
 
@@ -183,7 +188,7 @@ impl Game {
                     center: enemy.pos,
                     size: Vector2::new(30.0, 30.0),
                 },
-                z: 0.0,
+                z: 0.3,
                 color: Color4::new(0.8, 0.2, 0.2, 1.0),
             })
         }
@@ -194,7 +199,7 @@ impl Game {
                 size: Vector2::new(50.0, 50.0),
             }
             .rotate(self.state.player.angle),
-            z: 0.5,
+            z: 0.4,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
         });
     }
@@ -206,7 +211,7 @@ impl Game {
             projection: screen.orthographic_projection(),
         });
 
-        context.clear(Color4::new(0.0, 0.0, 0.0, 1.0));
+        context.clear(Color4::new(1.0, 1.0, 1.0, 1.0));
         context.draw_colors(
             &self.matrix_buffer,
             self.color_batch.draw_unit(),
@@ -215,6 +220,15 @@ impl Game {
                 ..DrawParams::default()
             },
         );
+        context.draw_sprites(
+            &self.matrix_buffer,
+            &self.wall_texture,
+            self.wall_sprite_batch.draw_unit(),
+            &DrawParams {
+                depth_test: Some(DepthTest::default()),
+                ..DrawParams::default()
+            },
+        )?;
 
         Ok(())
     }
