@@ -7,7 +7,7 @@ use super::{AttributeValueType, Context, ElementBuffer, Error, Vertex, VertexBuf
 pub struct VertexArray<V, E> {
     vertex_buffer: Rc<VertexBuffer<V>>,
     element_buffer: Rc<ElementBuffer<E>>,
-    pub(super) vao: <glow::Context as HasContext>::VertexArray,
+    vao: <glow::Context as HasContext>::VertexArray,
 }
 
 impl<V, E> VertexArray<V, E>

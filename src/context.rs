@@ -5,7 +5,7 @@ use web_sys::HtmlCanvasElement;
 use crate::{
     error::InitError,
     geometry::{ColorVertex, SpriteVertex},
-    gl::{self, DrawUnit, Element},
+    gl::{self, DrawUnit, Element, Texture},
     input::InputState,
     pass::{ColorPass, Matrices, SpritePass},
     Canvas, Color4, Config, DrawParams, Event, Screen, UniformBuffer,
@@ -87,12 +87,13 @@ impl Context {
     pub fn draw_sprites<E>(
         &self,
         matrices: &UniformBuffer<Matrices>,
+        texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
     ) where
         E: Element,
     {
-        self.sprite_pass.draw(matrices, draw_unit, params);
+        self.sprite_pass.draw(matrices, texture, draw_unit, params);
     }
 
     pub fn draw_colors<E>(

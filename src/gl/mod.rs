@@ -29,7 +29,7 @@ pub use draw_unit::{DrawUnit, PrimitiveMode};
 pub use element_buffer::{Element, ElementBuffer};
 pub use error::Error;
 pub use framebuffer::Framebuffer;
-pub use program::Program;
+pub use program::{Program, ProgramDef};
 pub use texture::{
     Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
 };

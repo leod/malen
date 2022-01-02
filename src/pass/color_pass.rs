@@ -2,37 +2,42 @@ use std::rc::Rc;
 
 use crate::{
     geometry::ColorVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, UniformBuffer},
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
 };
 
 use super::Matrices;
 
 pub struct ColorPass {
-    program: Program<Matrices, ColorVertex>,
+    program: Program<Matrices, ColorVertex, 0>,
 }
 
 impl ColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let program = Program::new(
-            gl,
-            r#"
-            out vec4 v_color;
+        let program_def = ProgramDef {
+            samplers: [],
+            vertex_source: r#"
+                out vec4 v_color;
 
-            void main() {
-                vec3 position = matrices.projection * matrices.view * vec3(a_position.xy, 1.0);
-                gl_Position = vec4(position.xy, a_position.z, 1.0);
+                void main() {
+                    vec3 position = matrices.projection
+                        * matrices.view
+                        * vec3(a_position.xy, 1.0);
 
-                v_color = a_color;
-            }"#,
-            r#"
-            in vec4 v_color;
-            out vec4 f_color;
+                    gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-            void main() {
-                f_color = v_color;
-            }
+                    v_color = a_color;
+                }
             "#,
-        )?;
+            fragment_source: r#"
+                in vec4 v_color;
+                out vec4 f_color;
+
+                void main() {
+                    f_color = v_color;
+                }
+            "#,
+        };
+        let program = Program::new(gl, program_def)?;
 
         Ok(Self { program })
     }
@@ -45,6 +50,6 @@ impl ColorPass {
     ) where
         E: Element,
     {
-        gl::draw(&self.program, matrices, draw_unit, params);
+        gl::draw(&self.program, matrices, [], draw_unit, params);
     }
 }

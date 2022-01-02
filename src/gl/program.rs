@@ -4,13 +4,13 @@ use glow::HasContext;
 
 use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
-pub struct Program<U, V> {
+pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
     program: <glow::Context as HasContext>::Program,
     _phantom: PhantomData<(U, V)>,
 }
 
-impl<U, V> Program<U, V> {
+impl<U, V, const S: usize> Program<U, V, S> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
@@ -22,13 +22,19 @@ impl<U, V> Program<U, V> {
     }
 }
 
-impl<U, V> Program<U, V>
+pub struct ProgramDef<'a, const S: usize> {
+    pub samplers: [&'a str; S],
+    pub vertex_source: &'a str,
+    pub fragment_source: &'a str,
+}
+
+impl<U, V, const S: usize> Program<U, V, S>
 where
     U: UniformBlocks,
     V: Vertex,
 {
-    pub fn new(gl: Rc<Context>, vertex_source: &str, fragment_source: &str) -> Result<Self, Error> {
-        let program = create_program::<U>(&*gl, &V::attributes(), vertex_source, fragment_source)?;
+    pub fn new(gl: Rc<Context>, def: ProgramDef<S>) -> Result<Self, Error> {
+        let program = create_program::<U, S>(&*gl, &V::attributes(), def)?;
 
         Ok(Self {
             gl,
@@ -38,13 +44,17 @@ where
     }
 }
 
-fn create_program<U: UniformBlocks>(
+fn create_program<U: UniformBlocks, const S: usize>(
     gl: &Context,
     attributes: &[Attribute],
-    vertex_source: &str,
-    fragment_source: &str,
+    def: ProgramDef<S>,
 ) -> Result<<glow::Context as HasContext>::Program, Error> {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
+
+    let samplers = def
+        .samplers
+        .map(|name| format!("uniform sampler2D {};", name))
+        .join("\n");
 
     let sources = [
         (
@@ -52,11 +62,12 @@ fn create_program<U: UniformBlocks>(
             SOURCE_HEADER.to_owned()
                 + &vertex_source_header(attributes)
                 + &U::glsl_definitions()
-                + vertex_source,
+                + &samplers
+                + def.vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
-            SOURCE_HEADER.to_owned() + &U::glsl_definitions() + fragment_source,
+            SOURCE_HEADER.to_owned() + &U::glsl_definitions() + &samplers + def.fragment_source,
         ),
     ];
 
@@ -127,7 +138,7 @@ fn vertex_source_header(attributes: &[Attribute]) -> String {
         + "\n"
 }
 
-impl<U, V> Drop for Program<U, V> {
+impl<U, V, const S: usize> Drop for Program<U, V, S> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_program(self.program);
