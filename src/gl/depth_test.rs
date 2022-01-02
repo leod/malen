@@ -23,7 +23,7 @@ impl Default for DepthTest {
         Self {
             func: DepthFunc::default(),
             range_near: 0.0,
-            range_far: 0.0,
+            range_far: 1.0,
             write: true,
         }
     }
