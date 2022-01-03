@@ -93,7 +93,7 @@ impl Context {
 
     pub fn draw_sprites<E>(
         &self,
-        matrices_buffer: &UniformBuffer<MatricesBlock>,
+        matrices: &UniformBuffer<MatricesBlock>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
@@ -101,18 +101,17 @@ impl Context {
     where
         E: Element,
     {
-        self.sprite_pass
-            .draw(matrices_buffer, texture, draw_unit, params)
+        self.sprite_pass.draw(matrices, texture, draw_unit, params)
     }
 
     pub fn draw_colors<E>(
         &self,
-        matrices_buffer: &UniformBuffer<MatricesBlock>,
+        matrices: &UniformBuffer<MatricesBlock>,
         draw_unit: DrawUnit<ColorVertex, E>,
         params: &DrawParams,
     ) where
         E: Element,
     {
-        self.color_pass.draw(matrices_buffer, draw_unit, params);
+        self.color_pass.draw(matrices, draw_unit, params);
     }
 }

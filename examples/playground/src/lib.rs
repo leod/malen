@@ -5,8 +5,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use malen::{
     geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
     gl::{DepthTest, DrawParams, FrameTimer, Texture, TextureParams, UniformBuffer},
-    Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
-    MatricesBlock, Rect, Screen,
+    Camera, CanvasSizeConfig, Color4, Config, Context, Font, FrameError, InitError, InputState,
+    Key, MatricesBlock, Rect, Screen,
 };
 
 struct Wall {
@@ -139,8 +139,12 @@ impl State {
 struct Game {
     state: State,
 
+    font: Font,
     wall_texture: Texture,
-    matrices_buffer: UniformBuffer<MatricesBlock>,
+
+    camera_matrices: UniformBuffer<MatricesBlock>,
+    screen_matrices: UniformBuffer<MatricesBlock>,
+
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
 }
@@ -149,19 +153,29 @@ impl Game {
     pub fn new(context: &Context) -> Result<Game, InitError> {
         let state = State::new();
 
+        let font = Font::load(
+            context,
+            include_bytes!("../resources/Roboto-Regular.ttf"),
+            40.0,
+        )?;
         let wall_texture = Texture::load(
             context.gl(),
             include_bytes!("../resources/04muroch256.png"),
             TextureParams::default(),
         )?;
-        let matrices_buffer = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
+
+        let camera_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
+
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
 
         Ok(Game {
             state,
+            font,
             wall_texture,
-            matrices_buffer,
+            camera_matrices,
+            screen_matrices,
             color_batch,
             wall_sprite_batch,
         })
@@ -206,14 +220,14 @@ impl Game {
 
     pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
         let screen = context.screen();
-        self.matrices_buffer.set_data(MatricesBlock {
+        self.camera_matrices.set_data(MatricesBlock {
             view: self.state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
 
         context.clear(Color4::new(1.0, 1.0, 1.0, 1.0));
         context.draw_colors(
-            &self.matrices_buffer,
+            &self.camera_matrices,
             self.color_batch.draw_unit(),
             &DrawParams {
                 depth_test: Some(DepthTest::default()),
@@ -221,7 +235,7 @@ impl Game {
             },
         );
         context.draw_sprites(
-            &self.matrices_buffer,
+            &self.camera_matrices,
             &self.wall_texture,
             self.wall_sprite_batch.draw_unit(),
             &DrawParams {
