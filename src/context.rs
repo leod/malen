@@ -7,7 +7,7 @@ use crate::{
     geometry::{ColorVertex, SpriteVertex},
     gl::{self, DrawParams, DrawUnit, Element, Texture, UniformBuffer},
     input::InputState,
-    pass::{ColorPass, MatrixBlock, SpritePass},
+    pass::{ColorPass, ColorSpritePass, MatricesBlock, SpritePass},
     Canvas, Color4, Config, Event, Screen,
 };
 
@@ -15,8 +15,9 @@ pub struct Context {
     canvas: Canvas,
     input_state: InputState,
 
-    sprite_pass: SpritePass,
-    color_pass: ColorPass,
+    sprite_pass: Rc<SpritePass>,
+    color_sprite_pass: Rc<ColorSpritePass>,
+    color_pass: Rc<ColorPass>,
 }
 
 impl Context {
@@ -40,13 +41,15 @@ impl Context {
     fn from_canvas(canvas: Canvas, _: Config) -> Result<Self, InitError> {
         let input_state = InputState::default();
         let sprite_pass = SpritePass::new(canvas.gl())?;
+        let color_sprite_pass = ColorSpritePass::new(canvas.gl())?;
         let color_pass = ColorPass::new(canvas.gl())?;
 
         Ok(Context {
             canvas,
             input_state,
-            sprite_pass,
-            color_pass,
+            sprite_pass: Rc::new(sprite_pass),
+            color_sprite_pass: Rc::new(color_sprite_pass),
+            color_pass: Rc::new(color_pass),
         })
     }
 
@@ -62,12 +65,16 @@ impl Context {
         &self.input_state
     }
 
-    pub fn sprite_pass(&self) -> &SpritePass {
-        &self.sprite_pass
+    pub fn sprite_pass(&self) -> Rc<SpritePass> {
+        self.sprite_pass.clone()
     }
 
-    pub fn color_pass(&self) -> &ColorPass {
-        &self.color_pass
+    pub fn color_sprite_pass(&self) -> Rc<ColorSpritePass> {
+        self.color_sprite_pass.clone()
+    }
+
+    pub fn color_pass(&self) -> Rc<ColorPass> {
+        self.color_pass.clone()
     }
 
     pub fn screen(&self) -> Screen {
@@ -86,7 +93,7 @@ impl Context {
 
     pub fn draw_sprites<E>(
         &self,
-        matrix_buffer: &UniformBuffer<MatrixBlock>,
+        matrices_buffer: &UniformBuffer<MatricesBlock>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
@@ -95,17 +102,17 @@ impl Context {
         E: Element,
     {
         self.sprite_pass
-            .draw(matrix_buffer, texture, draw_unit, params)
+            .draw(matrices_buffer, texture, draw_unit, params)
     }
 
     pub fn draw_colors<E>(
         &self,
-        matrix_buffer: &UniformBuffer<MatrixBlock>,
+        matrices_buffer: &UniformBuffer<MatricesBlock>,
         draw_unit: DrawUnit<ColorVertex, E>,
         params: &DrawParams,
     ) where
         E: Element,
     {
-        self.color_pass.draw(matrix_buffer, draw_unit, params);
+        self.color_pass.draw(matrices_buffer, draw_unit, params);
     }
 }

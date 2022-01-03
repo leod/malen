@@ -5,7 +5,7 @@ use crate::{
     Color4, Rect, RotatedRect,
 };
 
-use super::{ColorVertex, SpriteVertex};
+use super::{ColorSpriteVertex, ColorVertex, SpriteVertex};
 
 pub trait PrimitiveTag {
     fn primitive_mode() -> PrimitiveMode;
@@ -91,6 +91,22 @@ impl Geometry<TriangleTag> for Sprite {
             vertices.push(SpriteVertex {
                 position: Point3::new(p.x, p.y, self.z),
                 tex_coords,
+            });
+        }
+    }
+}
+
+impl Geometry<TriangleTag> for ColorSprite {
+    type Vertex = ColorSpriteVertex;
+
+    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+        elements.extend_from_slice(&quad_indices(vertices.len() as u32));
+
+        for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
+            vertices.push(ColorSpriteVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                tex_coords,
+                color: self.color,
             });
         }
     }
