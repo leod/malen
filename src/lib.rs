@@ -9,7 +9,7 @@ mod error;
 mod input;
 mod main_loop;
 mod pass;
-//mod text;
+mod text;
 
 pub(crate) mod util;
 
@@ -25,8 +25,9 @@ pub use canvas::{Canvas, CanvasSizeConfig};
 pub use color::{Color3, Color4};
 pub use config::Config;
 pub use context::Context;
-pub use error::{Error, InitError};
+pub use error::{FrameError, InitError};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
 pub use math::{Camera, Rect, RotatedRect, Screen};
-pub use pass::MatrixBlock;
+pub use pass::MatricesBlock;
+pub use text::{Font, TextBatch, WriteTextError};

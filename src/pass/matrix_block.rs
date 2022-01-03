@@ -4,11 +4,11 @@ use nalgebra::Matrix3;
 use crate::gl::UniformBlock;
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
-pub struct MatrixBlock {
+pub struct MatricesBlock {
     pub projection: Matrix3<f32>,
     pub view: Matrix3<f32>,
 }
 
-impl UniformBlock for MatrixBlock {
+impl UniformBlock for MatricesBlock {
     const INSTANCE_NAME: &'static str = "matrices";
 }

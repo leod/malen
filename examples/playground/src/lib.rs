@@ -5,8 +5,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use malen::{
     geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
     gl::{DepthTest, DrawParams, FrameTimer, Texture, TextureParams, UniformBuffer},
-    Camera, CanvasSizeConfig, Color4, Config, Context, Error, InitError, InputState, Key,
-    MatrixBlock, Rect, Screen,
+    Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
+    MatricesBlock, Rect, Screen,
 };
 
 struct Wall {
@@ -140,7 +140,7 @@ struct Game {
     state: State,
 
     wall_texture: Texture,
-    matrix_buffer: UniformBuffer<MatrixBlock>,
+    matrices_buffer: UniformBuffer<MatricesBlock>,
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
 }
@@ -149,19 +149,19 @@ impl Game {
     pub fn new(context: &Context) -> Result<Game, InitError> {
         let state = State::new();
 
-        let wall_texture = Texture::from_encoded_bytes(
+        let wall_texture = Texture::load(
             context.gl(),
             include_bytes!("../resources/04muroch256.png"),
             TextureParams::default(),
         )?;
-        let matrix_buffer = UniformBuffer::new(context.gl(), MatrixBlock::default())?;
+        let matrices_buffer = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
 
         Ok(Game {
             state,
             wall_texture,
-            matrix_buffer,
+            matrices_buffer,
             color_batch,
             wall_sprite_batch,
         })
@@ -204,16 +204,16 @@ impl Game {
         });
     }
 
-    pub fn draw(&mut self, context: &Context) -> Result<(), Error> {
+    pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
         let screen = context.screen();
-        self.matrix_buffer.set_data(MatrixBlock {
+        self.matrices_buffer.set_data(MatricesBlock {
             view: self.state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
 
         context.clear(Color4::new(1.0, 1.0, 1.0, 1.0));
         context.draw_colors(
-            &self.matrix_buffer,
+            &self.matrices_buffer,
             self.color_batch.draw_unit(),
             &DrawParams {
                 depth_test: Some(DepthTest::default()),
@@ -221,7 +221,7 @@ impl Game {
             },
         );
         context.draw_sprites(
-            &self.matrix_buffer,
+            &self.matrices_buffer,
             &self.wall_texture,
             self.wall_sprite_batch.draw_unit(),
             &DrawParams {

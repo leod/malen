@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::gl::{self, NewTextureError};
+use crate::{
+    gl::{self, LoadTextureError, NewTextureError},
+    WriteTextError,
+};
 
 #[derive(Error, Debug)]
 pub enum InitError {
@@ -22,15 +25,21 @@ pub enum InitError {
     #[error("could not initialize WebGL1")]
     InitializeWebGl,
 
-    #[error("GL error: {0}")]
+    #[error("OpenGL error: {0}")]
     OpenGL(#[from] gl::Error),
 
-    #[error("New texture error: {0}")]
-    NewTextureError(#[from] NewTextureError),
+    #[error("new texture error: {0}")]
+    NewTexture(#[from] NewTextureError),
+
+    #[error("load texture error: {0}")]
+    LoadTexture(#[from] LoadTextureError),
 }
 
 #[derive(Error, Debug)]
-pub enum Error {
-    #[error("GL error: {0}")]
+pub enum FrameError {
+    #[error("OpenGL error: {0}")]
     OpenGL(#[from] gl::Error),
+
+    #[error("write text error: {0}")]
+    WriteTextError(#[from] WriteTextError),
 }

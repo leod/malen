@@ -11,7 +11,7 @@ log = "0.4"
 thiserror = "1.0"
 wasm-bindgen = "0.2"
 nalgebra = { version = "0.25.4", features = ["convert-bytemuck"] }
-fontdue = "0.5"
+fontdue = "0.6"
 bytemuck = "1.7"
 bytemuck_derive = "1.0"
 glow = "0.11"

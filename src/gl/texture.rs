@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use glow::HasContext;
-use nalgebra::Vector2;
+use nalgebra::{Point2, Vector2};
 use thiserror::Error;
 
 use super::Context;
@@ -11,14 +11,17 @@ pub enum NewTextureError {
     #[error("GL error: {0}")]
     OpenGL(#[from] super::Error),
 
+    #[error("texture too large: requested {0}, but max size is {1}")]
+    TooLarge(u32, u32),
+}
+
+#[derive(Error, Debug)]
+pub enum LoadTextureError {
+    #[error("texture error: {0}")]
+    NewTexture(#[from] NewTextureError),
+
     #[error("image error: {0}")]
     Image(#[from] image::ImageError),
-
-    #[error("texture width too large: requested {0}, but max size is {1}")]
-    WidthTooLarge(u32, u32),
-
-    #[error("texture height too large: requestd {0}, but max size is {1}")]
-    HeightTooLarge(u32, u32),
 }
 
 #[derive(Debug, Clone)]
@@ -63,9 +66,15 @@ pub struct Texture {
     gl: Rc<Context>,
     id: glow::Texture,
     size: Vector2<u32>,
+    params: TextureParams,
 }
 
 impl Texture {
+    pub fn max_size(gl: &Context) -> u32 {
+        let max_size = unsafe { gl.get_parameter_i32(glow::MAX_TEXTURE_SIZE) };
+        max_size as u32
+    }
+
     pub fn new(
         gl: Rc<Context>,
         size: Vector2<u32>,
@@ -76,15 +85,15 @@ impl Texture {
             "Empty textures do not have a mipmap"
         );
 
-        let texture = Self::new_impl(gl.clone(), size, &params)?;
+        let texture = Self::new_impl(gl.clone(), size, params.clone())?;
 
         unsafe {
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
                 glow::RGBA as i32,
-                size.x as i32,
-                size.y as i32,
+                i32::try_from(size.x).unwrap(),
+                i32::try_from(size.y).unwrap(),
                 0,
                 glow::RGBA,
                 params.value_type.to_gl(),
@@ -102,24 +111,25 @@ impl Texture {
         params: TextureParams,
     ) -> Result<Self, NewTextureError> {
         assert!(rgba.len() as u32 == size.x * size.y * 4);
+        assert!(params.value_type == TextureValueType::UnsignedByte);
 
-        let texture = Self::new_impl(gl.clone(), size, &params)?;
+        let texture = Self::new_impl(gl.clone(), size, params)?;
 
         unsafe {
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
                 glow::RGBA as i32,
-                size.x as i32,
-                size.y as i32,
+                i32::try_from(size.x).unwrap(),
+                i32::try_from(size.y).unwrap(),
                 0,
                 glow::RGBA,
-                params.value_type.to_gl(),
+                texture.params.value_type.to_gl(),
                 Some(rgba),
             );
         }
 
-        if params.min_filter.uses_mipmap() {
+        if texture.params.min_filter.uses_mipmap() {
             unsafe {
                 gl.generate_mipmap(glow::TEXTURE_2D);
             }
@@ -128,46 +138,20 @@ impl Texture {
         Ok(texture)
     }
 
-    pub fn from_encoded_bytes(
+    pub fn load(
         gl: Rc<Context>,
         encoded_bytes: &[u8],
         params: TextureParams,
-    ) -> Result<Self, NewTextureError> {
+    ) -> Result<Self, LoadTextureError> {
         let image = image::load_from_memory(encoded_bytes)?.to_rgba8();
         let size = Vector2::new(image.width(), image.height());
 
-        Self::from_rgba(gl, image.into_raw().as_slice(), size, params)
-    }
-
-    fn new_impl(
-        gl: Rc<Context>,
-        size: Vector2<u32>,
-        params: &TextureParams,
-    ) -> Result<Self, NewTextureError> {
-        assert!(size.x > 0, "Texture width must be positive");
-        assert!(size.y > 0, "Texture height must be positive");
-        {
-            let max_size = unsafe { gl.get_parameter_i32(glow::MAX_TEXTURE_SIZE) } as u32;
-            if size.x > max_size {
-                return Err(NewTextureError::WidthTooLarge(size.x, max_size));
-            }
-            if size.y > max_size {
-                return Err(NewTextureError::HeightTooLarge(size.y, max_size));
-            }
-        }
-
-        // TODO:
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_assume_you_can_render_into_float_textures
-
-        let id = unsafe { gl.create_texture() }.map_err(super::Error::Glow)?;
-
-        unsafe {
-            gl.bind_texture(glow::TEXTURE_2D, Some(id));
-        }
-
-        set_texture_params(&*gl, params);
-
-        Ok(Self { gl, id, size })
+        Ok(Self::from_rgba(
+            gl,
+            image.into_raw().as_slice(),
+            size,
+            params,
+        )?)
     }
 
     pub fn gl(&self) -> Rc<Context> {
@@ -180,6 +164,67 @@ impl Texture {
 
     pub fn size(&self) -> Vector2<u32> {
         self.size
+    }
+
+    pub fn set_sub_image(&self, pos: Point2<u32>, size: Vector2<u32>, data: &[u8]) {
+        assert!(pos.x + size.x <= self.size.x);
+        assert!(pos.y + size.y <= self.size.y);
+        assert!(self.params.value_type == TextureValueType::UnsignedByte);
+
+        unsafe {
+            self.gl.bind_texture(glow::TEXTURE_2D, Some(self.id));
+            self.gl.tex_sub_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                i32::try_from(pos.x).unwrap(),
+                i32::try_from(pos.y).unwrap(),
+                i32::try_from(size.x).unwrap(),
+                i32::try_from(size.y).unwrap(),
+                glow::RGBA,
+                self.params.value_type.to_gl(),
+                glow::PixelUnpackData::Slice(data),
+            );
+        }
+
+        if self.params.min_filter.uses_mipmap() {
+            unsafe {
+                self.gl.generate_mipmap(glow::TEXTURE_2D);
+            }
+        }
+    }
+
+    fn new_impl(
+        gl: Rc<Context>,
+        size: Vector2<u32>,
+        params: TextureParams,
+    ) -> Result<Self, NewTextureError> {
+        assert!(size.x > 0, "Texture width must be positive");
+        assert!(size.y > 0, "Texture height must be positive");
+
+        if size.x > Self::max_size(&*gl) {
+            return Err(NewTextureError::TooLarge(size.x, Self::max_size(&*gl)));
+        }
+        if size.y > Self::max_size(&*gl) {
+            return Err(NewTextureError::TooLarge(size.y, Self::max_size(&*gl)));
+        }
+
+        // TODO:
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#dont_assume_you_can_render_into_float_textures
+
+        let id = unsafe { gl.create_texture() }.map_err(super::Error::Glow)?;
+
+        unsafe {
+            gl.bind_texture(glow::TEXTURE_2D, Some(id));
+        }
+
+        set_texture_params(&*gl, &params);
+
+        Ok(Self {
+            gl,
+            id,
+            size,
+            params,
+        })
     }
 }
 

@@ -32,8 +32,8 @@ pub use frame_timer::{FrameTimer, TimingInfo};
 pub use framebuffer::Framebuffer;
 pub use program::{Program, ProgramDef};
 pub use texture::{
-    NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType,
-    TextureWrap,
+    LoadTextureError, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
+    TextureValueType, TextureWrap,
 };
 pub use uniform_block::{UniformBlock, UniformBlocks};
 pub use uniform_buffer::UniformBuffer;
