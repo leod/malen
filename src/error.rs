@@ -2,6 +2,7 @@ use thiserror::Error;
 
 use crate::{
     gl::{self, LoadTextureError, NewTextureError},
+    text::LoadFontError,
     WriteTextError,
 };
 
@@ -33,6 +34,9 @@ pub enum InitError {
 
     #[error("load texture error: {0}")]
     LoadTexture(#[from] LoadTextureError),
+
+    #[error("load font error: {0}")]
+    LoadFont(#[from] LoadFontError),
 }
 
 #[derive(Error, Debug)]

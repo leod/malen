@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[derive(Error, Debug)]
-pub enum NewFontError {
+pub enum LoadFontError {
     #[error("new texture error: {0}")]
     NewTexture(#[from] NewTextureError),
 
@@ -30,7 +30,7 @@ pub enum WriteTextError {
     OpenGL(#[from] gl::Error),
 
     #[error("texture error: {0}")]
-    Texture(#[from] NewTextureError),
+    NewTexture(#[from] NewTextureError),
 
     #[error("glyph too large: glyph {0:?} of size {1} did not fit into empty atlas of size {2}")]
     GlyphTooLarge(GlyphRasterConfig, Vector2<u32>, u32),
@@ -62,17 +62,13 @@ pub struct Font {
 const MAX_ATLAS_SIZE: u32 = 2048;
 
 impl Font {
-    pub fn from_bytes<Data>(
-        context: &Context,
-        data: &[u8],
-        scale: f32,
-    ) -> Result<Self, NewFontError> {
+    pub fn load(context: &Context, data: &[u8], scale: f32) -> Result<Self, LoadFontError> {
         let settings = FontSettings {
             scale,
             ..Default::default()
         };
 
-        let font = fontdue::Font::from_bytes(data, settings).map_err(NewFontError::Fontdue)?;
+        let font = fontdue::Font::from_bytes(data, settings).map_err(LoadFontError::Fontdue)?;
 
         let atlas_size = Texture::max_size(&*context.gl()).min(MAX_ATLAS_SIZE);
         let atlas = Atlas::new(context.gl(), atlas_size, atlas_size)?;

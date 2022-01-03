@@ -56,7 +56,7 @@ pub struct Atlas {
 
 impl Atlas {
     pub fn new(gl: Rc<gl::Context>, width: u32, height: u32) -> Result<Atlas, NewTextureError> {
-        let mut texture = Texture::new(
+        let texture = Texture::new(
             gl,
             Vector2::new(width as u32, height as u32),
             TextureParams {

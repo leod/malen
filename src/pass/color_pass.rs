@@ -44,12 +44,12 @@ impl ColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices_buffer: &UniformBuffer<MatricesBlock>,
+        matrices: &UniformBuffer<MatricesBlock>,
         draw_unit: DrawUnit<ColorVertex, E>,
         params: &DrawParams,
     ) where
         E: Element,
     {
-        gl::draw(&self.program, matrices_buffer, [], draw_unit, params);
+        gl::draw(&self.program, matrices, [], draw_unit, params);
     }
 }
