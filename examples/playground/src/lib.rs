@@ -1,3 +1,4 @@
+use coarse_prof::profile;
 use nalgebra::{Matrix3, Point2, Vector2};
 use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -91,6 +92,8 @@ impl State {
     }
 
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
+        profile!("update");
+
         let dt_secs = self
             .last_timestamp_secs
             .map_or(0.0, |last_timestamp_secs| {
@@ -186,6 +189,8 @@ impl Game {
     }
 
     pub fn render(&mut self) -> Result<(), FrameError> {
+        profile!("render");
+
         self.color_batch.clear();
         self.wall_sprite_batch.clear();
         self.text_batch.clear();
@@ -237,6 +242,8 @@ impl Game {
     }
 
     pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
+        profile!("draw");
+
         let screen = context.screen();
 
         self.camera_matrices.set_data(MatricesBlock {
@@ -292,9 +299,11 @@ pub fn main() {
     let mut frame_timer = FrameTimer::new(context.gl(), 60);
 
     malen::main_loop(move |timestamp_secs, _running| {
-        coarse_prof::profile!("frame");
+        profile!("frame");
 
         while let Some(event) = context.pop_event() {
+            profile!("event");
+
             use malen::Event::*;
 
             match event {
@@ -309,7 +318,7 @@ pub fn main() {
                     coarse_prof::write(&mut buffer).unwrap();
                     coarse_prof::reset();
                     log::info!(
-                        "Profiling: {}",
+                        "Profiling:\n{}",
                         std::str::from_utf8(buffer.get_ref()).unwrap()
                     );
                     log::info!("Frame timer: {:?}", frame_timer.timing_info(),);

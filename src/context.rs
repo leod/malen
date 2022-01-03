@@ -4,10 +4,9 @@ use web_sys::HtmlCanvasElement;
 
 use crate::{
     error::InitError,
-    geometry::{ColorVertex, SpriteVertex},
-    gl::{self, DrawParams, DrawUnit, Element, Texture, UniformBuffer},
+    gl,
     input::InputState,
-    pass::{ColorPass, ColorSpritePass, MatricesBlock, SpritePass},
+    pass::{ColorPass, ColorSpritePass, SpritePass},
     Canvas, Color4, Config, Event, Screen,
 };
 
