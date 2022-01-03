@@ -249,7 +249,7 @@ impl Game {
         });
 
         context.clear(Color4::new(1.0, 1.0, 1.0, 1.0));
-        context.draw_colors(
+        context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
             &DrawParams {
@@ -257,7 +257,7 @@ impl Game {
                 ..DrawParams::default()
             },
         );
-        context.draw_sprites(
+        context.sprite_pass().draw(
             &self.camera_matrices,
             &self.wall_texture,
             self.wall_sprite_batch.draw_unit(),

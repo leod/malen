@@ -90,28 +90,4 @@ impl Context {
         self.input_state.handle_event(&event);
         Some(event)
     }
-
-    pub fn draw_sprites<E>(
-        &self,
-        matrices: &UniformBuffer<MatricesBlock>,
-        texture: &Texture,
-        draw_unit: DrawUnit<SpriteVertex, E>,
-        params: &DrawParams,
-    ) -> Result<(), gl::Error>
-    where
-        E: Element,
-    {
-        self.sprite_pass.draw(matrices, texture, draw_unit, params)
-    }
-
-    pub fn draw_colors<E>(
-        &self,
-        matrices: &UniformBuffer<MatricesBlock>,
-        draw_unit: DrawUnit<ColorVertex, E>,
-        params: &DrawParams,
-    ) where
-        E: Element,
-    {
-        self.color_pass.draw(matrices, draw_unit, params);
-    }
 }
