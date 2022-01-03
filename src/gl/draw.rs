@@ -20,6 +20,11 @@ pub fn draw<U, V, E, const S: usize>(
 {
     assert!(Rc::ptr_eq(&program.gl(), &draw_unit.gl()));
 
+    let range = draw_unit.element_range();
+    if range.start == range.end {
+        return;
+    }
+
     let gl = program.gl();
 
     set_draw_params(&*gl, draw_params);
@@ -28,8 +33,6 @@ pub fn draw<U, V, E, const S: usize>(
     uniforms.bind();
     bind_samplers(gl.clone(), samplers);
     draw_unit.bind();
-
-    let range = draw_unit.element_range();
 
     let mode = draw_unit.primitive_mode().to_gl();
     let count = range.end - range.start;
