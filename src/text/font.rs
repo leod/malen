@@ -243,10 +243,12 @@ impl Font {
                 let tex_rect = atlas.insert(bitmap_buffer.as_slice(), glyph_size);
 
                 if let Some(tex_rect) = tex_rect {
-                    return Ok(GlyphLoc {
+                    let glyph_loc = GlyphLoc {
                         atlas_index,
                         tex_rect,
-                    });
+                    };
+                    glyph_locs.insert(glyph_key.clone(), glyph_loc.clone());
+                    return Ok(glyph_loc);
                 }
             }
 
@@ -258,10 +260,12 @@ impl Font {
             atlases.push(atlas);
 
             if let Some(tex_rect) = tex_rect {
-                Ok(GlyphLoc {
+                let glyph_loc = GlyphLoc {
                     atlas_index: atlases.len() - 1,
                     tex_rect,
-                })
+                };
+                glyph_locs.insert(glyph_key.clone(), glyph_loc.clone());
+                Ok(glyph_loc)
             } else {
                 Err(WriteTextError::GlyphTooLarge(
                     glyph_key.clone(),
