@@ -55,10 +55,10 @@ pub struct Atlas {
 }
 
 impl Atlas {
-    pub fn new(gl: Rc<gl::Context>, width: u32, height: u32) -> Result<Atlas, NewTextureError> {
+    pub fn new(gl: Rc<gl::Context>, size: Vector2<u32>) -> Result<Atlas, NewTextureError> {
         let texture = Texture::new(
             gl,
-            Vector2::new(width as u32, height as u32),
+            size,
             TextureParams {
                 value_type: TextureValueType::UnsignedByte,
                 min_filter: TextureMinFilter::Nearest,
@@ -67,6 +67,12 @@ impl Atlas {
                 wrap_horizontal: TextureWrap::ClampToEdge,
             },
         )?;
+
+        // Ugh, this is not nice, but suppresses Firefox WebGL warnings about
+        // lazy texture initialization. Need to revisit this at some point.
+        let mut zeros = Vec::new();
+        zeros.resize((size.x * size.y * 4) as usize, 0);
+        texture.set_sub_image(Point2::origin(), size, &zeros);
 
         Ok(Atlas {
             texture,

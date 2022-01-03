@@ -4,7 +4,7 @@ use fontdue::{
     layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle},
     FontSettings,
 };
-use nalgebra::{Point3, Vector2};
+use nalgebra::{Point2, Vector2};
 use thiserror::Error;
 
 use super::atlas::Atlas;
@@ -37,13 +37,22 @@ pub enum WriteTextError {
 }
 
 pub struct TextBatch {
-    by_atlas: Vec<ColorSpriteBatch>,
+    atlas_batches: Vec<ColorSpriteBatch>,
 }
 
 #[derive(Debug, Clone)]
 struct GlyphLoc {
     atlas_index: usize,
     tex_rect: Rect,
+}
+
+#[derive(Debug, Clone)]
+pub struct Text<'a> {
+    pub pos: Point2<f32>,
+    pub size: f32,
+    pub z: f32,
+    pub color: Color4,
+    pub text: &'a str,
 }
 
 pub struct Font {
@@ -61,6 +70,20 @@ pub struct Font {
 
 const MAX_ATLAS_SIZE: u32 = 2048;
 
+impl TextBatch {
+    pub fn new(_: Rc<gl::Context>) -> Result<Self, gl::Error> {
+        Ok(Self {
+            atlas_batches: Vec::new(),
+        })
+    }
+
+    pub fn clear(&mut self) {
+        for atlas_batch in self.atlas_batches.iter_mut() {
+            atlas_batch.clear();
+        }
+    }
+}
+
 impl Font {
     pub fn load(context: &Context, data: &[u8], scale: f32) -> Result<Self, LoadFontError> {
         let settings = FontSettings {
@@ -71,7 +94,7 @@ impl Font {
         let font = fontdue::Font::from_bytes(data, settings).map_err(LoadFontError::Fontdue)?;
 
         let atlas_size = Texture::max_size(&*context.gl()).min(MAX_ATLAS_SIZE);
-        let atlas = Atlas::new(context.gl(), atlas_size, atlas_size)?;
+        let atlas = Atlas::new(context.gl(), Vector2::new(atlas_size, atlas_size))?;
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Ok(Font {
@@ -114,10 +137,7 @@ impl Font {
 
     pub fn write(
         &mut self,
-        pos: Point3<f32>,
-        size: f32,
-        color: Color4,
-        text: &str,
+        text: Text,
         batch: &mut TextBatch,
     ) -> Result<Vector2<f32>, WriteTextError> {
         let dpr = util::device_pixel_ratio() as f32;
@@ -128,8 +148,10 @@ impl Font {
             max_width: None,
             ..Default::default()
         });
-        self.layout
-            .append(&[&self.font], &TextStyle::new(text, size * dpr, 0));
+        self.layout.append(
+            &[&self.font],
+            &TextStyle::new(text.text, text.size * dpr, 0),
+        );
 
         let mut last_offset = Vector2::zeros();
 
@@ -148,8 +170,10 @@ impl Font {
                 &glyph_pos.key,
             )?;
 
-            while batch.by_atlas.len() < glyph_loc.atlas_index + 1 {
-                batch.by_atlas.push(ColorSpriteBatch::new(self.gl.clone())?);
+            while batch.atlas_batches.len() < glyph_loc.atlas_index + 1 {
+                batch
+                    .atlas_batches
+                    .push(ColorSpriteBatch::new(self.gl.clone())?);
             }
 
             let offset = Vector2::new(
@@ -158,15 +182,15 @@ impl Font {
             ) / dpr;
 
             let rect = Rect {
-                center: pos.xy() + offset,
+                center: text.pos + offset,
                 size: Vector2::new(glyph_pos.width as f32, glyph_pos.height as f32) / dpr,
             };
 
-            batch.by_atlas[glyph_loc.atlas_index].push(ColorSprite {
+            batch.atlas_batches[glyph_loc.atlas_index].push(ColorSprite {
                 rect,
-                z: pos.z,
+                z: text.z,
                 tex_rect: glyph_loc.tex_rect,
-                color,
+                color: text.color,
             });
 
             last_offset = offset;
@@ -180,7 +204,7 @@ impl Font {
         matrices_buffer: &UniformBuffer<MatricesBlock>,
         batch: &mut TextBatch,
     ) -> Result<(), gl::Error> {
-        for (atlas_batch, atlas) in batch.by_atlas.iter_mut().zip(&self.atlases) {
+        for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
             self.color_sprite_pass.draw(
                 matrices_buffer,
                 atlas.texture(),
@@ -227,7 +251,7 @@ impl Font {
             }
 
             let atlas_size = Texture::max_size(&*gl).min(MAX_ATLAS_SIZE);
-            let mut atlas = Atlas::new(gl.clone(), atlas_size, atlas_size)?;
+            let mut atlas = Atlas::new(gl.clone(), Vector2::new(atlas_size, atlas_size))?;
 
             let tex_rect = atlas.insert(bitmap_buffer.as_slice(), glyph_size);
 
