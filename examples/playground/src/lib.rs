@@ -1,12 +1,13 @@
-use nalgebra::{Point2, Vector2};
+use nalgebra::{Matrix3, Point2, Vector2};
 use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
     geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
     gl::{DepthTest, DrawParams, FrameTimer, Texture, TextureParams, UniformBuffer},
-    Camera, CanvasSizeConfig, Color4, Config, Context, Font, FrameError, InitError, InputState,
-    Key, MatricesBlock, Rect, Screen,
+    text::{Font, Text, TextBatch},
+    Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
+    MatricesBlock, Rect, Screen,
 };
 
 struct Wall {
@@ -147,6 +148,7 @@ struct Game {
 
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
+    text_batch: TextBatch,
 }
 
 impl Game {
@@ -169,6 +171,7 @@ impl Game {
 
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
+        let text_batch = TextBatch::new(context.gl())?;
 
         Ok(Game {
             state,
@@ -178,12 +181,14 @@ impl Game {
             screen_matrices,
             color_batch,
             wall_sprite_batch,
+            text_batch,
         })
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self) -> Result<(), FrameError> {
         self.color_batch.clear();
         self.wall_sprite_batch.clear();
+        self.text_batch.clear();
 
         for wall in &self.state.walls {
             self.wall_sprite_batch.push(Sprite {
@@ -216,12 +221,30 @@ impl Game {
             z: 0.4,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
         });
+
+        self.font.write(
+            Text {
+                pos: Point2::new(10.0, 10.0),
+                size: 30.0,
+                z: 0.0,
+                color: Color4::new(1.0, 0.0, 0.0, 1.0),
+                text: "Hello, world!",
+            },
+            &mut self.text_batch,
+        )?;
+
+        Ok(())
     }
 
     pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
         let screen = context.screen();
+
         self.camera_matrices.set_data(MatricesBlock {
             view: self.state.camera().matrix(screen),
+            projection: screen.orthographic_projection(),
+        });
+        self.screen_matrices.set_data(MatricesBlock {
+            view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
         });
 
@@ -243,6 +266,8 @@ impl Game {
                 ..DrawParams::default()
             },
         )?;
+        self.font
+            .draw(&self.screen_matrices, &mut self.text_batch)?;
 
         Ok(())
     }
@@ -295,7 +320,7 @@ pub fn main() {
 
         game.state
             .update(timestamp_secs, context.screen(), context.input_state());
-        game.render();
+        game.render().unwrap();
 
         frame_timer.start_draw();
         game.draw(&context).unwrap();

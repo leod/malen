@@ -2,8 +2,7 @@ use thiserror::Error;
 
 use crate::{
     gl::{self, LoadTextureError, NewTextureError},
-    text::LoadFontError,
-    WriteTextError,
+    text::{LoadFontError, WriteTextError},
 };
 
 #[derive(Error, Debug)]

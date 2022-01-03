@@ -9,13 +9,13 @@ mod error;
 mod input;
 mod main_loop;
 mod pass;
-mod text;
 
 pub(crate) mod util;
 
 pub mod geometry;
 pub mod gl;
 pub mod math;
+pub mod text;
 
 // Re-export dependencies that occur in our public API.
 pub use glow;
@@ -30,4 +30,3 @@ pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
 pub use math::{Camera, Rect, RotatedRect, Screen};
 pub use pass::MatricesBlock;
-pub use text::{Font, TextBatch, WriteTextError};
