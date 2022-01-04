@@ -9,6 +9,7 @@ mod error;
 mod input;
 mod main_loop;
 mod pass;
+mod plot;
 
 pub(crate) mod util;
 

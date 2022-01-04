@@ -200,7 +200,7 @@ impl Font {
     }
 
     pub fn draw(
-        &mut self,
+        &self,
         matrices_buffer: &UniformBuffer<MatricesBlock>,
         batch: &mut TextBatch,
     ) -> Result<(), gl::Error> {
