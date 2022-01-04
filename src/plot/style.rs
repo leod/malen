@@ -4,7 +4,7 @@ use crate::Color4;
 
 #[derive(Debug, Clone)]
 pub struct PlotStyle {
-    pub axis_margin: f32,
+    pub axis_margin: Vector2<f32>,
     pub tick_size: f32,
     pub legend_line_size: f32,
     pub legend_text_margin: f32,
@@ -21,7 +21,7 @@ pub struct PlotStyle {
 impl Default for PlotStyle {
     fn default() -> Self {
         Self {
-            axis_margin: 70.0,
+            axis_margin: Vector2::new(40.0, 20.0),
             tick_size: 7.5,
             legend_line_size: 30.0,
             legend_text_margin: 7.5,
@@ -38,11 +38,7 @@ impl Default for PlotStyle {
 }
 
 impl PlotStyle {
-    pub fn graph_offset(&self) -> Vector2<f32> {
-        Vector2::new(self.axis_margin, self.axis_margin)
-    }
-
     pub fn graph_size(&self, plot_size: Vector2<f32>) -> Vector2<f32> {
-        plot_size - 2.0 * self.graph_offset()
+        plot_size - 2.0 * self.axis_margin
     }
 }

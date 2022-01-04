@@ -7,7 +7,8 @@ use crate::{
     gl,
     input::InputState,
     pass::{ColorPass, ColorSpritePass, SpritePass},
-    Canvas, Color4, Config, Event, Screen,
+    plot::PlotPass,
+    Canvas, Config, Event, Screen,
 };
 
 pub struct Context {
@@ -17,6 +18,7 @@ pub struct Context {
     sprite_pass: Rc<SpritePass>,
     color_sprite_pass: Rc<ColorSpritePass>,
     color_pass: Rc<ColorPass>,
+    plot_pass: Rc<PlotPass>,
 }
 
 impl Context {
@@ -39,16 +41,18 @@ impl Context {
 
     fn from_canvas(canvas: Canvas, _: Config) -> Result<Self, InitError> {
         let input_state = InputState::default();
-        let sprite_pass = SpritePass::new(canvas.gl())?;
-        let color_sprite_pass = ColorSpritePass::new(canvas.gl())?;
-        let color_pass = ColorPass::new(canvas.gl())?;
+        let sprite_pass = Rc::new(SpritePass::new(canvas.gl())?);
+        let color_sprite_pass = Rc::new(ColorSpritePass::new(canvas.gl())?);
+        let color_pass = Rc::new(ColorPass::new(canvas.gl())?);
+        let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
 
         Ok(Context {
             canvas,
             input_state,
-            sprite_pass: Rc::new(sprite_pass),
-            color_sprite_pass: Rc::new(color_sprite_pass),
-            color_pass: Rc::new(color_pass),
+            sprite_pass,
+            color_sprite_pass,
+            color_pass,
+            plot_pass,
         })
     }
 
@@ -76,12 +80,12 @@ impl Context {
         self.color_pass.clone()
     }
 
-    pub fn screen(&self) -> Screen {
-        self.canvas.screen()
+    pub fn plot_pass(&self) -> Rc<PlotPass> {
+        self.plot_pass.clone()
     }
 
-    pub fn clear(&self, color: Color4) {
-        self.canvas.clear(color);
+    pub fn screen(&self) -> Screen {
+        self.canvas.screen()
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {

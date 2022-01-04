@@ -35,7 +35,7 @@ pub struct Canvas {
     gl: Rc<gl::Context>,
     caps: CanvasCaps,
     event_handlers: EventHandlers,
-    logical_size: Vector2<f64>,
+    logical_size: Vector2<f32>,
 }
 
 impl Canvas {
@@ -108,6 +108,10 @@ impl Canvas {
 
     pub fn caps(&self) -> &CanvasCaps {
         &self.caps
+    }
+
+    pub fn logical_size(&self) -> Vector2<f32> {
+        self.logical_size
     }
 
     pub fn screen(&self) -> Screen {
@@ -193,11 +197,12 @@ impl Canvas {
         let device_pixel_ratio = util::device_pixel_ratio();
         let bounding_rect = self.element.get_bounding_client_rect();
 
-        self.logical_size = Vector2::new(bounding_rect.width(), bounding_rect.height());
+        let logical_size = Vector2::new(bounding_rect.width(), bounding_rect.height());
         let physical_size = Vector2::new(
-            (self.logical_size.x * device_pixel_ratio).round() as u32,
-            (self.logical_size.y * device_pixel_ratio).round() as u32,
+            (logical_size.x * device_pixel_ratio).round() as u32,
+            (logical_size.y * device_pixel_ratio).round() as u32,
         );
+        self.logical_size = logical_size.cast::<f32>();
 
         let need_resize =
             self.element.width() != physical_size.x || self.element.height() != physical_size.y;

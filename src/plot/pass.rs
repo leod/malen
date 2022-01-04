@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
 use crate::{
-    gl::{Blend, DepthTest, DrawParams, UniformBuffer},
-    pass::ColorPass,
+    gl::{Blend, DrawParams, UniformBuffer},
+    pass::{ColorPass, MatricesBlock},
     text::Font,
-    Context, FrameError, MatricesBlock,
+    FrameError,
 };
 
 use super::PlotBatch;
@@ -14,10 +14,8 @@ pub struct PlotPass {
 }
 
 impl PlotPass {
-    pub fn new(context: &Context) -> Self {
-        Self {
-            color_pass: context.color_pass(),
-        }
+    pub fn new(color_pass: Rc<ColorPass>) -> Self {
+        Self { color_pass }
     }
 
     pub fn draw(
@@ -27,7 +25,6 @@ impl PlotPass {
         batch: &mut PlotBatch,
     ) -> Result<(), FrameError> {
         let draw_params = DrawParams {
-            depth_test: Some(DepthTest::default()),
             blend: Some(Blend::default()),
             ..DrawParams::default()
         };
