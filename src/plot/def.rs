@@ -1,7 +1,7 @@
 use crate::{Color4, Rect};
 
 #[derive(Debug, Clone)]
-pub struct Line {
+pub struct LineGraph {
     pub caption: String,
     pub color: Color4,
     pub points: Vec<(f32, f32)>,
@@ -35,13 +35,13 @@ pub struct Plot {
     pub rect: Rect,
     pub x_axis: Axis,
     pub y_axis: Axis,
-    pub lines: Vec<Line>,
+    pub line_graphs: Vec<LineGraph>,
 }
 
 impl Plot {
     pub fn x_range(&self) -> (f32, f32) {
         self.x_axis.get_range(
-            self.lines
+            self.line_graphs
                 .iter()
                 .flat_map(|line| line.points.iter().map(|(x, _)| *x)),
         )
@@ -49,7 +49,7 @@ impl Plot {
 
     pub fn y_range(&self) -> (f32, f32) {
         self.y_axis.get_range(
-            self.lines
+            self.line_graphs
                 .iter()
                 .flat_map(|line| line.points.iter().map(|(_, y)| *y)),
         )

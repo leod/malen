@@ -36,8 +36,13 @@ impl PlotBatch {
         self.text_batch.clear();
     }
 
-    pub fn push(&mut self, font: &mut Font, plot: &Plot, style: &PlotStyle) {
-        Render::new(self, font, plot, style).render();
+    pub fn push(
+        &mut self,
+        font: &mut Font,
+        plot: Plot,
+        style: PlotStyle,
+    ) -> Result<(), WriteTextError> {
+        Render::new(self, font, &plot, &style).render()
     }
 }
 
@@ -50,7 +55,6 @@ struct Render<'a> {
 
     x_range: (f32, f32),
     y_range: (f32, f32),
-    graph_offset: Vector2<f32>,
     graph_size: Vector2<f32>,
     axis_scale: Vector2<f32>,
 }
@@ -64,7 +68,6 @@ impl<'a> Render<'a> {
     ) -> Self {
         let x_range = plot.x_range();
         let y_range = plot.y_range();
-        let graph_offset = style.graph_offset();
         let graph_size = style.graph_size(plot.rect.size);
         let axis_scale = Vector2::new(
             graph_size.x / (x_range.1 - x_range.0) as f32,
@@ -78,7 +81,6 @@ impl<'a> Render<'a> {
             font,
             x_range,
             y_range,
-            graph_offset,
             graph_size,
             axis_scale,
         }
@@ -106,16 +108,20 @@ impl<'a> Render<'a> {
     }
 
     fn render_lines(&mut self) {
-        for line in self.plot.lines.iter() {
-            for (a, b) in line.points.iter().zip(line.points.iter().skip(1)) {
+        for line_graph in self.plot.line_graphs.iter() {
+            for (a, b) in line_graph
+                .points
+                .iter()
+                .zip(line_graph.points.iter().skip(1))
+            {
                 let a_map = self.map_point(Point2::new(a.0, a.1));
                 let b_map = self.map_point(Point2::new(b.0, b.1));
 
                 self.batch.line_batch.push(ColorLine {
                     a: a_map,
                     b: b_map,
-                    z: 0.3,
-                    color: self.style.axis_color,
+                    z: 0.0,
+                    color: line_graph.color,
                 });
             }
         }
@@ -124,10 +130,10 @@ impl<'a> Render<'a> {
     fn render_border(&mut self) {
         self.batch.line_batch.push(ColorRect {
             rect: Rect::from_top_left(
-                self.plot.rect.top_left() + self.graph_offset,
+                self.plot.rect.top_left() + self.style.axis_margin,
                 self.graph_size,
             ),
-            z: 0.1,
+            z: 0.0,
             color: self.style.axis_color,
         });
     }
@@ -166,7 +172,7 @@ impl<'a> Render<'a> {
                 Point2::new(self.x_range.0, self.y_range.0) + (current_offset - range.0) * axis,
             );
             let shifted_pos = if is_x {
-                pos - Vector2::new(text_size.x / 2.0, 6.0)
+                pos - Vector2::new(text_size.x / 2.0, 0.0)
             } else {
                 pos - Vector2::new(8.0 + text_size.x, text_size.y / 2.0 + 3.0)
             };
@@ -175,7 +181,7 @@ impl<'a> Render<'a> {
                 Text {
                     pos: shifted_pos,
                     size: self.style.normal_font_size,
-                    z: 0.2,
+                    z: 0.0,
                     color: self.style.text_color,
                     text: &text,
                 },
@@ -186,26 +192,26 @@ impl<'a> Render<'a> {
                 self.batch.line_batch.push(ColorLine {
                     a: pos,
                     b: pos + normal * self.style.tick_size,
-                    z: 0.4,
+                    z: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
                     a: pos - Vector2::new(0.0, self.graph_size.y),
                     b: pos - Vector2::new(0.0, self.graph_size.y) - normal * self.style.tick_size,
-                    z: 0.4,
+                    z: 0.0,
                     color: self.style.axis_color,
                 });
             } else {
                 self.batch.line_batch.push(ColorLine {
                     a: pos,
                     b: pos + normal * self.style.tick_size,
-                    z: 0.4,
+                    z: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
                     a: pos + Vector2::new(self.graph_size.x, 0.0),
                     b: pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size,
-                    z: 0.4,
+                    z: 0.0,
                     color: self.style.axis_color,
                 });
             }
@@ -217,7 +223,7 @@ impl<'a> Render<'a> {
     }
 
     fn render_legend(&mut self) -> Result<(), WriteTextError> {
-        if self.plot.lines.is_empty() {
+        if self.plot.line_graphs.is_empty() {
             return Ok(());
         }
 
@@ -225,10 +231,10 @@ impl<'a> Render<'a> {
         let mut max_text_height = 0.0f32;
 
         width += (self.style.legend_line_size + self.style.legend_text_margin)
-            * self.plot.lines.len() as f32;
-        width += self.style.legend_entry_margin as f32 * ((self.plot.lines.len() - 1) as f32);
+            * self.plot.line_graphs.len() as f32;
+        width += self.style.legend_entry_margin as f32 * ((self.plot.line_graphs.len() - 1) as f32);
 
-        for line in self.plot.lines.iter() {
+        for line in self.plot.line_graphs.iter() {
             let text_size = self
                 .font
                 .text_size(self.style.normal_font_size, &line.caption);
@@ -244,13 +250,13 @@ impl<'a> Render<'a> {
             self.style.legend_y_offset,
         );
 
-        for line in self.plot.lines.iter() {
+        for line in self.plot.line_graphs.iter() {
             pos.x += self.style.legend_line_size;
 
             self.batch.line_batch.push(ColorLine {
                 a: pos,
                 b: pos + Vector2::new(self.style.legend_line_size, 0.0),
-                z: 0.3,
+                z: 0.0,
                 color: line.color,
             });
 
@@ -258,9 +264,9 @@ impl<'a> Render<'a> {
 
             let text_size = self.font.write(
                 Text {
-                    pos: pos - Vector2::new(0.0, max_text_height / 2.0 - 1.0),
+                    pos: pos - Vector2::new(0.0, max_text_height / 2.0 + 2.0),
                     size: self.style.normal_font_size,
-                    z: 0.3,
+                    z: 0.0,
                     color: self.style.text_color,
                     text: &line.caption,
                 },
@@ -277,7 +283,7 @@ impl<'a> Render<'a> {
     fn map_point(&mut self, pos: Point2<f32>) -> Point2<f32> {
         let shift = pos.coords - Vector2::new(self.x_range.0, self.y_range.0);
         let scale = shift.component_mul(&self.axis_scale);
-        let margin = scale + Vector2::new(self.style.axis_margin, self.style.axis_margin);
+        let margin = scale + self.style.axis_margin;
         let flip = Vector2::new(margin.x, self.plot.rect.size.y - margin.y);
         self.plot.rect.top_left() + flip
     }

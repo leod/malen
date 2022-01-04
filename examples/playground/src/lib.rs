@@ -1,14 +1,19 @@
+use std::{collections::VecDeque, time::Duration};
+
 use coarse_prof::profile;
+use instant::Instant;
 use nalgebra::{Matrix3, Point2, Vector2};
 use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
     geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
-    gl::{DepthTest, DrawParams, FrameTimer, Texture, TextureParams, UniformBuffer},
+    gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
+    pass::MatricesBlock,
+    plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
     text::{Font, Text, TextBatch},
     Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
-    MatricesBlock, Rect, Screen,
+    Rect, Screen,
 };
 
 struct Wall {
@@ -255,7 +260,7 @@ impl Game {
             projection: screen.orthographic_projection(),
         });
 
-        context.clear(Color4::new(1.0, 1.0, 1.0, 1.0));
+        context.canvas().clear(Color4::new(1.0, 1.0, 1.0, 1.0));
         context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
@@ -296,10 +301,15 @@ pub fn main() {
 
     let mut game = Game::new(&context).unwrap();
 
-    let mut frame_timer = FrameTimer::new(context.gl(), 60);
+    let mut draw_timer = DrawTimer::new(context.gl(), 60);
+    let mut frame_times = VecDeque::<(Instant, Duration)>::new();
+    let mut plot_batch = PlotBatch::new(context.gl()).unwrap();
+    let plot_secs = 5;
 
     malen::main_loop(move |timestamp_secs, _running| {
         profile!("frame");
+
+        let start_time = Instant::now();
 
         while let Some(event) = context.pop_event() {
             profile!("event");
@@ -321,7 +331,7 @@ pub fn main() {
                         "Profiling:\n{}",
                         std::str::from_utf8(buffer.get_ref()).unwrap()
                     );
-                    log::info!("Frame timer: {:?}", frame_timer.timing_info(),);
+                    log::info!("Frame timer: {:?}", draw_timer.timing_info(),);
                 }
                 _ => (),
             }
@@ -331,8 +341,66 @@ pub fn main() {
             .update(timestamp_secs, context.screen(), context.input_state());
         game.render().unwrap();
 
-        frame_timer.start_draw();
+        plot_batch.clear();
+        if let Some((last_time, _)) = frame_times.back() {
+            profile!("render plots");
+
+            let plot = Plot {
+                rect: Rect::from_top_left(
+                    Point2::new(10.0, context.canvas().logical_size().y as f32 - 110.0),
+                    Vector2::new(500.0, 100.0),
+                ),
+                x_axis: Axis {
+                    label: "dt [s]".to_owned(),
+                    range: Some((-(plot_secs as f32), 0.0)),
+                    tics: 1.0,
+                },
+                y_axis: Axis {
+                    label: "dur [ms]".to_owned(),
+                    range: Some((0.0, 30.0)),
+                    tics: 15.0,
+                },
+                line_graphs: vec![
+                    LineGraph {
+                        caption: "frame times".to_owned(),
+                        color: Color4::new(1.0, 0.0, 0.0, 1.0),
+                        points: frame_times
+                            .iter()
+                            .map(|(time, dur)| {
+                                (
+                                    -last_time.duration_since(*time).as_secs_f32(),
+                                    dur.as_secs_f32() * 1000.0,
+                                )
+                            })
+                            .collect(),
+                    },
+                    LineGraph {
+                        caption: "draw times".to_owned(),
+                        color: Color4::new(0.0, 1.0, 0.0, 1.0),
+                        points: Vec::new(),
+                    },
+                ],
+            };
+
+            plot_batch
+                .push(&mut game.font, plot, PlotStyle::default())
+                .unwrap();
+        }
+
+        draw_timer.start_draw();
         game.draw(&context).unwrap();
-        frame_timer.end_draw();
+        context
+            .plot_pass()
+            .draw(&game.screen_matrices, &mut game.font, &mut plot_batch)
+            .unwrap();
+        draw_timer.end_draw();
+
+        while frame_times.front().map_or(false, |(time, _)| {
+            start_time.duration_since(*time) > Duration::from_secs(plot_secs)
+        }) {
+            frame_times.pop_front();
+        }
+
+        frame_times.push_back((start_time, Instant::now().duration_since(start_time)));
     });
 }
