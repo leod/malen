@@ -251,8 +251,6 @@ impl<'a> Render<'a> {
         );
 
         for line in self.plot.line_graphs.iter() {
-            pos.x += self.style.legend_line_size;
-
             self.batch.line_batch.push(ColorLine {
                 a: pos,
                 b: pos + Vector2::new(self.style.legend_line_size, 0.0),
