@@ -52,7 +52,7 @@ impl SpritePass {
 
     pub fn draw<E>(
         &self,
-        matrices_buffer: &UniformBuffer<MatricesBlock>,
+        matrices: &UniformBuffer<MatricesBlock>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
@@ -65,7 +65,7 @@ impl SpritePass {
 
         gl::draw(
             &self.program,
-            (matrices_buffer, sprite_info),
+            (matrices, sprite_info),
             [texture],
             draw_unit,
             params,

@@ -55,6 +55,22 @@ impl Rect {
             self.center - dx + dy,
         ]
     }
+
+    pub fn top_left(&self) -> Point2<f32> {
+        self.corners()[0]
+    }
+
+    pub fn top_right(&self) -> Point2<f32> {
+        self.corners()[1]
+    }
+
+    pub fn bottom_right(&self) -> Point2<f32> {
+        self.corners()[2]
+    }
+
+    pub fn bottom_left(&self) -> Point2<f32> {
+        self.corners()[3]
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

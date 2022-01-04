@@ -5,83 +5,6 @@ use crate::{
     Canvas, Color4, Error, Font, Rect, TextBatch,
 };
 
-const AXIS_MARGIN: f64 = 70.0;
-const TICK_SIZE: f64 = 7.5;
-
-const LEGEND_LINE_SIZE: f32 = 30.0;
-const LEGEND_TEXT_MARGIN: f32 = 7.5;
-const LEGEND_ENTRY_MARGIN: f32 = 50.0;
-const LEGEND_Y_OFFSET: f32 = 15.0;
-
-const FONT_SIZE: f32 = 14.0;
-
-#[derive(Debug, Clone)]
-pub struct Line {
-    pub caption: String,
-    pub color: Color4,
-    pub points: Vec<(f64, f64)>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Axis {
-    pub label: String,
-    pub range: Option<(f64, f64)>,
-    pub tics: f64,
-    pub tic_precision: usize,
-}
-
-impl Axis {
-    pub fn get_range(&self, data: impl Iterator<Item = f64>) -> (f64, f64) {
-        self.range.unwrap_or_else(|| {
-            let mut min = std::f64::MAX;
-            let mut max = std::f64::MIN;
-
-            for item in data {
-                min = min.min(item);
-                max = max.max(item);
-            }
-
-            (min, max)
-        })
-    }
-}
-
-fn clip_to_ranges(p: Point2<f64>, x_range: (f64, f64), y_range: (f64, f64)) -> Point2<f64> {
-    Point2::new(
-        p.x.max(x_range.0).min(x_range.1),
-        p.y.max(y_range.0).min(y_range.1),
-    )
-}
-
-#[derive(Debug, Clone)]
-pub struct Plot {
-    pub size: Vector2<f64>,
-    pub x_axis: Axis,
-    pub y_axis: Axis,
-    pub axis_color: Color4,
-    pub background_color: Option<Color4>,
-    pub text_color: Color4,
-    pub lines: Vec<Line>,
-}
-
-impl Plot {
-    pub fn x_range(&self) -> (f64, f64) {
-        self.x_axis.get_range(
-            self.lines
-                .iter()
-                .flat_map(|line| line.points.iter().map(|(x, _)| *x)),
-        )
-    }
-
-    pub fn y_range(&self) -> (f64, f64) {
-        self.y_axis.get_range(
-            self.lines
-                .iter()
-                .flat_map(|line| line.points.iter().map(|(_, y)| *y)),
-        )
-    }
-}
-
 pub struct Plotting {
     tri_batch: TriBatch<ColVertex>,
     line_batch: LineBatch<ColVertex>,
@@ -186,7 +109,7 @@ impl<'a> RenderCtx<'a> {
 
         while current_offset <= range.1 {
             let text = &format!("{:.*}", tic_precision, current_offset);
-            let text_size = self.font.text_size(11.0, &text);
+            let text_size = self.font.text_size(self.style.small_font_size, &text);
 
             let pos = self.map_point(
                 Point2::new(self.x_range.0, self.y_range.0) + (current_offset - range.0) * axis,
