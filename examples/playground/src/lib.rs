@@ -301,10 +301,10 @@ pub fn main() {
 
     let mut game = Game::new(&context).unwrap();
 
-    let mut draw_timer = DrawTimer::new(context.gl(), 60);
+    let plot_secs = 5;
+    let mut draw_timer = DrawTimer::new(context.gl(), Duration::from_secs(plot_secs));
     let mut frame_times = VecDeque::<(Instant, Duration)>::new();
     let mut plot_batch = PlotBatch::new(context.gl()).unwrap();
-    let plot_secs = 5;
 
     malen::main_loop(move |timestamp_secs, _running| {
         profile!("frame");
@@ -362,7 +362,7 @@ pub fn main() {
                 },
                 line_graphs: vec![
                     LineGraph {
-                        caption: "frame times".to_owned(),
+                        caption: "frame [ms]".to_owned(),
                         color: Color4::new(1.0, 0.0, 0.0, 1.0),
                         points: frame_times
                             .iter()
@@ -375,9 +375,18 @@ pub fn main() {
                             .collect(),
                     },
                     LineGraph {
-                        caption: "draw times".to_owned(),
-                        color: Color4::new(0.0, 1.0, 0.0, 1.0),
-                        points: Vec::new(),
+                        caption: "draw [ms]".to_owned(),
+                        color: Color4::new(0.0, 0.0, 1.0, 1.0),
+                        points: draw_timer
+                            .samples()
+                            .iter()
+                            .map(|(time, dur)| {
+                                (
+                                    -last_time.duration_since(*time).as_secs_f32(),
+                                    dur.as_secs_f32() * 1000.0,
+                                )
+                            })
+                            .collect(),
                     },
                 ],
             };
