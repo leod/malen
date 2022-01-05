@@ -11,7 +11,7 @@ use super::{
 };
 
 pub struct ColorSpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), ColorSpriteVertex, 2, 1>,
+    program: Program<(MatricesBlock, SpriteInfoBlock), ColorSpriteVertex, 1>,
     sprite_infos: RefCell<SpriteInfos>,
 }
 

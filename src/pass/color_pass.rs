@@ -8,7 +8,7 @@ use crate::{
 use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 pub struct ColorPass {
-    program: Program<MatricesBlock, ColorVertex, 1, 0>,
+    program: Program<MatricesBlock, ColorVertex, 0>,
 }
 
 impl ColorPass {

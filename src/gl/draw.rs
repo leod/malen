@@ -7,14 +7,14 @@ use super::{
     Element, Program, Texture, Vertex,
 };
 
-pub fn draw<U, V, E, const N: usize, const S: usize>(
-    program: &Program<U::UniformBlocks, V, N, S>,
+pub fn draw<U, V, E, const S: usize>(
+    program: &Program<U::UniformBlocks, V, S>,
     uniforms: U,
     samplers: [&Texture; S],
     draw_unit: DrawUnit<V, E>,
     draw_params: &DrawParams,
 ) where
-    U: UniformBuffers<N>,
+    U: UniformBuffers,
     V: Vertex,
     E: Element,
 {

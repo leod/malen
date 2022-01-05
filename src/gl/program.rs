@@ -4,14 +4,14 @@ use glow::HasContext;
 
 use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
-pub struct Program<U, V, const N: usize, const S: usize> {
+pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
     id: glow::Program,
-    uniform_block_bindings: [u32; N],
+    uniform_block_bindings: Vec<u32>,
     _phantom: PhantomData<(U, V)>,
 }
 
-impl<U, V, const N: usize, const S: usize> Program<U, V, N, S> {
+impl<U, V, const S: usize> Program<U, V, S> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
@@ -20,8 +20,8 @@ impl<U, V, const N: usize, const S: usize> Program<U, V, N, S> {
         self.id
     }
 
-    pub fn uniform_block_bindings(&self) -> [u32; N] {
-        self.uniform_block_bindings
+    pub fn uniform_block_bindings(&self) -> &[u32] {
+        &self.uniform_block_bindings
     }
 
     pub fn bind(&self) {
@@ -38,18 +38,22 @@ pub struct ProgramDef<'a, const N: usize, const S: usize> {
     pub fragment_source: &'a str,
 }
 
-impl<U, V, const N: usize, const S: usize> Program<U, V, N, S>
+impl<U, V, const S: usize> Program<U, V, S>
 where
-    U: UniformBlocks<N>,
+    U: UniformBlocks,
     V: Vertex,
 {
-    pub fn new(gl: Rc<Context>, def: ProgramDef<N, S>) -> Result<Self, Error> {
+    pub fn new<const N: usize>(gl: Rc<Context>, def: ProgramDef<N, S>) -> Result<Self, Error> {
+        // I think we'll be able to turn this into a compile time check once
+        // there is a bit more const-generics on stable.
+        assert!(N == U::N);
+
         let id = create_program::<U, N, S>(&*gl, &V::attributes(), &def)?;
 
         Ok(Self {
             gl,
             id,
-            uniform_block_bindings: def.uniform_block_bindings(),
+            uniform_block_bindings: def.uniform_block_bindings().to_vec(),
             _phantom: PhantomData,
         })
     }
@@ -79,7 +83,7 @@ fn create_program<U, const N: usize, const S: usize>(
     def: &ProgramDef<N, S>,
 ) -> Result<glow::Program, Error>
 where
-    U: UniformBlocks<N>,
+    U: UniformBlocks,
 {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
@@ -93,14 +97,14 @@ where
             glow::VERTEX_SHADER,
             SOURCE_HEADER.to_owned()
                 + &vertex_source_header(attributes)
-                + &U::glsl_definitions(def.uniform_block_names())
+                + &U::glsl_definitions(&def.uniform_block_names())
                 + &sampler_definitions
                 + def.vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
             SOURCE_HEADER.to_owned()
-                + &U::glsl_definitions(def.uniform_block_names())
+                + &U::glsl_definitions(&def.uniform_block_names())
                 + &sampler_definitions
                 + def.fragment_source,
         ),
@@ -177,7 +181,7 @@ where
     }
 
     // Setting uniform block binding locations should be done after linking.
-    U::bind_to_program(gl, program, def.uniform_blocks);
+    U::bind_to_program(gl, program, &def.uniform_blocks);
 
     Ok(program)
 }
@@ -193,7 +197,7 @@ fn vertex_source_header(attributes: &[Attribute]) -> String {
         + "\n"
 }
 
-impl<U, V, const N: usize, const S: usize> Drop for Program<U, V, N, S> {
+impl<U, V, const S: usize> Drop for Program<U, V, S> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_program(self.id);
