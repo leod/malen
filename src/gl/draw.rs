@@ -40,7 +40,12 @@ pub fn draw<U, V, E, const S: usize>(
     let offset = range.start * std::mem::size_of::<E>();
 
     unsafe {
-        gl.draw_elements(mode, count as i32, element_type, offset as i32);
+        gl.draw_elements(
+            mode,
+            i32::try_from(count).unwrap(),
+            element_type,
+            i32::try_from(offset).unwrap(),
+        );
 
         // It is important to unbind the vertex array here, so that buffer
         // bindings later on (e.g. for mutating buffer contents) do not change
