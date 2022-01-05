@@ -7,14 +7,14 @@ use super::{
     Element, Program, Texture, Vertex,
 };
 
-pub fn draw<U, V, E, const S: usize>(
-    program: &Program<U::UniformBlocks, V, S>,
+pub fn draw<U, V, E, const N: usize, const S: usize>(
+    program: &Program<U::UniformBlocks, V, N, S>,
     uniforms: U,
     samplers: [&Texture; S],
     draw_unit: DrawUnit<V, E>,
     draw_params: &DrawParams,
 ) where
-    U: UniformBuffers,
+    U: UniformBuffers<N>,
     V: Vertex,
     E: Element,
 {
@@ -30,7 +30,7 @@ pub fn draw<U, V, E, const S: usize>(
     set_draw_params(&*gl, draw_params);
 
     program.bind();
-    uniforms.bind();
+    uniforms.bind(program.uniform_block_bindings());
     bind_samplers(gl.clone(), samplers);
     draw_unit.bind();
 

@@ -7,17 +7,21 @@ use crate::{
 
 use super::{
     sprite_info::{SpriteInfoBlock, SpriteInfos},
-    MatricesBlock,
+    MatricesBlock, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING, SPRITE_SAMPLER_BINDING,
 };
 
 pub struct SpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 1>,
+    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 2, 1>,
     sprite_infos: RefCell<SpriteInfos>,
 }
 
 impl SpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
+            uniform_blocks: [
+                ("matrices", MATRICES_BLOCK_BINDING),
+                ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
+            ],
             samplers: ["sprite"],
             vertex_source: r#"
                 out vec2 v_tex_coords;

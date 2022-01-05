@@ -5,190 +5,172 @@ use glow::HasContext;
 
 use super::{Context, UniformBuffer};
 
-pub trait UniformBlock: AsStd140 + GlslStruct {
-    // TODO: We should consider setting the instance name at runtime, similarly
-    //       to how sampler names are set in `ProgramDef`. This would allow
-    //       using the same UniformBlock for multiple inputs in the same
-    //       program.
-    const INSTANCE_NAME: &'static str;
+pub trait UniformBlock: AsStd140 + GlslStruct {}
 
-    // TODO: We may want to allow customizing the bind point here to reduce
-    //       state changes. Not needed for now.
+pub trait UniformBuffers<const N: usize> {
+    type UniformBlocks: UniformBlocks<N>;
+
+    fn bind(&self, bindings: [u32; N]);
 }
 
-pub trait UniformBuffers {
-    type UniformBlocks: UniformBlocks;
-
-    fn bind(&self);
+pub trait UniformBlocks<const N: usize> {
+    fn glsl_definitions(instance_names: [&str; N]) -> String;
+    fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: [(&str, u32); N]);
 }
 
-pub trait UniformBlocks {
-    const NUM_BLOCKS: usize;
-
-    fn glsl_definitions() -> String;
-    fn bind_to_program(gl: &Context, id: glow::Program);
-}
-
-impl UniformBlocks for () {
-    const NUM_BLOCKS: usize = 0;
-
-    fn glsl_definitions() -> String {
+impl UniformBlocks<0> for () {
+    fn glsl_definitions(_: [&str; 0]) -> String {
         String::new()
     }
 
-    fn bind_to_program(_gl: &Context, _id: glow::Program) {}
+    fn bind_to_program(_: &Context, _: glow::Program, _: [(&str, u32); 0]) {}
 }
 
-impl<U> UniformBlocks for U
+impl<U> UniformBlocks<1> for U
 where
     U: UniformBlock,
 {
-    const NUM_BLOCKS: usize = 1;
+    fn glsl_definitions(instance_names: [&str; 1]) -> String {
+        let mut output = String::new();
 
-    fn glsl_definitions() -> String {
-        glsl_definition::<U>()
+        output.push_str("uniform ");
+        output.push_str(&block_name(instance_names[0]));
+        output.push_str(" {\n");
+
+        for field in U::FIELDS {
+            output.push('\t');
+            output.push_str(field.ty);
+            output.push(' ');
+            output.push_str(field.name);
+            output.push_str(";\n");
+        }
+
+        output.push_str("} ");
+        output.push_str(instance_names[0]);
+        output.push_str(";\n");
+
+        output
     }
 
-    fn bind_to_program(gl: &Context, id: glow::Program) {
-        bind_uniform_block(gl, id, U::NAME, 0);
+    fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: [(&str, u32); 1]) {
+        if let Some(index) =
+            unsafe { gl.get_uniform_block_index(id, &block_name(uniform_blocks[0].0)) }
+        {
+            unsafe {
+                gl.uniform_block_binding(id, index, uniform_blocks[0].1);
+            }
+        } else {
+            log::info!("Uniform block `{}` is unused", uniform_blocks[0].0);
+        }
     }
 }
 
-impl<U1, U2> UniformBlocks for (U1, U2)
+impl<U0, U1> UniformBlocks<2> for (U0, U1)
 where
+    U0: UniformBlock,
+    U1: UniformBlock,
+{
+    fn glsl_definitions(instance_names: [&str; 2]) -> String {
+        U0::glsl_definitions([instance_names[0]]) + &U1::glsl_definitions([instance_names[1]])
+    }
+
+    fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: [(&str, u32); 2]) {
+        U0::bind_to_program(gl, id, [uniform_blocks[0]]);
+        U1::bind_to_program(gl, id, [uniform_blocks[1]]);
+    }
+}
+
+impl<U0, U1, U2> UniformBlocks<3> for (U0, U1, U2)
+where
+    U0: UniformBlock,
     U1: UniformBlock,
     U2: UniformBlock,
 {
-    const NUM_BLOCKS: usize = 2;
-
-    fn glsl_definitions() -> String {
-        U1::glsl_definitions() + &glsl_definition::<U2>()
+    fn glsl_definitions(instance_names: [&str; 3]) -> String {
+        U0::glsl_definitions([instance_names[0]])
+            + &U1::glsl_definitions([instance_names[1]])
+            + &U2::glsl_definitions([instance_names[2]])
     }
 
-    fn bind_to_program(gl: &Context, id: glow::Program) {
-        U1::bind_to_program(gl, id);
-        bind_uniform_block(gl, id, U2::NAME, 1);
-    }
-}
-
-impl<U1, U2, U3> UniformBlocks for (U1, U2, U3)
-where
-    U1: UniformBlock,
-    U2: UniformBlock,
-    U3: UniformBlock,
-{
-    const NUM_BLOCKS: usize = 2;
-
-    fn glsl_definitions() -> String {
-        <(U1, U2)>::glsl_definitions() + &glsl_definition::<U3>()
-    }
-
-    fn bind_to_program(gl: &Context, id: glow::Program) {
-        <(U1, U2)>::bind_to_program(gl, id);
-        bind_uniform_block(gl, id, U3::NAME, 2);
+    fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: [(&str, u32); 3]) {
+        U0::bind_to_program(gl, id, [uniform_blocks[0]]);
+        U1::bind_to_program(gl, id, [uniform_blocks[1]]);
+        U2::bind_to_program(gl, id, [uniform_blocks[2]]);
     }
 }
 
-impl UniformBuffers for () {
+impl UniformBuffers<0> for () {
     type UniformBlocks = ();
 
-    fn bind(&self) {}
+    fn bind(&self, bindings: [u32; 0]) {}
 }
 
-impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
+impl<'a, U> UniformBuffers<1> for &'a UniformBuffer<U>
 where
     U: UniformBlock,
 {
     type UniformBlocks = U;
 
-    fn bind(&self) {
+    fn bind(&self, bindings: [u32; 1]) {
         unsafe {
             self.gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[0], Some(self.id()));
         }
     }
 }
 
-impl<'a, U1, U2> UniformBuffers for (&'a UniformBuffer<U1>, &'a UniformBuffer<U2>)
+impl<'a, U0, U1> UniformBuffers<2> for (&'a UniformBuffer<U0>, &'a UniformBuffer<U1>)
 where
+    U0: UniformBlock,
     U1: UniformBlock,
-    U2: UniformBlock,
 {
-    type UniformBlocks = (U1, U2);
+    type UniformBlocks = (U0, U1);
 
-    fn bind(&self) {
+    fn bind(&self, bindings: [u32; 2]) {
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
 
         unsafe {
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[0], Some(self.0.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[1], Some(self.1.id()));
         }
     }
 }
 
-impl<'a, U1, U2, U3> UniformBuffers
+impl<'a, U0, U1, U2> UniformBuffers<3>
     for (
+        &'a UniformBuffer<U0>,
         &'a UniformBuffer<U1>,
         &'a UniformBuffer<U2>,
-        &'a UniformBuffer<U3>,
     )
 where
+    U0: UniformBlock,
     U1: UniformBlock,
     U2: UniformBlock,
-    U3: UniformBlock,
 {
-    type UniformBlocks = (U1, U2, U3);
+    type UniformBlocks = (U0, U1, U2);
 
-    fn bind(&self) {
+    fn bind(&self, bindings: [u32; 3]) {
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
         assert!(Rc::ptr_eq(&self.0.gl(), &self.2.gl()));
 
         unsafe {
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 0, Some(self.0.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[0], Some(self.0.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 1, Some(self.1.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[1], Some(self.1.id()));
             self.0
                 .gl()
-                .bind_buffer_base(glow::UNIFORM_BUFFER, 2, Some(self.2.id()));
+                .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[2], Some(self.2.id()));
         }
     }
 }
 
-fn bind_uniform_block(gl: &Context, id: glow::Program, instance_name: &str, binding: u32) {
-    if let Some(index) = unsafe { gl.get_uniform_block_index(id, instance_name) } {
-        unsafe {
-            gl.uniform_block_binding(id, index, binding);
-        }
-    } else {
-        log::info!("Uniform block `{}` is unused", instance_name);
-    }
-}
-
-fn glsl_definition<U: UniformBlock>() -> String {
-    let mut output = String::new();
-
-    output.push_str("uniform ");
-    output.push_str(U::NAME);
-    output.push_str(" {\n");
-
-    for field in U::FIELDS {
-        output.push('\t');
-        output.push_str(field.ty);
-        output.push(' ');
-        output.push_str(field.name);
-        output.push_str(";\n");
-    }
-
-    output.push_str("} ");
-    output.push_str(U::INSTANCE_NAME);
-    output.push_str(";\n");
-
-    output
+fn block_name(instance_name: &str) -> String {
+    format!("_{}_", instance_name)
 }
