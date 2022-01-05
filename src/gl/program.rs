@@ -4,15 +4,24 @@ use glow::HasContext;
 
 use super::{Attribute, Context, Error, UniformBlocks, Vertex};
 
-pub struct Program<U, V, const S: usize> {
+pub struct Program<U, V, const N: usize, const S: usize> {
     gl: Rc<Context>,
     id: glow::Program,
+    uniform_block_bindings: [u32; N],
     _phantom: PhantomData<(U, V)>,
 }
 
-impl<U, V, const S: usize> Program<U, V, S> {
+impl<U, V, const N: usize, const S: usize> Program<U, V, N, S> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
+    }
+
+    pub fn id(&self) -> glow::Program {
+        self.id
+    }
+
+    pub fn uniform_block_bindings(&self) -> [u32; N] {
+        self.uniform_block_bindings
     }
 
     pub fn bind(&self) {
@@ -20,39 +29,58 @@ impl<U, V, const S: usize> Program<U, V, S> {
             self.gl.use_program(Some(self.id));
         }
     }
-
-    pub fn id(&self) -> glow::Program {
-        self.id
-    }
 }
 
-pub struct ProgramDef<'a, const S: usize> {
+pub struct ProgramDef<'a, const N: usize, const S: usize> {
+    pub uniform_blocks: [(&'a str, u32); N],
     pub samplers: [&'a str; S],
     pub vertex_source: &'a str,
     pub fragment_source: &'a str,
 }
 
-impl<U, V, const S: usize> Program<U, V, S>
+impl<U, V, const N: usize, const S: usize> Program<U, V, N, S>
 where
-    U: UniformBlocks,
+    U: UniformBlocks<N>,
     V: Vertex,
 {
-    pub fn new(gl: Rc<Context>, def: ProgramDef<S>) -> Result<Self, Error> {
-        let id = create_program::<U, S>(&*gl, &V::attributes(), def)?;
+    pub fn new(gl: Rc<Context>, def: ProgramDef<N, S>) -> Result<Self, Error> {
+        let id = create_program::<U, N, S>(&*gl, &V::attributes(), &def)?;
 
         Ok(Self {
             gl,
             id,
+            uniform_block_bindings: def.uniform_block_bindings(),
             _phantom: PhantomData,
         })
     }
 }
 
-fn create_program<U: UniformBlocks, const S: usize>(
+impl<'a, const N: usize, const S: usize> ProgramDef<'a, N, S> {
+    fn uniform_block_names(&self) -> [&str; N] {
+        let mut result = [""; N];
+        for (i, (instance_name, _)) in self.uniform_blocks.iter().enumerate() {
+            result[i] = instance_name;
+        }
+        result
+    }
+
+    fn uniform_block_bindings(&self) -> [u32; N] {
+        let mut result = [0; N];
+        for (i, (_, binding)) in self.uniform_blocks.iter().enumerate() {
+            result[i] = *binding;
+        }
+        result
+    }
+}
+
+fn create_program<U, const N: usize, const S: usize>(
     gl: &Context,
     attributes: &[Attribute],
-    def: ProgramDef<S>,
-) -> Result<glow::Program, Error> {
+    def: &ProgramDef<N, S>,
+) -> Result<glow::Program, Error>
+where
+    U: UniformBlocks<N>,
+{
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
     let sampler_definitions = def
@@ -65,14 +93,14 @@ fn create_program<U: UniformBlocks, const S: usize>(
             glow::VERTEX_SHADER,
             SOURCE_HEADER.to_owned()
                 + &vertex_source_header(attributes)
-                + &U::glsl_definitions()
+                + &U::glsl_definitions(def.uniform_block_names())
                 + &sampler_definitions
                 + def.vertex_source,
         ),
         (
             glow::FRAGMENT_SHADER,
             SOURCE_HEADER.to_owned()
-                + &U::glsl_definitions()
+                + &U::glsl_definitions(def.uniform_block_names())
                 + &sampler_definitions
                 + def.fragment_source,
         ),
@@ -149,7 +177,7 @@ fn create_program<U: UniformBlocks, const S: usize>(
     }
 
     // Setting uniform block binding locations should be done after linking.
-    U::bind_to_program(gl, program);
+    U::bind_to_program(gl, program, def.uniform_blocks);
 
     Ok(program)
 }
@@ -165,7 +193,7 @@ fn vertex_source_header(attributes: &[Attribute]) -> String {
         + "\n"
 }
 
-impl<U, V, const S: usize> Drop for Program<U, V, S> {
+impl<U, V, const N: usize, const S: usize> Drop for Program<U, V, N, S> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_program(self.id);

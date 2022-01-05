@@ -34,6 +34,4 @@ impl SpriteInfos {
     }
 }
 
-impl UniformBlock for SpriteInfoBlock {
-    const INSTANCE_NAME: &'static str = "sprite_info";
-}
+impl UniformBlock for SpriteInfoBlock {}

@@ -9,6 +9,4 @@ pub struct MatricesBlock {
     pub view: Matrix3<f32>,
 }
 
-impl UniformBlock for MatricesBlock {
-    const INSTANCE_NAME: &'static str = "matrices";
-}
+impl UniformBlock for MatricesBlock {}

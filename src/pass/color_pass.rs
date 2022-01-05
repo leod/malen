@@ -5,15 +5,16 @@ use crate::{
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
 };
 
-use super::MatricesBlock;
+use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 pub struct ColorPass {
-    program: Program<MatricesBlock, ColorVertex, 0>,
+    program: Program<MatricesBlock, ColorVertex, 1, 0>,
 }
 
 impl ColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
+            uniform_blocks: [("matrices", MATRICES_BLOCK_BINDING)],
             samplers: [],
             vertex_source: r#"
                 out vec4 v_color;
