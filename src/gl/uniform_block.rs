@@ -23,11 +23,15 @@ pub trait UniformBlocks {
 impl UniformBlocks for () {
     const N: usize = 0;
 
-    fn glsl_definitions(_: &[&str]) -> String {
+    fn glsl_definitions(instance_names: &[&str]) -> String {
+        assert!(instance_names.len() == Self::N);
+
         String::new()
     }
 
-    fn bind_to_program(_: &Context, _: glow::Program, _: &[(&str, u32)]) {}
+    fn bind_to_program(_: &Context, _: glow::Program, uniform_blocks: &[(&str, u32)]) {
+        assert!(uniform_blocks.len() == Self::N);
+    }
 }
 
 impl<U> UniformBlocks for U
@@ -37,6 +41,8 @@ where
     const N: usize = 1;
 
     fn glsl_definitions(instance_names: &[&str]) -> String {
+        assert!(instance_names.len() == Self::N);
+
         let mut output = String::new();
 
         output.push_str("uniform ");
@@ -59,6 +65,8 @@ where
     }
 
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]) {
+        assert!(uniform_blocks.len() == Self::N);
+
         if let Some(index) =
             unsafe { gl.get_uniform_block_index(id, &block_name(uniform_blocks[0].0)) }
         {
@@ -79,10 +87,14 @@ where
     const N: usize = 2;
 
     fn glsl_definitions(instance_names: &[&str]) -> String {
+        assert!(instance_names.len() == Self::N);
+
         U0::glsl_definitions(&[instance_names[0]]) + &U1::glsl_definitions(&[instance_names[1]])
     }
 
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]) {
+        assert!(uniform_blocks.len() == Self::N);
+
         U0::bind_to_program(gl, id, &[uniform_blocks[0]]);
         U1::bind_to_program(gl, id, &[uniform_blocks[1]]);
     }
@@ -97,12 +109,16 @@ where
     const N: usize = 3;
 
     fn glsl_definitions(instance_names: &[&str]) -> String {
+        assert!(instance_names.len() == Self::N);
+
         U0::glsl_definitions(&[instance_names[0]])
             + &U1::glsl_definitions(&[instance_names[1]])
             + &U2::glsl_definitions(&[instance_names[2]])
     }
 
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]) {
+        assert!(uniform_blocks.len() == Self::N);
+
         U0::bind_to_program(gl, id, &[uniform_blocks[0]]);
         U1::bind_to_program(gl, id, &[uniform_blocks[1]]);
         U2::bind_to_program(gl, id, &[uniform_blocks[2]]);
@@ -112,7 +128,9 @@ where
 impl UniformBuffers for () {
     type UniformBlocks = ();
 
-    fn bind(&self, bindings: &[u32]) {}
+    fn bind(&self, bindings: &[u32]) {
+        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+    }
 }
 
 impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
@@ -122,6 +140,8 @@ where
     type UniformBlocks = U;
 
     fn bind(&self, bindings: &[u32]) {
+        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+
         unsafe {
             self.gl()
                 .bind_buffer_base(glow::UNIFORM_BUFFER, bindings[0], Some(self.id()));
@@ -137,6 +157,7 @@ where
     type UniformBlocks = (U0, U1);
 
     fn bind(&self, bindings: &[u32]) {
+        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
 
         unsafe {
@@ -164,6 +185,7 @@ where
     type UniformBlocks = (U0, U1, U2);
 
     fn bind(&self, bindings: &[u32]) {
+        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
         assert!(Rc::ptr_eq(&self.0.gl(), &self.2.gl()));
 
