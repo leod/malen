@@ -339,8 +339,7 @@ pub fn main() {
                 - prof_size
                 - Vector2::new(10.0, 10.0);
 
-            let text_end = game
-                .font
+            game.font
                 .write(
                     Text {
                         pos: prof_pos + Vector2::new(10.0, 10.0),

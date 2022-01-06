@@ -29,9 +29,9 @@ where
     V: Vertex,
 {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let vertex_buffer = VertexBuffer::new_dynamic(gl.clone())?;
-        let element_buffer = ElementBuffer::new_dynamic(gl)?;
-        let vertex_array = VertexArray::new(Rc::new(vertex_buffer), Rc::new(element_buffer))?;
+        let element_buffer = ElementBuffer::new_dynamic(gl.clone())?;
+        let vertex_buffer = VertexBuffer::new_dynamic(gl)?;
+        let vertex_array = VertexArray::new(Rc::new(element_buffer), Rc::new(vertex_buffer))?;
 
         Ok(GeometryBatch {
             buffer: GeometryBuffer::new(),
@@ -54,8 +54,8 @@ where
     pub fn draw_unit(&mut self) -> DrawUnit<V, u32> {
         if self.dirty {
             self.buffer.upload(
-                &*self.vertex_array.vertex_buffers(),
                 &*self.vertex_array.element_buffer(),
+                &*self.vertex_array.vertex_buffers(),
             );
             self.dirty = false;
         }

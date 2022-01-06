@@ -123,7 +123,7 @@ where
         V1::bind_to_vertex_array(
             gl,
             &*buffers.1,
-            V0::bind_to_vertex_array(gl, &*buffers.0, 0),
+            V0::bind_to_vertex_array(gl, &*buffers.0, index),
         )
     }
 }
@@ -162,7 +162,7 @@ where
             V1::bind_to_vertex_array(
                 gl,
                 &*buffers.1,
-                V0::bind_to_vertex_array(gl, &*buffers.0, 0),
+                V0::bind_to_vertex_array(gl, &*buffers.0, index),
             ),
         )
     }

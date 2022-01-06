@@ -18,7 +18,7 @@ pub struct LineTag {}
 pub trait Geometry<Tag: PrimitiveTag> {
     type Vertex: Vertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>);
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>);
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -73,7 +73,7 @@ impl PrimitiveTag for LineTag {
 impl Geometry<TriangleTag> for Sprite {
     type Vertex = SpriteVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
@@ -88,7 +88,7 @@ impl Geometry<TriangleTag> for Sprite {
 impl Geometry<TriangleTag> for ColorSprite {
     type Vertex = ColorSpriteVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
@@ -104,7 +104,7 @@ impl Geometry<TriangleTag> for ColorSprite {
 impl Geometry<TriangleTag> for ColorRect {
     type Vertex = ColorVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
@@ -119,7 +119,7 @@ impl Geometry<TriangleTag> for ColorRect {
 impl Geometry<LineTag> for ColorRect {
     type Vertex = ColorVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.extend_from_slice(&quad_line_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
@@ -134,7 +134,7 @@ impl Geometry<LineTag> for ColorRect {
 impl Geometry<TriangleTag> for ColorRotatedRect {
     type Vertex = ColorVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
@@ -149,7 +149,7 @@ impl Geometry<TriangleTag> for ColorRotatedRect {
 impl Geometry<LineTag> for ColorLine {
     type Vertex = ColorVertex;
 
-    fn write(&self, vertices: &mut Vec<Self::Vertex>, elements: &mut Vec<u32>) {
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         elements.push(vertices.len() as u32);
         elements.push(vertices.len() as u32 + 1);
 
