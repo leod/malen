@@ -6,7 +6,7 @@ use crate::{
     error::InitError,
     gl,
     input::InputState,
-    pass::{ColorPass, ColorSpritePass, SpritePass},
+    pass::{ColorPass, ColorSpritePass, InstancedColorPass, SpritePass},
     plot::PlotPass,
     Canvas, Config, Event, Screen,
 };
@@ -18,6 +18,7 @@ pub struct Context {
     sprite_pass: Rc<SpritePass>,
     color_sprite_pass: Rc<ColorSpritePass>,
     color_pass: Rc<ColorPass>,
+    instanced_color_pass: Rc<InstancedColorPass>,
     plot_pass: Rc<PlotPass>,
 }
 
@@ -44,6 +45,7 @@ impl Context {
         let sprite_pass = Rc::new(SpritePass::new(canvas.gl())?);
         let color_sprite_pass = Rc::new(ColorSpritePass::new(canvas.gl())?);
         let color_pass = Rc::new(ColorPass::new(canvas.gl())?);
+        let instanced_color_pass = Rc::new(InstancedColorPass::new(canvas.gl())?);
         let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
 
         Ok(Context {
@@ -52,6 +54,7 @@ impl Context {
             sprite_pass,
             color_sprite_pass,
             color_pass,
+            instanced_color_pass,
             plot_pass,
         })
     }
@@ -78,6 +81,10 @@ impl Context {
 
     pub fn color_pass(&self) -> Rc<ColorPass> {
         self.color_pass.clone()
+    }
+
+    pub fn instanced_color_pass(&self) -> Rc<InstancedColorPass> {
+        self.instanced_color_pass.clone()
     }
 
     pub fn plot_pass(&self) -> Rc<PlotPass> {

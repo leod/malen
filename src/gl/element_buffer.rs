@@ -21,7 +21,7 @@ impl Element for u16 {
     }
 }
 
-pub struct ElementBuffer<E> {
+pub struct ElementBuffer<E = u32> {
     gl: Rc<Context>,
     id: glow::Buffer,
     len: Cell<usize>,
@@ -32,7 +32,7 @@ impl<E> ElementBuffer<E>
 where
     E: Element,
 {
-    pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
+    pub fn new(gl: Rc<Context>) -> Result<Self, Error> {
         let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         Ok(Self {
@@ -44,7 +44,7 @@ where
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[E]) -> Result<Self, Error> {
-        let element_buffer = Self::new_dynamic(gl)?;
+        let element_buffer = Self::new(gl)?;
         element_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
 
         Ok(element_buffer)

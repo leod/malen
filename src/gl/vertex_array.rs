@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
-use super::{Context, ElementBuffer, Error, VertexDecls};
+use super::{Context, ElementBuffer, Error, Vertex, VertexBuffer, VertexDecls};
 
-pub struct VertexArray<V, E>
+pub struct VertexArray<V, E = u32>
 where
     V: VertexDecls,
 {
@@ -15,11 +15,11 @@ where
 
 impl<V, E> VertexArray<V, E>
 where
-    V: VertexDecls,
+    V: Vertex,
 {
     pub fn new(
         element_buffer: Rc<ElementBuffer<E>>,
-        vertex_buffers: V::RcVertexBufferTuple,
+        vertex_buffer: Rc<VertexBuffer<V>>,
     ) -> Result<Self, Error> {
         let gl = element_buffer.gl();
         let id = unsafe { gl.create_vertex_array() }.map_err(Error::Glow)?;
@@ -27,7 +27,36 @@ where
         unsafe {
             gl.bind_vertex_array(Some(id));
             gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.id()));
-            V::bind_to_vertex_array(&*gl, vertex_buffers.clone(), 0);
+            V::bind_to_vertex_array(&*vertex_buffer, 0, 0);
+            gl.bind_vertex_array(None);
+        }
+
+        Ok(Self {
+            element_buffer,
+            vertex_buffers: vertex_buffer,
+            id,
+        })
+    }
+}
+
+impl<V, E> VertexArray<V, E>
+where
+    V: VertexDecls,
+{
+    pub fn new_instanced(
+        element_buffer: Rc<ElementBuffer<E>>,
+        vertex_buffers: V::RcVertexBufferTuple,
+        divisors: &[u32],
+    ) -> Result<Self, Error> {
+        assert!(divisors.len() == V::N);
+
+        let gl = element_buffer.gl();
+        let id = unsafe { gl.create_vertex_array() }.map_err(Error::Glow)?;
+
+        unsafe {
+            gl.bind_vertex_array(Some(id));
+            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.id()));
+            V::bind_to_vertex_array(vertex_buffers.clone(), divisors, 0);
             gl.bind_vertex_array(None);
         }
 

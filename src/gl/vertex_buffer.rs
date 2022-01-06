@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, rc::Rc};
+use std::{cell::Cell, marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
@@ -7,6 +7,7 @@ use super::{Context, Error, Vertex};
 pub struct VertexBuffer<V> {
     gl: Rc<Context>,
     id: glow::Buffer,
+    len: Cell<usize>,
     _phantom: PhantomData<V>,
 }
 
@@ -14,18 +15,19 @@ impl<V> VertexBuffer<V>
 where
     V: Vertex,
 {
-    pub fn new_dynamic(gl: Rc<Context>) -> Result<Self, Error> {
+    pub fn new(gl: Rc<Context>) -> Result<Self, Error> {
         let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
 
         Ok(Self {
             gl,
             id,
+            len: Cell::new(0),
             _phantom: PhantomData,
         })
     }
 
     pub fn new_static(gl: Rc<Context>, data: &[V]) -> Result<Self, Error> {
-        let vertex_buffer = Self::new_dynamic(gl)?;
+        let vertex_buffer = Self::new(gl)?;
         vertex_buffer.set_data_with_usage(data, glow::STATIC_DRAW);
 
         Ok(vertex_buffer)
@@ -46,6 +48,8 @@ where
             self.gl
                 .buffer_data_u8_slice(glow::ARRAY_BUFFER, data_u8, usage);
         }
+
+        self.len.set(data.len());
     }
 }
 
@@ -56,6 +60,14 @@ impl<V> VertexBuffer<V> {
 
     pub fn id(&self) -> glow::Buffer {
         self.id
+    }
+
+    pub fn len(&self) -> usize {
+        self.len.get()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
