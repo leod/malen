@@ -294,6 +294,7 @@ pub fn main() {
     let mut draw_timer = DrawTimer::new(context.gl(), Duration::from_secs(plot_secs));
     let mut frame_times = VecDeque::<(Instant, Duration)>::new();
     let mut plot_batch = PlotBatch::new(context.gl()).unwrap();
+    let mut show_profiling = false;
 
     malen::main_loop(move |timestamp_secs, _running| {
         profile!("frame");
@@ -313,9 +314,12 @@ pub fn main() {
                     log::info!("Canvas lost focus");
                 }
                 KeyPressed(Key::P) => {
-                    log::info!("Profiling:\n{}", coarse_prof::to_string(),);
+                    log::info!("Profiling:\n{}", coarse_prof::to_string());
+                    log::info!("Frame timer: {:?}", draw_timer.timing_info());
+                    show_profiling = !show_profiling;
+                }
+                KeyPressed(Key::R) => {
                     coarse_prof::reset();
-                    log::info!("Frame timer: {:?}", draw_timer.timing_info(),);
                 }
                 _ => (),
             }
@@ -326,40 +330,53 @@ pub fn main() {
         game.render().unwrap();
 
         plot_batch.clear();
-        if let Some((last_time, _)) = frame_times.back() {
-            profile!("render_plots");
+        if let Some((last_time, _)) = frame_times.back().filter(|_| show_profiling) {
+            profile!("render_profiling");
 
-            game.font
+            let prof_string = coarse_prof::to_string();
+            let prof_size = game.font.text_size(17.0, &prof_string) + Vector2::new(30.0, 30.0);
+            let prof_pos = Point2::from(context.canvas().logical_size())
+                - prof_size
+                - Vector2::new(10.0, 10.0);
+
+            let text_end = game
+                .font
                 .write(
                     Text {
-                        pos: Point2::new(10.0, 10.0),
+                        pos: prof_pos + Vector2::new(10.0, 10.0),
                         size: 17.0,
                         z: 0.0,
                         color: Color4::new(0.0, 0.0, 0.0, 1.0),
-                        text: &coarse_prof::to_string(),
+                        text: &prof_string,
                     },
-                    &mut game.text_batch,
+                    &mut plot_batch.text_batch,
                 )
                 .unwrap();
 
+            plot_batch.triangle_batch.push(ColorRect {
+                rect: Rect::from_top_left(prof_pos, prof_size),
+                z: 0.0,
+                color: PlotStyle::default().background_color.unwrap(),
+            });
+
             let plot = Plot {
                 rect: Rect::from_top_left(
-                    Point2::new(10.0, context.canvas().logical_size().y - 130.0),
-                    Vector2::new(600.0, 120.0),
+                    Point2::new(10.0, context.canvas().logical_size().y - 210.0),
+                    Vector2::new(700.0, 200.0),
                 ),
                 x_axis: Axis {
-                    label: "dt [s]".to_owned(),
+                    label: "dt[s]".to_owned(),
                     range: Some((-(plot_secs as f32), 0.0)),
                     tics: 1.0,
                 },
                 y_axis: Axis {
-                    label: "dur [ms]".to_owned(),
+                    label: "dur[ms]".to_owned(),
                     range: Some((0.0, 30.0)),
                     tics: 15.0,
                 },
                 line_graphs: vec![
                     LineGraph {
-                        caption: "frame [ms]".to_owned(),
+                        caption: "frame[ms]".to_owned(),
                         color: Color4::new(1.0, 0.0, 0.0, 1.0),
                         points: frame_times
                             .iter()
@@ -372,7 +389,7 @@ pub fn main() {
                             .collect(),
                     },
                     LineGraph {
-                        caption: "draw [ms]".to_owned(),
+                        caption: "draw[ms]".to_owned(),
                         color: Color4::new(0.0, 0.0, 1.0, 1.0),
                         points: draw_timer
                             .samples()
