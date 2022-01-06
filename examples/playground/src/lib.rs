@@ -210,7 +210,7 @@ impl Game {
             context,
             LightPipelineParams {
                 shadow_map_resolution: 512,
-                max_num_lights: 512,
+                max_num_lights: 40,
             },
         )?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
@@ -281,6 +281,20 @@ impl Game {
             z: 0.4,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
         });
+        self.lights.push(Light {
+            position: self.state.player.pos,
+            radius: 512.0,
+            angle: self.state.player.angle,
+            angle_size: std::f32::consts::PI / 4.0,
+            color: Color3::new(0.0, 0.5, 0.0),
+        });
+        self.lights.push(Light {
+            position: self.state.player.pos,
+            radius: 100.0,
+            angle: self.state.player.angle,
+            angle_size: 2.0 * std::f32::consts::PI,
+            color: Color3::new(0.0, 0.5, 0.0),
+        });
 
         Ok(())
     }
@@ -335,8 +349,8 @@ impl Game {
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(300.0, 200.0)),
-            &self.light_pipeline.screen_light(),
+            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
+            &self.light_pipeline.shadow_map(),
         )?;
 
         Ok(())

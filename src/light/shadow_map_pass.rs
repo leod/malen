@@ -21,12 +21,13 @@ float angle_to_light(vec2 position) {
 const float PI = 3.141592;
 
 void main() {
-    if (gl_InstanceID == a_ignore_light_index) {
+    /*if (gl_InstanceID == a_ignore_light_index) {
         gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
         return;
-    }
+    }*/
 
     v_light_position = i_light_position;
+    v_light_radius = i_light_radius;
 
     float angle_0 = angle_to_light(a_line_0);
     float angle_1 = angle_to_light(a_line_1);
@@ -66,16 +67,16 @@ float ray_line_segment_intersection(
     vec2 q
 ) {
     /**
-    ray(s) = o + d * s             (0 <= s)
-    line(t) = p + (q - p) * t      (0 <= t <= 1)
-
-    ray(s) = line(t)
-    <=> o + d * s = p + (q - p) * t
-    <=> d * s + (p - q) * t = p - o
-    <=> M * [[s], [t]] = p - o
-      where M = [[d.x, d.y], [p.x - q.x, p.y - q.y]] 
-    <=> [[s], [t]] = M^-1 (p - o)   (if M is invertible)
-      where M^-1 = 1.0 / det(M) * [[p.y - q.y, -d.y], [q.x - p.x, d.x]]
+        ray(s) = o + d * s             (0 <= s)
+        line(t) = p + (q - p) * t      (0 <= t <= 1)
+    
+        ray(s) = line(t)
+            <=> o + d * s = p + (q - p) * t
+            <=> d * s + (p - q) * t = p - o
+            <=> M * [[s], [t]] = p - o
+              where M = [[d.x, d.y], [p.x - q.x, p.y - q.y]] 
+            <=> [[s], [t]] = M^-1 (p - o)   (if M is invertible)
+              where M^-1 = 1.0 / det(M) * [[p.y - q.y, -d.y], [q.x - p.x, d.x]]
     **/
 
     float det = d.x * (p.y - q.y) + d.y * (q.x - p.x);
@@ -106,8 +107,8 @@ void main() {
         v_edge.xy,
         v_edge.zw
     );
-    //f_color = vec4(t, t, t, t);
-    f_color = vec4(0, 0, 0, 0);
+    f_color = vec4(t, t, t, 1.0);
+    //f_color = vec4(0.0, 0, 0, 1.0);
 }
 "#;
 
