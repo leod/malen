@@ -84,6 +84,10 @@ impl LightPipeline {
         })
     }
 
+    pub fn shadow_map(&self) -> &Texture {
+        &self.shadow_map.textures()[0]
+    }
+
     pub fn screen_light(&self) -> &Texture {
         &self.screen_light.textures()[0]
     }
