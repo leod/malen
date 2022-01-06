@@ -302,7 +302,10 @@ impl Game {
         context.instanced_color_pass().draw(
             &self.camera_matrices,
             self.circle_instances.draw_unit(),
-            &DrawParams::default(),
+            &DrawParams {
+                depth_test: Some(DepthTest::default()),
+                ..DrawParams::default()
+            },
         );
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
