@@ -21,7 +21,7 @@ mod vertex_buffer;
 pub use blend::{Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp};
 pub use context::Context;
 pub use depth_test::{DepthFunc, DepthTest};
-pub use draw::{draw, draw_instanced};
+pub use draw::{clear_color, clear_color_and_depth, clear_depth, draw, draw_instanced};
 pub use draw_params::DrawParams;
 pub use draw_timer::{DrawTimer, DrawTimingInfo};
 pub use draw_unit::{DrawUnit, InstancedDrawUnit, PrimitiveMode};
