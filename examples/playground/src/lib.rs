@@ -7,9 +7,13 @@ use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
-    data::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
+    data::{
+        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, Mesh,
+        MeshInstanceBatch, Sprite, SpriteBatch, TriangleTag,
+    },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
-    pass::MatricesBlock,
+    math::Circle,
+    pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
     text::{Font, Text, TextBatch},
     Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
@@ -154,6 +158,7 @@ struct Game {
     camera_matrices: UniformBuffer<MatricesBlock>,
     screen_matrices: UniformBuffer<MatricesBlock>,
 
+    circle_instances: MeshInstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
     text_batch: TextBatch,
@@ -177,6 +182,21 @@ impl Game {
         let camera_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
 
+        let circle_mesh = Mesh::from_geometry::<TriangleTag, _>(
+            context.gl(),
+            ColorCircle {
+                circle: Circle {
+                    center: Point2::origin(),
+                    radius: 20.0,
+                },
+                z: 0.0,
+                angle: 0.0,
+                num_segments: 64,
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
+            },
+        )?;
+
+        let circle_instances = MeshInstanceBatch::new(circle_mesh)?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
@@ -187,6 +207,7 @@ impl Game {
             wall_texture,
             camera_matrices,
             screen_matrices,
+            circle_instances,
             color_batch,
             wall_sprite_batch,
             text_batch,
@@ -199,6 +220,7 @@ impl Game {
         self.color_batch.clear();
         self.wall_sprite_batch.clear();
         self.text_batch.clear();
+        self.circle_instances.clear();
 
         for wall in &self.state.walls {
             self.wall_sprite_batch.push(Sprite {
@@ -212,14 +234,13 @@ impl Game {
         }
 
         for enemy in &self.state.enemies {
-            self.color_batch.push(ColorRect {
-                rect: Rect {
-                    center: enemy.pos,
-                    size: Vector2::new(30.0, 30.0),
-                },
-                z: 0.3,
+            self.circle_instances.push(ColorInstance {
+                position: enemy.pos,
+                z: 0.0,
+                angle: enemy.angle,
+                scale: Vector2::new(1.0, 1.0),
                 color: Color4::new(0.8, 0.2, 0.2, 1.0),
-            })
+            });
         }
 
         self.color_batch.push(ColorRotatedRect {
@@ -267,6 +288,11 @@ impl Game {
                 ..DrawParams::default()
             },
         )?;
+        context.instanced_color_pass().draw(
+            &self.camera_matrices,
+            self.circle_instances.draw_unit(),
+            &DrawParams::default(),
+        );
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 

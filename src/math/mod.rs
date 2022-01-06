@@ -1,9 +1,11 @@
 mod camera;
+mod circle;
 mod rect;
 mod screen;
 mod transforms;
 
 pub use camera::Camera;
+pub use circle::Circle;
 pub use rect::{Rect, RotatedRect};
 pub use screen::Screen;
 pub use transforms::{

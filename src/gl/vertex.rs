@@ -28,10 +28,11 @@ pub trait Vertex: Pod {
     fn attributes() -> Vec<Attribute>;
 
     unsafe fn bind_to_vertex_array(
-        gl: &Context,
         vertex_buffer: &VertexBuffer<Self>,
+        divisor: u32,
         mut index: usize,
     ) -> usize {
+        let gl = vertex_buffer.gl();
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.id()));
 
         for attribute in Self::attributes().iter() {
@@ -41,6 +42,7 @@ pub trait Vertex: Pod {
             );
 
             gl.enable_vertex_attrib_array(index as u32);
+            gl.vertex_attrib_divisor(index as u32, divisor);
 
             match attribute.element_type {
                 AttributeValueType::Float => gl.vertex_attrib_pointer_f32(
@@ -75,8 +77,8 @@ pub trait VertexDecls {
     fn attributes() -> Vec<Attribute>;
 
     unsafe fn bind_to_vertex_array(
-        gl: &Context,
         buffers: Self::RcVertexBufferTuple,
+        divisors: &[u32],
         index: usize,
     ) -> usize;
 }
@@ -94,11 +96,12 @@ where
     }
 
     unsafe fn bind_to_vertex_array(
-        gl: &Context,
         buffers: Self::RcVertexBufferTuple,
+        divisors: &[u32],
         index: usize,
     ) -> usize {
-        V::bind_to_vertex_array(gl, &*buffers, index)
+        assert!(divisors.len() == Self::N);
+        V::bind_to_vertex_array(&*buffers, divisors[0], index)
     }
 }
 
@@ -116,14 +119,15 @@ where
     }
 
     unsafe fn bind_to_vertex_array(
-        gl: &Context,
         buffers: Self::RcVertexBufferTuple,
+        divisors: &[u32],
         index: usize,
     ) -> usize {
+        assert!(divisors.len() == Self::N);
         V1::bind_to_vertex_array(
-            gl,
             &*buffers.1,
-            V0::bind_to_vertex_array(gl, &*buffers.0, index),
+            divisors[1],
+            V0::bind_to_vertex_array(&*buffers.0, divisors[0], index),
         )
     }
 }
@@ -152,17 +156,19 @@ where
     }
 
     unsafe fn bind_to_vertex_array(
-        gl: &Context,
         buffers: Self::RcVertexBufferTuple,
+        divisors: &[u32],
         index: usize,
     ) -> usize {
+        assert!(divisors.len() == Self::N);
+
         V2::bind_to_vertex_array(
-            gl,
             &*buffers.2,
+            divisors[2],
             V1::bind_to_vertex_array(
-                gl,
                 &*buffers.1,
-                V0::bind_to_vertex_array(gl, &*buffers.0, index),
+                divisors[1],
+                V0::bind_to_vertex_array(&*buffers.0, divisors[0], index),
             ),
         )
     }
