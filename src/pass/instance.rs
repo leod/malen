@@ -28,3 +28,15 @@ impl Vertex for ColorInstance {
         ]
     }
 }
+
+impl Default for ColorInstance {
+    fn default() -> Self {
+        Self {
+            position: Point2::origin(),
+            z: 0.0,
+            angle: 0.0,
+            scale: Vector2::new(1.0, 1.0),
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
+        }
+    }
+}
