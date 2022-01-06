@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use bytemuck::Pod;
 use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vector3, Vector4};
 
@@ -5,7 +7,7 @@ use glow::HasContext;
 
 use crate::Color4;
 
-use super::Context;
+use super::{Context, VertexBuffer};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AttributeValueType {
@@ -25,7 +27,13 @@ pub struct Attribute {
 pub trait Vertex: Pod {
     fn attributes() -> Vec<Attribute>;
 
-    unsafe fn bind_to_vertex_array(gl: &Context, mut index: usize) -> usize {
+    unsafe fn bind_to_vertex_array(
+        gl: &Context,
+        vertex_buffer: &VertexBuffer<Self>,
+        mut index: usize,
+    ) -> usize {
+        gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.id()));
+
         for attribute in Self::attributes().iter() {
             assert!(
                 attribute.offset + attribute.num_elements * attribute.element_type.size()
@@ -62,7 +70,15 @@ pub trait Vertex: Pod {
 pub trait VertexDecls {
     const N: usize;
 
+    type RcVertexBufferTuple: Clone;
+
     fn attributes() -> Vec<Attribute>;
+
+    unsafe fn bind_to_vertex_array(
+        gl: &Context,
+        buffers: Self::RcVertexBufferTuple,
+        index: usize,
+    ) -> usize;
 }
 
 impl<V> VertexDecls for V
@@ -71,8 +87,18 @@ where
 {
     const N: usize = 1;
 
+    type RcVertexBufferTuple = Rc<VertexBuffer<V>>;
+
     fn attributes() -> Vec<Attribute> {
         V::attributes()
+    }
+
+    unsafe fn bind_to_vertex_array(
+        gl: &Context,
+        buffers: Self::RcVertexBufferTuple,
+        index: usize,
+    ) -> usize {
+        V::bind_to_vertex_array(gl, &*buffers, index)
     }
 }
 
@@ -83,8 +109,22 @@ where
 {
     const N: usize = 2;
 
+    type RcVertexBufferTuple = (Rc<VertexBuffer<V0>>, Rc<VertexBuffer<V1>>);
+
     fn attributes() -> Vec<Attribute> {
         [&V0::attributes()[..], &V1::attributes()[..]].concat()
+    }
+
+    unsafe fn bind_to_vertex_array(
+        gl: &Context,
+        buffers: Self::RcVertexBufferTuple,
+        index: usize,
+    ) -> usize {
+        V1::bind_to_vertex_array(
+            gl,
+            &*buffers.1,
+            V0::bind_to_vertex_array(gl, &*buffers.0, 0),
+        )
     }
 }
 
@@ -96,6 +136,12 @@ where
 {
     const N: usize = 3;
 
+    type RcVertexBufferTuple = (
+        Rc<VertexBuffer<V0>>,
+        Rc<VertexBuffer<V1>>,
+        Rc<VertexBuffer<V2>>,
+    );
+
     fn attributes() -> Vec<Attribute> {
         [
             &V0::attributes()[..],
@@ -103,6 +149,22 @@ where
             &V2::attributes()[..],
         ]
         .concat()
+    }
+
+    unsafe fn bind_to_vertex_array(
+        gl: &Context,
+        buffers: Self::RcVertexBufferTuple,
+        index: usize,
+    ) -> usize {
+        V2::bind_to_vertex_array(
+            gl,
+            &*buffers.2,
+            V1::bind_to_vertex_array(
+                gl,
+                &*buffers.1,
+                V0::bind_to_vertex_array(gl, &*buffers.0, 0),
+            ),
+        )
     }
 }
 

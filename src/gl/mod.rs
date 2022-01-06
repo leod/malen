@@ -37,6 +37,6 @@ pub use texture::{
 };
 pub use uniform_block::{UniformBlock, UniformBlockDecls};
 pub use uniform_buffer::UniformBuffer;
-pub use vertex::{attribute, Attribute, AttributeValueType, DataType, Vertex};
+pub use vertex::{attribute, Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
 pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;

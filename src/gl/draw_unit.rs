@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use super::{Context, ElementBuffer, VertexArray, VertexBuffer};
+use super::{Context, ElementBuffer, VertexArray, VertexBuffer, VertexDecls};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveMode {
@@ -8,13 +8,19 @@ pub enum PrimitiveMode {
     Line,
 }
 
-pub struct DrawUnit<'a, V, E> {
+pub struct DrawUnit<'a, V, E>
+where
+    V: VertexDecls,
+{
     vertex_array: &'a VertexArray<V, E>,
     primitive_mode: PrimitiveMode,
     element_range: Range<usize>,
 }
 
-impl<'a, V, E> DrawUnit<'a, V, E> {
+impl<'a, V, E> DrawUnit<'a, V, E>
+where
+    V: VertexDecls,
+{
     pub fn new(
         vertex_array: &'a VertexArray<V, E>,
         primitive_mode: PrimitiveMode,
@@ -38,8 +44,8 @@ impl<'a, V, E> DrawUnit<'a, V, E> {
         self.vertex_array
     }
 
-    pub fn vertex_buffer(&self) -> Rc<VertexBuffer<V>> {
-        self.vertex_array.vertex_buffer()
+    pub fn vertex_buffers(&self) -> V::RcVertexBufferTuple {
+        self.vertex_array.vertex_buffers()
     }
 
     pub fn element_buffer(&self) -> Rc<ElementBuffer<E>> {
