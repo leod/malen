@@ -93,7 +93,7 @@ where
     }
 }
 
-pub struct MeshInstanceBatch<V, I>
+pub struct InstanceBatch<V, I>
 where
     V: Vertex,
     I: Vertex,
@@ -104,12 +104,12 @@ where
     dirty: bool,
 }
 
-impl<V, I> MeshInstanceBatch<V, I>
+impl<V, I> InstanceBatch<V, I>
 where
     V: Vertex,
     I: Vertex,
 {
-    pub fn new(mesh: Mesh<V>) -> Result<Self, gl::Error> {
+    pub fn from_mesh(mesh: Mesh<V>) -> Result<Self, gl::Error> {
         let instance_buffer = Rc::new(VertexBuffer::new(mesh.element_buffer().gl())?);
         let vertex_array = VertexArray::new_instanced(
             mesh.element_buffer(),
@@ -136,6 +136,7 @@ where
                 .vertex_buffers()
                 .1
                 .set_data(&self.instances);
+            self.dirty = false;
         }
     }
 

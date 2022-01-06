@@ -2,7 +2,8 @@ use nalgebra::{Point2, Point3};
 
 use crate::{
     gl::{PrimitiveMode, Vertex},
-    Color4, Rect, RotatedRect, math::Line,
+    math::Line,
+    Color4, Rect, RotatedRect,
 };
 
 use super::{ColorSpriteVertex, ColorVertex, SpriteVertex};
@@ -163,7 +164,7 @@ impl Geometry<LineTag> for ColorLine {
     }
 }
 
-fn quad_triangle_indices(start_index: u32) -> [u32; 6] {
+pub fn quad_triangle_indices(start_index: u32) -> [u32; 6] {
     [
         start_index,
         start_index + 1,
@@ -174,7 +175,7 @@ fn quad_triangle_indices(start_index: u32) -> [u32; 6] {
     ]
 }
 
-fn quad_line_indices(start_index: u32) -> [u32; 8] {
+pub fn quad_line_indices(start_index: u32) -> [u32; 8] {
     [
         start_index + 0,
         start_index + 1,
