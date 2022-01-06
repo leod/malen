@@ -2,6 +2,8 @@ use std::rc::Rc;
 
 use glow::HasContext;
 
+use crate::Color4;
+
 use super::{
     draw_params::set_draw_params, uniform_block::UniformBuffers, Context, DrawParams, DrawUnit,
     Element, Framebuffer, InstancedDrawUnit, Program, Texture, Vertex, VertexDecls,
@@ -131,6 +133,28 @@ where
     }
 
     result
+}
+
+pub fn clear_color_and_depth(gl: &Context, color: Color4, depth: f32) {
+    unsafe {
+        gl.clear_color(color.r, color.g, color.b, color.a);
+        gl.clear_depth_f32(depth);
+        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+    }
+}
+
+pub fn clear_color(gl: &Context, color: Color4) {
+    unsafe {
+        gl.clear_color(color.r, color.g, color.b, color.a);
+        gl.clear(glow::COLOR_BUFFER_BIT);
+    }
+}
+
+pub fn clear_depth(gl: &Context, depth: f32) {
+    unsafe {
+        gl.clear_depth_f32(depth);
+        gl.clear(glow::DEPTH_BUFFER_BIT);
+    }
 }
 
 fn bind_samplers<const S: usize>(gl: Rc<Context>, samplers: [&Texture; S]) {

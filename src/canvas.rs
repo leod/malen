@@ -139,23 +139,16 @@ impl Canvas {
         &active_element == AsRef::<web_sys::Element>::as_ref(&self.element)
     }
 
-    pub fn clear(&self, color: Color4) {
-        unsafe {
-            self.gl.clear_color(color.r, color.g, color.b, color.a);
-            self.gl
-                .clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-        }
+    pub fn clear_color_and_depth(&self, color: Color4, depth: f32) {
+        gl::clear_color_and_depth(&*self.gl, color, depth);
     }
 
-    pub fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
-        unsafe {
-            self.gl.viewport(
-                lower_left.x as i32,
-                lower_left.y as i32,
-                size.x as i32,
-                size.y as i32,
-            );
-        }
+    pub fn clear_color(&self, color: Color4) {
+        gl::clear_color(&*self.gl, color);
+    }
+
+    pub fn clear_depth(&self, depth: f32) {
+        gl::clear_depth(&*self.gl, depth);
     }
 
     pub fn set_size_config(&mut self, size_config: CanvasSizeConfig) {
@@ -189,6 +182,17 @@ impl Canvas {
         }
 
         self.set_viewport(Point2::origin(), self.screen().physical_size);
+    }
+
+    fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
+        unsafe {
+            self.gl.viewport(
+                lower_left.x as i32,
+                lower_left.y as i32,
+                size.x as i32,
+                size.y as i32,
+            );
+        }
     }
 
     fn adjust_sizes(&mut self) {

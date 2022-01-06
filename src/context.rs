@@ -8,7 +8,7 @@ use crate::{
     input::InputState,
     pass::{ColorPass, ColorSpritePass, InstancedColorPass, SpritePass},
     plot::PlotPass,
-    Canvas, Config, Event, Screen,
+    Canvas, Config, Event,
 };
 
 pub struct Context {
@@ -89,10 +89,6 @@ impl Context {
 
     pub fn plot_pass(&self) -> Rc<PlotPass> {
         self.plot_pass.clone()
-    }
-
-    pub fn screen(&self) -> Screen {
-        self.canvas.screen()
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {

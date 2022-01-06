@@ -258,7 +258,7 @@ impl Game {
     pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
         profile!("draw");
 
-        let screen = context.screen();
+        let screen = context.canvas().screen();
 
         self.camera_matrices.set_data(MatricesBlock {
             view: self.state.camera().matrix(screen),
@@ -269,7 +269,9 @@ impl Game {
             projection: screen.orthographic_projection(),
         });
 
-        context.canvas().clear(Color4::new(1.0, 1.0, 1.0, 1.0));
+        context
+            .canvas()
+            .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
         context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
@@ -350,8 +352,11 @@ pub fn main() {
             }
         }
 
-        game.state
-            .update(timestamp_secs, context.screen(), context.input_state());
+        game.state.update(
+            timestamp_secs,
+            context.canvas().screen(),
+            context.input_state(),
+        );
         game.render().unwrap();
 
         plot_batch.clear();
