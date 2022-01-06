@@ -27,9 +27,8 @@ where
             gl.bind_vertex_array(Some(id));
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(vertex_buffer.id()));
             gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer.id()));
+            V::bind_to_vertex_array(&*gl, 0);
         }
-
-        set_vertex_attribs::<V>(&*gl);
 
         unsafe {
             gl.bind_vertex_array(None);
@@ -71,41 +70,6 @@ impl<V, E> Drop for VertexArray<V, E> {
     fn drop(&mut self) {
         unsafe {
             self.gl().delete_vertex_array(self.id);
-        }
-    }
-}
-
-fn set_vertex_attribs<V: Vertex>(gl: &Context) {
-    for (index, attribute) in V::attributes().iter().enumerate() {
-        assert!(
-            attribute.offset + attribute.num_elements * attribute.element_type.size()
-                <= std::mem::size_of::<V>()
-        );
-
-        unsafe {
-            gl.enable_vertex_attrib_array(index as u32);
-        }
-
-        match attribute.element_type {
-            AttributeValueType::Float => unsafe {
-                gl.vertex_attrib_pointer_f32(
-                    index as u32,
-                    attribute.num_elements as i32,
-                    attribute.element_type.to_gl(),
-                    false,
-                    std::mem::size_of::<V>() as i32,
-                    attribute.offset as i32,
-                );
-            },
-            AttributeValueType::Int => unsafe {
-                gl.vertex_attrib_pointer_i32(
-                    index as u32,
-                    attribute.num_elements as i32,
-                    attribute.element_type.to_gl(),
-                    std::mem::size_of::<V>() as i32,
-                    attribute.offset as i32,
-                );
-            },
         }
     }
 }
