@@ -1,7 +1,8 @@
 use thiserror::Error;
 
 use crate::{
-    gl::{self, LoadTextureError, NewTextureError},
+    gl::{self, LoadTextureError, NewFramebufferError, NewTextureError},
+    light::NewLightPipelineError,
     text::{LoadFontError, WriteTextError},
 };
 
@@ -36,6 +37,12 @@ pub enum InitError {
 
     #[error("load font error: {0}")]
     LoadFont(#[from] LoadFontError),
+
+    #[error("new framebuffer error: {0}")]
+    NewFramebuffer(#[from] NewFramebufferError),
+
+    #[error("new light pipeline error: {0}")]
+    NewLightPipeline(#[from] NewLightPipelineError),
 }
 
 #[derive(Error, Debug)]
@@ -45,4 +52,7 @@ pub enum FrameError {
 
     #[error("write text error: {0}")]
     WriteTextError(#[from] WriteTextError),
+
+    #[error("new framebuffer error: {0}")]
+    NewFramebuffer(#[from] NewFramebufferError),
 }

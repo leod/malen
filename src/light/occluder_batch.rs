@@ -14,12 +14,12 @@ pub struct OccluderBatch {
 }
 
 impl OccluderBatch {
-    pub(super) fn new(instance_buffer: Rc<VertexBuffer<LightInstance>>) -> Result<Self, gl::Error> {
+    pub(super) fn new(light_instances: Rc<VertexBuffer<LightInstance>>) -> Result<Self, gl::Error> {
         let buffer = GeometryBuffer::new();
-        let element_buffer = Rc::new(ElementBuffer::new(instance_buffer.gl())?);
-        let vertex_buffer = Rc::new(VertexBuffer::new(instance_buffer.gl())?);
+        let element_buffer = Rc::new(ElementBuffer::new(light_instances.gl())?);
+        let vertex_buffer = Rc::new(VertexBuffer::new(light_instances.gl())?);
         let vertex_array =
-            VertexArray::new_instanced(element_buffer, (vertex_buffer, instance_buffer), &[0, 1])?;
+            VertexArray::new_instanced(element_buffer, (vertex_buffer, light_instances), &[0, 1])?;
 
         Ok(Self {
             buffer,
