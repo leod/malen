@@ -2,7 +2,7 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use super::{Attribute, Context, Error, UniformBlocks, Vertex};
+use super::{vertex::VertexDecls, Attribute, Context, Error, UniformBlockDecls, Vertex};
 
 pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
@@ -40,15 +40,15 @@ pub struct ProgramDef<'a, const N: usize, const S: usize> {
 
 impl<U, V, const S: usize> Program<U, V, S>
 where
-    U: UniformBlocks,
-    V: Vertex,
+    U: UniformBlockDecls,
+    V: VertexDecls,
 {
     pub fn new<const N: usize>(gl: Rc<Context>, def: ProgramDef<N, S>) -> Result<Self, Error> {
         // I think we'll be able to turn this into a compile time check once
         // there is a bit more const-generics on stable.
         assert!(N == U::N);
 
-        let id = create_program::<U, N, S>(&*gl, &V::attributes(), &def)?;
+        let id = create_program::<U, V, N, S>(&*gl, &def)?;
 
         Ok(Self {
             gl,
@@ -77,13 +77,13 @@ impl<'a, const N: usize, const S: usize> ProgramDef<'a, N, S> {
     }
 }
 
-fn create_program<U, const N: usize, const S: usize>(
+fn create_program<U, V, const N: usize, const S: usize>(
     gl: &Context,
-    attributes: &[Attribute],
     def: &ProgramDef<N, S>,
 ) -> Result<glow::Program, Error>
 where
-    U: UniformBlocks,
+    U: UniformBlockDecls,
+    V: VertexDecls,
 {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
@@ -96,7 +96,7 @@ where
         (
             glow::VERTEX_SHADER,
             SOURCE_HEADER.to_owned()
-                + &vertex_source_header(attributes)
+                + &vertex_source_header(&V::attributes())
                 + &U::glsl_definitions(&def.uniform_block_names())
                 + &sampler_definitions
                 + def.vertex_source,
@@ -140,7 +140,7 @@ where
         .collect::<Result<Vec<_>, Error>>()?;
 
     // Binding attributes must be done before linking.
-    for (index, attribute) in attributes.iter().enumerate() {
+    for (index, attribute) in V::attributes().iter().enumerate() {
         unsafe {
             gl.bind_attrib_location(program, index as u32, attribute.name);
         }

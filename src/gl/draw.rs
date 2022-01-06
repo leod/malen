@@ -8,7 +8,7 @@ use super::{
 };
 
 pub fn draw<U, V, E, const S: usize>(
-    program: &Program<U::UniformBlocks, V, S>,
+    program: &Program<U::UniformBlockDecls, V, S>,
     uniforms: U,
     samplers: [&Texture; S],
     draw_unit: DrawUnit<V, E>,

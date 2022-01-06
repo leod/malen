@@ -8,19 +8,19 @@ use super::{Context, UniformBuffer};
 pub trait UniformBlock: AsStd140 + GlslStruct {}
 
 pub trait UniformBuffers {
-    type UniformBlocks: UniformBlocks;
+    type UniformBlockDecls: UniformBlockDecls;
 
     fn bind(&self, bindings: &[u32]);
 }
 
-pub trait UniformBlocks {
+pub trait UniformBlockDecls {
     const N: usize;
 
     fn glsl_definitions(instance_names: &[&str]) -> String;
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]);
 }
 
-impl UniformBlocks for () {
+impl UniformBlockDecls for () {
     const N: usize = 0;
 
     fn glsl_definitions(instance_names: &[&str]) -> String {
@@ -34,7 +34,7 @@ impl UniformBlocks for () {
     }
 }
 
-impl<U> UniformBlocks for U
+impl<U> UniformBlockDecls for U
 where
     U: UniformBlock,
 {
@@ -79,7 +79,7 @@ where
     }
 }
 
-impl<U0, U1> UniformBlocks for (U0, U1)
+impl<U0, U1> UniformBlockDecls for (U0, U1)
 where
     U0: UniformBlock,
     U1: UniformBlock,
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<U0, U1, U2> UniformBlocks for (U0, U1, U2)
+impl<U0, U1, U2> UniformBlockDecls for (U0, U1, U2)
 where
     U0: UniformBlock,
     U1: UniformBlock,
@@ -126,10 +126,10 @@ where
 }
 
 impl UniformBuffers for () {
-    type UniformBlocks = ();
+    type UniformBlockDecls = ();
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
     }
 }
 
@@ -137,10 +137,10 @@ impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
 where
     U: UniformBlock,
 {
-    type UniformBlocks = U;
+    type UniformBlockDecls = U;
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
 
         unsafe {
             self.gl()
@@ -154,10 +154,10 @@ where
     U0: UniformBlock,
     U1: UniformBlock,
 {
-    type UniformBlocks = (U0, U1);
+    type UniformBlockDecls = (U0, U1);
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
 
         unsafe {
@@ -182,10 +182,10 @@ where
     U1: UniformBlock,
     U2: UniformBlock,
 {
-    type UniformBlocks = (U0, U1, U2);
+    type UniformBlockDecls = (U0, U1, U2);
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlocks as UniformBlocks>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
         assert!(Rc::ptr_eq(&self.0.gl(), &self.2.gl()));
 

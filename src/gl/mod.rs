@@ -35,7 +35,7 @@ pub use texture::{
     LoadTextureError, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
     TextureValueType, TextureWrap,
 };
-pub use uniform_block::{UniformBlock, UniformBlocks};
+pub use uniform_block::{UniformBlock, UniformBlockDecls};
 pub use uniform_buffer::UniformBuffer;
 pub use vertex::{attribute, Attribute, AttributeValueType, DataType, Vertex};
 pub use vertex_array::VertexArray;
