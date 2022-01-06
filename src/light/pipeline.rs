@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
 use nalgebra::Vector2;
 use thiserror::Error;
@@ -8,7 +8,7 @@ use crate::{
         Framebuffer, NewFramebufferError, NewTextureError, Texture, TextureMagFilter,
         TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
     },
-    Context, Canvas,
+    Canvas, Context,
 };
 
 #[derive(Debug, Clone)]
@@ -70,6 +70,11 @@ impl LightPipeline {
             )?],
         )?;
 
-        Ok(Self { canvas, params, shadow_map, screen_light })
+        Ok(Self {
+            canvas,
+            params,
+            shadow_map,
+            screen_light,
+        })
     }
 }

@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
 use nalgebra::Vector2;
 use web_sys::HtmlCanvasElement;
@@ -9,7 +9,7 @@ use crate::{
     input::InputState,
     pass::{ColorPass, ColorSpritePass, InstancedColorPass, SpritePass},
     plot::PlotPass,
-    Canvas, Config, Event, Screen, Color4,
+    Canvas, Color4, Config, Event, Screen,
 };
 
 pub struct Context {

@@ -5,8 +5,9 @@ use nalgebra::{Point2, Vector2};
 use crate::{
     data::{ColorLine, ColorLineBatch, ColorRect, ColorTriangleBatch},
     gl,
+    math::Line,
     text::{Font, Text, TextBatch, WriteTextError},
-    Rect, math::Line,
+    Rect,
 };
 
 use super::{Plot, PlotStyle};
@@ -208,7 +209,10 @@ impl<'a> Render<'a> {
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
-                    line: Line(pos + Vector2::new(self.graph_size.x, 0.0), pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size),
+                    line: Line(
+                        pos + Vector2::new(self.graph_size.x, 0.0),
+                        pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size,
+                    ),
                     z: 0.0,
                     color: self.style.axis_color,
                 });

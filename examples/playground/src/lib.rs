@@ -8,8 +8,8 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, Mesh,
-        MeshInstanceBatch, Sprite, SpriteBatch, TriangleTag,
+        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
+        Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     math::Circle,
@@ -158,7 +158,7 @@ struct Game {
     camera_matrices: UniformBuffer<MatricesBlock>,
     screen_matrices: UniformBuffer<MatricesBlock>,
 
-    circle_instances: MeshInstanceBatch<ColorVertex, ColorInstance>,
+    circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
     text_batch: TextBatch,
@@ -196,7 +196,7 @@ impl Game {
             },
         )?;
 
-        let circle_instances = MeshInstanceBatch::new(circle_mesh)?;
+        let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
