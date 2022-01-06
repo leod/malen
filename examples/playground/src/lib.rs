@@ -12,6 +12,7 @@ use malen::{
         Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
+    light::{LightPipeline, LightPipelineParams},
     math::Circle,
     pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
@@ -162,6 +163,8 @@ struct Game {
     color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
     text_batch: TextBatch,
+
+    light_pipeline: LightPipeline,
 }
 
 impl Game {
@@ -201,6 +204,14 @@ impl Game {
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
 
+        let light_pipeline = LightPipeline::new(
+            context,
+            LightPipelineParams {
+                shadow_map_resolution: 512,
+                max_num_lights: 512,
+            },
+        )?;
+
         Ok(Game {
             state,
             font,
@@ -211,6 +222,7 @@ impl Game {
             color_batch,
             wall_sprite_batch,
             text_batch,
+            light_pipeline,
         })
     }
 
