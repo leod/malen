@@ -7,7 +7,10 @@ use super::{
     TriangleTag,
 };
 
-pub struct GeometryBatch<P, V> {
+pub struct GeometryBatch<P, V>
+where
+    V: Vertex,
+{
     buffer: GeometryBuffer<P, V>,
     vertex_array: VertexArray<V, u32>,
     dirty: bool,
@@ -51,7 +54,7 @@ where
     pub fn draw_unit(&mut self) -> DrawUnit<V, u32> {
         if self.dirty {
             self.buffer.upload(
-                &*self.vertex_array.vertex_buffer(),
+                &*self.vertex_array.vertex_buffers(),
                 &*self.vertex_array.element_buffer(),
             );
             self.dirty = false;
@@ -65,7 +68,10 @@ where
     }
 }
 
-impl<P, V> GeometryBatch<P, V> {
+impl<P, V> GeometryBatch<P, V>
+where
+    V: Vertex,
+{
     pub fn clear(&mut self) {
         self.buffer.clear();
         self.dirty = true;
