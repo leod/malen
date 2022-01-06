@@ -204,6 +204,9 @@ impl Font {
         matrices_buffer: &UniformBuffer<MatricesBlock>,
         batch: &mut TextBatch,
     ) -> Result<(), gl::Error> {
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("Font::draw");
+
         for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
             self.color_sprite_pass.draw(
                 matrices_buffer,
