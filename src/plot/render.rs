@@ -3,7 +3,7 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
-    geometry::{ColorLine, ColorLineBatch, ColorRect, ColorTriangleBatch},
+    data::{ColorLine, ColorLineBatch, ColorRect, ColorTriangleBatch},
     gl,
     text::{Font, Text, TextBatch, WriteTextError},
     Rect,

@@ -7,7 +7,7 @@ use rand::Rng;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
-    geometry::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
+    data::{ColorRect, ColorRotatedRect, ColorTriangleBatch, Sprite, SpriteBatch},
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     pass::MatricesBlock,
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},

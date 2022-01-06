@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use super::atlas::Atlas;
 use crate::{
-    geometry::{ColorSprite, ColorSpriteBatch},
+    data::{ColorSprite, ColorSpriteBatch},
     gl::{self, Blend, DrawParams, NewTextureError, Texture, UniformBuffer},
     pass::{ColorSpritePass, MatricesBlock},
     util, Color4, Context, Rect,
