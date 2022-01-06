@@ -3,7 +3,7 @@ use std::rc::Rc;
 use glow::HasContext;
 use thiserror::Error;
 
-use super::{Context, Texture};
+use super::{Context, NewTextureError, Texture};
 
 #[derive(Error, Debug)]
 pub enum NewFramebufferError {
@@ -12,6 +12,9 @@ pub enum NewFramebufferError {
 
     #[error("too many color attachments: requested {0}, but max count is {1}")]
     TooManyColorAttachments(usize, u32),
+
+    #[error("texture error: {0}")]
+    Texture(#[from] NewTextureError),
 }
 
 pub struct Framebuffer {

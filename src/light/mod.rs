@@ -7,4 +7,4 @@ mod shadow_map_pass;
 
 pub use data::{Light, OccluderLine, OccluderLineVertex};
 pub use occluder_batch::OccluderBatch;
-pub use pipeline::{LightPipeline, LightPipelineParams};
+pub use pipeline::{LightPipeline, LightPipelineParams, NewLightPipelineError};
