@@ -153,7 +153,7 @@ impl Font {
             &TextStyle::new(text.text, text.size * dpr, 0),
         );
 
-        let mut last_offset = Vector2::zeros();
+        let mut size = Vector2::zeros();
 
         for glyph_pos in self.layout.glyphs() {
             // Ignore empty glyphs (e.g. space).
@@ -180,6 +180,10 @@ impl Font {
                 glyph_pos.x + glyph_pos.width as f32 / 2.0,
                 glyph_pos.y + glyph_pos.height as f32 / 2.0,
             ) / dpr;
+            size = Vector2::new(
+                glyph_pos.x + glyph_pos.width as f32,
+                glyph_pos.y + glyph_pos.height as f32,
+            ) / dpr;
 
             let rect = Rect {
                 center: text.pos + offset,
@@ -192,11 +196,9 @@ impl Font {
                 tex_rect: glyph_loc.tex_rect,
                 color: text.color,
             });
-
-            last_offset = offset;
         }
 
-        Ok(last_offset)
+        Ok(size)
     }
 
     pub fn draw(

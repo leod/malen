@@ -12,9 +12,9 @@ use crate::{
 use super::{Plot, PlotStyle};
 
 pub struct PlotBatch {
-    pub(super) triangle_batch: ColorTriangleBatch,
-    pub(super) line_batch: ColorLineBatch,
-    pub(super) text_batch: TextBatch,
+    pub triangle_batch: ColorTriangleBatch,
+    pub line_batch: ColorLineBatch,
+    pub text_batch: TextBatch,
 }
 
 impl PlotBatch {

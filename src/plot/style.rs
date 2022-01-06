@@ -21,7 +21,7 @@ pub struct PlotStyle {
 impl Default for PlotStyle {
     fn default() -> Self {
         Self {
-            axis_margin: Vector2::new(50.0, 30.0),
+            axis_margin: Vector2::new(60.0, 30.0),
             tick_size: 7.5,
             legend_line_size: 36.0,
             legend_text_margin: 9.0,
