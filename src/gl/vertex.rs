@@ -5,7 +5,7 @@ use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vecto
 
 use glow::HasContext;
 
-use crate::Color4;
+use crate::{Color3, Color4};
 
 use super::VertexBuffer;
 
@@ -17,10 +17,10 @@ pub enum AttributeValueType {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Attribute {
-    pub name: &'static str,
+    pub name: String,
     pub offset: usize,
     pub glsl_type_name: &'static str,
-    pub element_type: AttributeValueType,
+    pub value_type: AttributeValueType,
     pub num_elements: usize,
 }
 
@@ -37,18 +37,18 @@ pub trait Vertex: Pod {
 
         for attribute in Self::attributes().iter() {
             assert!(
-                attribute.offset + attribute.num_elements * attribute.element_type.size()
+                attribute.offset + attribute.num_elements * attribute.value_type.size()
                     <= std::mem::size_of::<Self>()
             );
 
             gl.enable_vertex_attrib_array(index as u32);
             gl.vertex_attrib_divisor(index as u32, divisor);
 
-            match attribute.element_type {
+            match attribute.value_type {
                 AttributeValueType::Float => gl.vertex_attrib_pointer_f32(
                     index as u32,
                     attribute.num_elements as i32,
-                    attribute.element_type.to_gl(),
+                    attribute.value_type.to_gl(),
                     false,
                     std::mem::size_of::<Self>() as i32,
                     attribute.offset as i32,
@@ -56,7 +56,7 @@ pub trait Vertex: Pod {
                 AttributeValueType::Int => gl.vertex_attrib_pointer_i32(
                     index as u32,
                     attribute.num_elements as i32,
-                    attribute.element_type.to_gl(),
+                    attribute.value_type.to_gl(),
                     std::mem::size_of::<Self>() as i32,
                     attribute.offset as i32,
                 ),
@@ -174,13 +174,20 @@ where
     }
 }
 
-pub fn attribute<T: DataType>(name: &'static str, offset: usize) -> Attribute {
-    Attribute {
-        name,
-        offset,
-        glsl_type_name: T::glsl_name(),
-        element_type: T::element_type(),
-        num_elements: T::num_elements(),
+#[macro_export]
+macro_rules! attributes {
+    [$prefix:literal : $($field:tt),*] => {
+        vec![
+            $(
+                Attribute {
+                    name: $prefix.to_owned() + &stringify!($field),
+                    offset: bytemuck::offset_of!(Self::zeroed(), Self, $field),
+                    glsl_type_name: $crate::gl::DataType::glsl_type_name(&Self::zeroed().$field),
+                    value_type: $crate::gl::DataType::value_type(&Self::zeroed().$field),
+                    num_elements: $crate::gl::DataType::num_elements(&Self::zeroed().$field),
+                }
+            ),*
+        ]
     }
 }
 
@@ -207,23 +214,23 @@ impl Attribute {
 }
 
 pub trait DataType {
-    fn glsl_name() -> &'static str;
-    fn element_type() -> AttributeValueType;
-    fn num_elements() -> usize;
+    fn glsl_type_name(&self) -> &'static str;
+    fn value_type(&self) -> AttributeValueType;
+    fn num_elements(&self) -> usize;
 }
 
 macro_rules! impl_data_type {
     ($type:ty, $name:ident, $element_type:ident, $num_elements:expr) => {
         impl crate::gl::DataType for $type {
-            fn glsl_name() -> &'static str {
+            fn glsl_type_name(&self) -> &'static str {
                 stringify!($name)
             }
 
-            fn element_type() -> crate::gl::AttributeValueType {
+            fn value_type(&self) -> crate::gl::AttributeValueType {
                 crate::gl::AttributeValueType::$element_type
             }
 
-            fn num_elements() -> usize {
+            fn num_elements(&self) -> usize {
                 $num_elements
             }
         }
@@ -257,4 +264,5 @@ impl_data_type!(Matrix3<i32>, imat3, Int, 3 * 3);
 impl_data_type!(Matrix4<f32>, mat4, Float, 4 * 4);
 impl_data_type!(Matrix4<i32>, imat4, Int, 4 * 4);
 
+impl_data_type!(Color3, vec3, Float, 3);
 impl_data_type!(Color4, vec4, Float, 4);

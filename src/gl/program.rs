@@ -142,7 +142,7 @@ where
     // Binding attributes must be done before linking.
     for (index, attribute) in V::attributes().iter().enumerate() {
         unsafe {
-            gl.bind_attrib_location(program, index as u32, attribute.name);
+            gl.bind_attrib_location(program, index as u32, &attribute.name);
         }
     }
 

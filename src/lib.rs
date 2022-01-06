@@ -13,6 +13,7 @@ pub(crate) mod util;
 
 pub mod data;
 pub mod gl;
+pub mod light;
 pub mod math;
 pub mod pass;
 pub mod plot;
