@@ -2,7 +2,7 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use super::{vertex::VertexDecls, Attribute, Context, Error, UniformBlockDecls, Vertex};
+use super::{vertex::VertexDecls, Attribute, Context, Error, UniformBlockDecls};
 
 pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,

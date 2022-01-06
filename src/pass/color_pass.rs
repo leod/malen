@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    geometry::ColorVertex,
+    data::ColorVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
 };
 

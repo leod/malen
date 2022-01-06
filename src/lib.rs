@@ -11,7 +11,7 @@ mod main_loop;
 
 pub(crate) mod util;
 
-pub mod geometry;
+pub mod data;
 pub mod gl;
 pub mod math;
 pub mod pass;
