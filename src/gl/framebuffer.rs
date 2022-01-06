@@ -56,7 +56,6 @@ impl Framebuffer {
 
         unsafe {
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(id));
-            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 
         for (i, texture) in textures
@@ -89,6 +88,10 @@ impl Framebuffer {
                     0,
                 );
             }
+        }
+
+        unsafe {
+            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 
         Ok(Framebuffer { gl, textures, id })

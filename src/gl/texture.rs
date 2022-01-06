@@ -258,8 +258,8 @@ impl TextureValueType {
         use TextureValueType::*;
 
         match self {
-            RgbaU8 => glow::RGBA as i32,
-            RgbaF32 => glow::RGBA as i32,
+            RgbaU8 => glow::RGBA8 as i32,
+            RgbaF32 => glow::RGBA32F as i32,
             Depth => glow::DEPTH_COMPONENT24 as i32,
         }
     }
