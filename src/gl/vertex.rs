@@ -7,7 +7,7 @@ use glow::HasContext;
 
 use crate::Color4;
 
-use super::{Context, VertexBuffer};
+use super::VertexBuffer;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AttributeValueType {

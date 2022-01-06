@@ -236,10 +236,9 @@ impl Game {
         for enemy in &self.state.enemies {
             self.circle_instances.push(ColorInstance {
                 position: enemy.pos,
-                z: 0.0,
                 angle: enemy.angle,
-                scale: Vector2::new(1.0, 1.0),
                 color: Color4::new(0.8, 0.2, 0.2, 1.0),
+                ..ColorInstance::default()
             });
         }
 
