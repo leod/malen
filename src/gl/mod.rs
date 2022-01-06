@@ -27,7 +27,7 @@ pub use draw_timer::{DrawTimer, DrawTimingInfo};
 pub use draw_unit::{DrawUnit, InstancedDrawUnit, PrimitiveMode};
 pub use element_buffer::{Element, ElementBuffer};
 pub use error::Error;
-pub use framebuffer::Framebuffer;
+pub use framebuffer::{Framebuffer, NewFramebufferError};
 pub use program::{Program, ProgramDef};
 pub use texture::{
     LoadTextureError, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
@@ -35,6 +35,8 @@ pub use texture::{
 };
 pub use uniform_block::{UniformBlock, UniformBlockDecls};
 pub use uniform_buffer::UniformBuffer;
-pub use vertex::{attribute, Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
+pub use vertex::{Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
 pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;
+
+pub use crate::attributes;

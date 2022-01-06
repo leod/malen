@@ -114,10 +114,14 @@ impl Canvas {
         self.logical_size
     }
 
+    pub fn physical_size(&self) -> Vector2<u32> {
+        Vector2::new(self.element.width(), self.element.height())
+    }
+
     pub fn screen(&self) -> Screen {
         Screen {
             logical_size: self.logical_size,
-            physical_size: Vector2::new(self.element.width(), self.element.height()),
+            physical_size: self.physical_size(),
             device_pixel_ratio: util::device_pixel_ratio(),
         }
     }

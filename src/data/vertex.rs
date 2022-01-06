@@ -1,10 +1,11 @@
 use nalgebra::{Point2, Point3};
 
-use bytemuck::{offset_of, Zeroable};
+use bytemuck::Zeroable;
 use bytemuck_derive::{Pod, Zeroable};
 
 use crate::{
-    gl::{attribute, Attribute, Vertex},
+    attributes,
+    gl::{Attribute, Vertex},
     Color4,
 };
 
@@ -32,28 +33,18 @@ pub struct ColorVertex {
 
 impl Vertex for SpriteVertex {
     fn attributes() -> Vec<Attribute> {
-        vec![
-            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Point2<f32>>("a_tex_coords", offset_of!(Self::zeroed(), Self, tex_coords)),
-        ]
+        attributes!["a_": position, tex_coords]
     }
 }
 
 impl Vertex for ColorSpriteVertex {
     fn attributes() -> Vec<Attribute> {
-        vec![
-            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Point2<f32>>("a_tex_coords", offset_of!(Self::zeroed(), Self, tex_coords)),
-            attribute::<Color4>("a_color", offset_of!(Self::zeroed(), Self, color)),
-        ]
+        attributes!["a_": position, tex_coords, color]
     }
 }
 
 impl Vertex for ColorVertex {
     fn attributes() -> Vec<Attribute> {
-        vec![
-            attribute::<Point3<f32>>("a_position", offset_of!(Self::zeroed(), Self, position)),
-            attribute::<Color4>("a_color", offset_of!(Self::zeroed(), Self, color)),
-        ]
+        attributes!["a_": position, color]
     }
 }
