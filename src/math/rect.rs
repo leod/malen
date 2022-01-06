@@ -1,5 +1,7 @@
 use nalgebra::{Point2, Vector2};
 
+use super::Line;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rect {
     pub center: Point2<f32>,
@@ -70,6 +72,17 @@ impl Rect {
 
     pub fn bottom_left(&self) -> Point2<f32> {
         self.corners()[3]
+    }
+
+    pub fn lines(&self) -> [Line; 4] {
+        let corners = self.corners();
+
+        [
+            Line(corners[0], corners[1]),
+            Line(corners[1], corners[2]),
+            Line(corners[2], corners[3]),
+            Line(corners[3], corners[0]),
+        ]
     }
 }
 

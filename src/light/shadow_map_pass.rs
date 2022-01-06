@@ -106,7 +106,8 @@ void main() {
         v_edge.xy,
         v_edge.zw
     );
-    f_color = vec4(t, t, t, t);
+    //f_color = vec4(t, t, t, t);
+    f_color = vec4(0, 0, 0, 0);
 }
 "#;
 
