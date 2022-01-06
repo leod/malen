@@ -1,3 +1,6 @@
+use std::{rc::Rc, cell::RefCell};
+
+use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::{
@@ -5,17 +8,20 @@ use crate::{
         Framebuffer, NewFramebufferError, NewTextureError, Texture, TextureMagFilter,
         TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
     },
-    Context,
+    Context, Canvas,
 };
 
 #[derive(Debug, Clone)]
 pub struct LightPipelineParams {
-    pub max_num_lights: usize,
+    pub shadow_map_resolution: u32,
+    pub max_num_lights: u32,
 }
 
 pub struct LightPipeline {
+    canvas: Rc<RefCell<Canvas>>,
     params: LightPipelineParams,
     shadow_map: Framebuffer,
+    screen_light: Framebuffer,
 }
 
 #[derive(Debug, Error)]
@@ -32,12 +38,13 @@ impl LightPipeline {
         context: &Context,
         params: LightPipelineParams,
     ) -> Result<LightPipeline, NewLightPipelineError> {
-        let initial_size = context.canvas().physical_size();
+        let canvas = context.canvas();
+
         let shadow_map = Framebuffer::new(
             context.gl(),
             vec![Texture::new(
                 context.gl(),
-                initial_size,
+                Vector2::new(params.shadow_map_resolution, params.max_num_lights),
                 TextureParams {
                     value_type: TextureValueType::Depth,
                     min_filter: TextureMinFilter::Nearest,
@@ -48,6 +55,21 @@ impl LightPipeline {
             )?],
         )?;
 
-        Ok(Self { params, shadow_map })
+        let screen_light = Framebuffer::new(
+            context.gl(),
+            vec![Texture::new(
+                context.gl(),
+                canvas.borrow().physical_size(),
+                TextureParams {
+                    value_type: TextureValueType::RgbaF32,
+                    min_filter: TextureMinFilter::Nearest,
+                    mag_filter: TextureMagFilter::Nearest,
+                    wrap_vertical: TextureWrap::ClampToEdge,
+                    wrap_horizontal: TextureWrap::ClampToEdge,
+                },
+            )?],
+        )?;
+
+        Ok(Self { canvas, params, shadow_map, screen_light })
     }
 }

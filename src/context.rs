@@ -1,5 +1,6 @@
-use std::rc::Rc;
+use std::{rc::Rc, cell::RefCell};
 
+use nalgebra::Vector2;
 use web_sys::HtmlCanvasElement;
 
 use crate::{
@@ -8,11 +9,11 @@ use crate::{
     input::InputState,
     pass::{ColorPass, ColorSpritePass, InstancedColorPass, SpritePass},
     plot::PlotPass,
-    Canvas, Config, Event,
+    Canvas, Config, Event, Screen, Color4,
 };
 
 pub struct Context {
-    canvas: Canvas,
+    canvas: Rc<RefCell<Canvas>>,
     input_state: InputState,
 
     sprite_pass: Rc<SpritePass>,
@@ -49,7 +50,7 @@ impl Context {
         let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
 
         Ok(Context {
-            canvas,
+            canvas: Rc::new(RefCell::new(canvas)),
             input_state,
             sprite_pass,
             color_sprite_pass,
@@ -59,12 +60,36 @@ impl Context {
         })
     }
 
-    pub fn canvas(&self) -> &Canvas {
-        &self.canvas
+    pub fn canvas(&self) -> Rc<RefCell<Canvas>> {
+        self.canvas.clone()
     }
 
     pub fn gl(&self) -> Rc<gl::Context> {
-        self.canvas.gl()
+        self.canvas.borrow().gl()
+    }
+
+    pub fn logical_size(&self) -> Vector2<f32> {
+        self.canvas.borrow().logical_size()
+    }
+
+    pub fn physical_size(&self) -> Vector2<u32> {
+        self.canvas.borrow().physical_size()
+    }
+
+    pub fn screen(&self) -> Screen {
+        self.canvas.borrow().screen()
+    }
+
+    pub fn clear_color_and_depth(&self, color: Color4, depth: f32) {
+        gl::clear_color_and_depth(&*self.gl(), color, depth);
+    }
+
+    pub fn clear_color(&self, color: Color4) {
+        gl::clear_color(&*self.gl(), color);
+    }
+
+    pub fn clear_depth(&self, depth: f32) {
+        gl::clear_depth(&*self.gl(), depth);
     }
 
     pub fn input_state(&self) -> &InputState {
@@ -92,7 +117,7 @@ impl Context {
     }
 
     pub fn pop_event(&mut self) -> Option<Event> {
-        let event = self.canvas.pop_event()?;
+        let event = self.canvas.borrow_mut().pop_event()?;
         self.input_state.handle_event(&event);
         Some(event)
     }

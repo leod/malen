@@ -6,7 +6,7 @@ use crate::{
     data::{ColorLine, ColorLineBatch, ColorRect, ColorTriangleBatch},
     gl,
     text::{Font, Text, TextBatch, WriteTextError},
-    Rect,
+    Rect, math::Line,
 };
 
 use super::{Plot, PlotStyle};
@@ -118,8 +118,7 @@ impl<'a> Render<'a> {
                 let b_map = self.map_point(Point2::new(b.0, b.1));
 
                 self.batch.line_batch.push(ColorLine {
-                    a: a_map,
-                    b: b_map,
+                    line: Line(a_map, b_map),
                     z: 0.0,
                     color: line_graph.color,
                 });
@@ -190,27 +189,26 @@ impl<'a> Render<'a> {
 
             if is_x {
                 self.batch.line_batch.push(ColorLine {
-                    a: pos,
-                    b: pos + normal * self.style.tick_size,
+                    line: Line(pos, pos + normal * self.style.tick_size),
                     z: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
-                    a: pos - Vector2::new(0.0, self.graph_size.y),
-                    b: pos - Vector2::new(0.0, self.graph_size.y) - normal * self.style.tick_size,
+                    line: Line(
+                        pos - Vector2::new(0.0, self.graph_size.y),
+                        pos - Vector2::new(0.0, self.graph_size.y) - normal * self.style.tick_size,
+                    ),
                     z: 0.0,
                     color: self.style.axis_color,
                 });
             } else {
                 self.batch.line_batch.push(ColorLine {
-                    a: pos,
-                    b: pos + normal * self.style.tick_size,
+                    line: Line(pos, pos + normal * self.style.tick_size),
                     z: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
-                    a: pos + Vector2::new(self.graph_size.x, 0.0),
-                    b: pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size,
+                    line: Line(pos + Vector2::new(self.graph_size.x, 0.0), pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size),
                     z: 0.0,
                     color: self.style.axis_color,
                 });
@@ -252,8 +250,7 @@ impl<'a> Render<'a> {
 
         for line in self.plot.line_graphs.iter() {
             self.batch.line_batch.push(ColorLine {
-                a: pos,
-                b: pos + Vector2::new(self.style.legend_line_size, 0.0),
+                line: Line(pos, pos + Vector2::new(self.style.legend_line_size, 0.0)),
                 z: 0.0,
                 color: line.color,
             });

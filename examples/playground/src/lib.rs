@@ -258,7 +258,7 @@ impl Game {
     pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
         profile!("draw");
 
-        let screen = context.canvas().screen();
+        let screen = context.screen();
 
         self.camera_matrices.set_data(MatricesBlock {
             view: self.state.camera().matrix(screen),
@@ -269,9 +269,7 @@ impl Game {
             projection: screen.orthographic_projection(),
         });
 
-        context
-            .canvas()
-            .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
+        context.clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
         context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
@@ -352,11 +350,8 @@ pub fn main() {
             }
         }
 
-        game.state.update(
-            timestamp_secs,
-            context.canvas().screen(),
-            context.input_state(),
-        );
+        game.state
+            .update(timestamp_secs, context.screen(), context.input_state());
         game.render().unwrap();
 
         plot_batch.clear();
@@ -365,9 +360,8 @@ pub fn main() {
 
             let prof_string = coarse_prof::to_string();
             let prof_size = game.font.text_size(17.0, &prof_string) + Vector2::new(30.0, 30.0);
-            let prof_pos = Point2::from(context.canvas().logical_size())
-                - prof_size
-                - Vector2::new(10.0, 10.0);
+            let prof_pos =
+                Point2::from(context.logical_size()) - prof_size - Vector2::new(10.0, 10.0);
 
             game.font
                 .write(
@@ -390,7 +384,7 @@ pub fn main() {
 
             let plot = Plot {
                 rect: Rect::from_top_left(
-                    Point2::new(10.0, context.canvas().logical_size().y - 210.0),
+                    Point2::new(10.0, context.logical_size().y - 210.0),
                     Vector2::new(700.0, 200.0),
                 ),
                 x_axis: Axis {

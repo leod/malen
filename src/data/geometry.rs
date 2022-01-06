@@ -2,7 +2,7 @@ use nalgebra::{Point2, Point3};
 
 use crate::{
     gl::{PrimitiveMode, Vertex},
-    Color4, Rect, RotatedRect,
+    Color4, Rect, RotatedRect, math::Line,
 };
 
 use super::{ColorSpriteVertex, ColorVertex, SpriteVertex};
@@ -52,8 +52,7 @@ pub struct ColorRotatedRect {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ColorLine {
-    pub a: Point2<f32>,
-    pub b: Point2<f32>,
+    pub line: Line,
     pub z: f32,
     pub color: Color4,
 }
@@ -154,11 +153,11 @@ impl Geometry<LineTag> for ColorLine {
         elements.push(vertices.len() as u32 + 1);
 
         vertices.push(ColorVertex {
-            position: Point3::new(self.a.x, self.a.y, self.z),
+            position: Point3::new(self.line.0.x, self.line.0.y, self.z),
             color: self.color,
         });
         vertices.push(ColorVertex {
-            position: Point3::new(self.b.x, self.b.y, self.z),
+            position: Point3::new(self.line.1.x, self.line.1.y, self.z),
             color: self.color,
         });
     }
