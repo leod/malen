@@ -21,14 +21,14 @@ pub struct PlotStyle {
 impl Default for PlotStyle {
     fn default() -> Self {
         Self {
-            axis_margin: Vector2::new(40.0, 20.0),
+            axis_margin: Vector2::new(50.0, 30.0),
             tick_size: 7.5,
-            legend_line_size: 30.0,
-            legend_text_margin: 7.5,
-            legend_entry_margin: 30.0,
-            legend_y_offset: 10.0,
-            normal_font_size: 14.0,
-            small_font_size: 11.0,
+            legend_line_size: 36.0,
+            legend_text_margin: 9.0,
+            legend_entry_margin: 36.0,
+            legend_y_offset: 15.0,
+            normal_font_size: 17.0,
+            small_font_size: 13.0,
             tic_precision: 1,
             background_color: Some(Color4::new(0.2, 0.2, 0.4, 0.5)),
             axis_color: Color4::new(0.0, 0.0, 0.0, 1.0),

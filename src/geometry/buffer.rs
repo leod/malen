@@ -52,7 +52,7 @@ where
     pub fn upload(&mut self, vertex_buffer: &VertexBuffer<V>, element_buffer: &ElementBuffer<u32>) {
         #[cfg(feature = "coarse-prof")]
         coarse_prof::profile_string_name!(format!(
-            "GeometryBuffer<{}, {}>::upload()",
+            "<{}, {}>::upload",
             std::any::type_name::<P>().split("::").last().unwrap(),
             std::any::type_name::<V>().split("::").last().unwrap(),
         ));
