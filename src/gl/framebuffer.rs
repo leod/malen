@@ -33,7 +33,14 @@ impl Framebuffer {
             .count();
         let num_depth = textures.len() - num_color;
 
+        assert!(
+            num_color + num_depth > 0,
+            "Must have at least one attachment"
+        );
         assert!(num_depth <= 1, "Can have at most one depth attachment");
+        assert!(textures
+            .iter()
+            .all(|t| t.size() == textures.first().unwrap().size()));
 
         if num_color > Self::max_color_attachments(&*gl) as usize {
             return Err(NewFramebufferError::TooManyColorAttachments(

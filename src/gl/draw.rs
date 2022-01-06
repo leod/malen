@@ -4,7 +4,7 @@ use glow::HasContext;
 
 use super::{
     draw_params::set_draw_params, uniform_block::UniformBuffers, Context, DrawParams, DrawUnit,
-    Element, InstancedDrawUnit, Program, Texture, Vertex, VertexDecls,
+    Element, Framebuffer, InstancedDrawUnit, Program, Texture, Vertex, VertexDecls,
 };
 
 pub fn draw<U, V, E, const S: usize>(
@@ -96,6 +96,41 @@ pub fn draw_instanced<U, V, E, const S: usize>(
         // the vertex array bindings.
         gl.bind_vertex_array(None);
     }
+}
+
+pub fn with_framebuffer<F, R>(framebuffer: &Framebuffer, f: F) -> R
+where
+    F: Fn() -> R,
+{
+    let gl = framebuffer.gl();
+
+    let mut prev_viewport = [0, 0, 0, 0];
+
+    unsafe {
+        gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer.id()));
+        gl.get_parameter_i32_slice(glow::VIEWPORT, &mut prev_viewport);
+        gl.viewport(
+            0,
+            0,
+            i32::try_from(framebuffer.textures()[0].size().x).unwrap(),
+            i32::try_from(framebuffer.textures()[0].size().y).unwrap(),
+        );
+    }
+
+    let result = f();
+
+    // TODO: We should be able to reduce state changes by delaying the unbind.
+    unsafe {
+        gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+        gl.viewport(
+            prev_viewport[0],
+            prev_viewport[1],
+            prev_viewport[2],
+            prev_viewport[3],
+        );
+    }
+
+    result
 }
 
 fn bind_samplers<const S: usize>(gl: Rc<Context>, samplers: [&Texture; S]) {
