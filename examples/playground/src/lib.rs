@@ -165,7 +165,7 @@ impl Game {
 
         let font = Font::load(
             context,
-            include_bytes!("../resources/Roboto-Regular.ttf"),
+            include_bytes!("../resources/RobotoMono-Regular.ttf"),
             40.0,
         )?;
         let wall_texture = Texture::load(
@@ -231,17 +231,6 @@ impl Game {
             z: 0.4,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
         });
-
-        self.font.write(
-            Text {
-                pos: Point2::new(10.0, 10.0),
-                size: 30.0,
-                z: 0.0,
-                color: Color4::new(1.0, 0.0, 0.0, 1.0),
-                text: "Hello, world!",
-            },
-            &mut self.text_batch,
-        )?;
 
         Ok(())
     }
@@ -324,13 +313,8 @@ pub fn main() {
                     log::info!("Canvas lost focus");
                 }
                 KeyPressed(Key::P) => {
-                    let mut buffer = std::io::Cursor::new(Vec::new());
-                    coarse_prof::write(&mut buffer).unwrap();
+                    log::info!("Profiling:\n{}", coarse_prof::to_string(),);
                     coarse_prof::reset();
-                    log::info!(
-                        "Profiling:\n{}",
-                        std::str::from_utf8(buffer.get_ref()).unwrap()
-                    );
                     log::info!("Frame timer: {:?}", draw_timer.timing_info(),);
                 }
                 _ => (),
@@ -345,10 +329,23 @@ pub fn main() {
         if let Some((last_time, _)) = frame_times.back() {
             profile!("render_plots");
 
+            game.font
+                .write(
+                    Text {
+                        pos: Point2::new(10.0, 10.0),
+                        size: 17.0,
+                        z: 0.0,
+                        color: Color4::new(0.0, 0.0, 0.0, 1.0),
+                        text: &coarse_prof::to_string(),
+                    },
+                    &mut game.text_batch,
+                )
+                .unwrap();
+
             let plot = Plot {
                 rect: Rect::from_top_left(
-                    Point2::new(10.0, context.canvas().logical_size().y as f32 - 110.0),
-                    Vector2::new(500.0, 100.0),
+                    Point2::new(10.0, context.canvas().logical_size().y - 130.0),
+                    Vector2::new(600.0, 120.0),
                 ),
                 x_axis: Axis {
                     label: "dt [s]".to_owned(),
