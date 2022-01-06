@@ -1,7 +1,11 @@
 use bytemuck::Pod;
 use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vector3, Vector4};
 
+use glow::HasContext;
+
 use crate::Color4;
+
+use super::Context;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AttributeValueType {
@@ -20,6 +24,109 @@ pub struct Attribute {
 
 pub trait Vertex: Pod {
     fn attributes() -> Vec<Attribute>;
+}
+
+pub trait VertexDecls {
+    const N: usize;
+
+    fn attributes() -> Vec<Attribute>;
+    unsafe fn bind_to_vertex_array(gl: &Context, divisors: &[u32], index: usize) -> usize;
+}
+
+impl<V> VertexDecls for V
+where
+    V: Vertex,
+{
+    const N: usize = 1;
+
+    fn attributes() -> Vec<Attribute> {
+        V::attributes()
+    }
+
+    unsafe fn bind_to_vertex_array(gl: &Context, divisors: &[u32], mut index: usize) -> usize {
+        assert!(divisors.len() == Self::N);
+
+        for attribute in V::attributes().iter() {
+            assert!(
+                attribute.offset + attribute.num_elements * attribute.element_type.size()
+                    <= std::mem::size_of::<V>()
+            );
+
+            gl.enable_vertex_attrib_array(index as u32);
+
+            match attribute.element_type {
+                AttributeValueType::Float => gl.vertex_attrib_pointer_f32(
+                    index as u32,
+                    attribute.num_elements as i32,
+                    attribute.element_type.to_gl(),
+                    false,
+                    std::mem::size_of::<V>() as i32,
+                    attribute.offset as i32,
+                ),
+                AttributeValueType::Int => gl.vertex_attrib_pointer_i32(
+                    index as u32,
+                    attribute.num_elements as i32,
+                    attribute.element_type.to_gl(),
+                    std::mem::size_of::<V>() as i32,
+                    attribute.offset as i32,
+                ),
+            }
+
+            index += 1;
+        }
+
+        index
+    }
+}
+
+impl<V0, V1> VertexDecls for (V0, V1)
+where
+    V0: Vertex,
+    V1: Vertex,
+{
+    const N: usize = 2;
+
+    fn attributes() -> Vec<Attribute> {
+        [&V0::attributes()[..], &V1::attributes()[..]].concat()
+    }
+
+    unsafe fn bind_to_vertex_array(gl: &Context, divisors: &[u32], index: usize) -> usize {
+        assert!(divisors.len() == Self::N);
+
+        V1::bind_to_vertex_array(
+            gl,
+            &[divisors[1]],
+            V0::bind_to_vertex_array(gl, &[divisors[0]], index),
+        )
+    }
+}
+
+impl<V0, V1, V2> VertexDecls for (V0, V1, V2)
+where
+    V0: Vertex,
+    V1: Vertex,
+    V2: Vertex,
+{
+    const N: usize = 3;
+
+    fn attributes() -> Vec<Attribute> {
+        [
+            &V0::attributes()[..],
+            &V1::attributes()[..],
+            &V2::attributes()[..],
+        ]
+        .concat()
+    }
+
+    unsafe fn bind_to_vertex_array(gl: &Context, divisors: &[u32], index: usize) -> usize {
+        assert!(divisors.len() == Self::N);
+
+        V2::bind_to_vertex_array(
+            gl,
+            &[divisors[2]],
+            <(V0, V1)>::bind_to_vertex_array(gl, &divisors[0..2], index),
+        )
+    }
 }
 
 pub fn attribute<T: DataType>(name: &'static str, offset: usize) -> Attribute {
