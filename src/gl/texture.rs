@@ -35,8 +35,9 @@ pub struct TextureParams {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextureValueType {
-    UnsignedByte,
-    Float,
+    RgbaU8,
+    RgbaF32,
+    Depth,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,12 +92,12 @@ impl Texture {
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
-                glow::RGBA as i32,
+                params.value_type.internal_format_gl(),
                 i32::try_from(size.x).unwrap(),
                 i32::try_from(size.y).unwrap(),
                 0,
-                glow::RGBA,
-                params.value_type.to_gl(),
+                params.value_type.format_gl(),
+                params.value_type.type_gl(),
                 None,
             );
         }
@@ -111,20 +112,20 @@ impl Texture {
         params: TextureParams,
     ) -> Result<Self, NewTextureError> {
         assert!(rgba.len() as u32 == size.x * size.y * 4);
-        assert!(params.value_type == TextureValueType::UnsignedByte);
+        assert!(params.value_type == TextureValueType::RgbaU8);
 
-        let texture = Self::new_impl(gl.clone(), size, params)?;
+        let texture = Self::new_impl(gl.clone(), size, params.clone())?;
 
         unsafe {
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
-                glow::RGBA as i32,
+                params.value_type.internal_format_gl(),
                 i32::try_from(size.x).unwrap(),
                 i32::try_from(size.y).unwrap(),
                 0,
-                glow::RGBA,
-                texture.params.value_type.to_gl(),
+                params.value_type.format_gl(),
+                params.value_type.type_gl(),
                 Some(rgba),
             );
         }
@@ -166,10 +167,14 @@ impl Texture {
         self.size
     }
 
+    pub fn params(&self) -> &TextureParams {
+        &self.params
+    }
+
     pub fn set_sub_image(&self, pos: Point2<u32>, size: Vector2<u32>, data: &[u8]) {
         assert!(pos.x + size.x <= self.size.x);
         assert!(pos.y + size.y <= self.size.y);
-        assert!(self.params.value_type == TextureValueType::UnsignedByte);
+        assert!(self.params.value_type == TextureValueType::RgbaU8);
 
         unsafe {
             self.gl.bind_texture(glow::TEXTURE_2D, Some(self.id));
@@ -180,8 +185,8 @@ impl Texture {
                 i32::try_from(pos.y).unwrap(),
                 i32::try_from(size.x).unwrap(),
                 i32::try_from(size.y).unwrap(),
-                glow::RGBA,
-                self.params.value_type.to_gl(),
+                self.params.value_type.format_gl(),
+                self.params.value_type.type_gl(),
                 glow::PixelUnpackData::Slice(data),
             );
         }
@@ -239,7 +244,7 @@ impl Drop for Texture {
 impl Default for TextureParams {
     fn default() -> Self {
         Self {
-            value_type: TextureValueType::UnsignedByte,
+            value_type: TextureValueType::RgbaU8,
             min_filter: TextureMinFilter::Linear,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::Repeat,
@@ -249,13 +254,38 @@ impl Default for TextureParams {
 }
 
 impl TextureValueType {
-    pub fn to_gl(self) -> u32 {
+    pub fn internal_format_gl(self) -> i32 {
         use TextureValueType::*;
 
         match self {
-            UnsignedByte => glow::UNSIGNED_BYTE,
-            Float => glow::FLOAT,
+            RgbaU8 => glow::RGBA as i32,
+            RgbaF32 => glow::RGBA as i32,
+            Depth => glow::DEPTH_COMPONENT24 as i32,
         }
+    }
+
+    pub fn format_gl(self) -> u32 {
+        use TextureValueType::*;
+
+        match self {
+            RgbaU8 => glow::RGBA,
+            RgbaF32 => glow::RGBA,
+            Depth => glow::DEPTH_COMPONENT,
+        }
+    }
+
+    pub fn type_gl(self) -> u32 {
+        use TextureValueType::*;
+
+        match self {
+            RgbaU8 => glow::UNSIGNED_BYTE,
+            RgbaF32 => glow::FLOAT,
+            Depth => glow::UNSIGNED_INT,
+        }
+    }
+
+    pub fn is_depth(self) -> bool {
+        self == TextureValueType::Depth
     }
 }
 

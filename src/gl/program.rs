@@ -186,7 +186,9 @@ where
     Ok(program)
 }
 
-const SOURCE_HEADER: &str = "#version 300 es\nprecision highp float;\n";
+const SOURCE_HEADER: &str = r#"#version 300 es
+    precision highp float;
+    precision highp sampler2D;"#;
 
 fn vertex_source_header(attributes: &[Attribute]) -> String {
     attributes
