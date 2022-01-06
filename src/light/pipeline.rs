@@ -10,7 +10,7 @@ use crate::{
         VertexBuffer,
     },
     pass::MatricesBlock,
-    Canvas, Context, FrameError,
+    Canvas, Color4, Context, FrameError,
 };
 
 use super::{
@@ -84,15 +84,20 @@ impl LightPipeline {
         })
     }
 
+    pub fn screen_light(&self) -> &Texture {
+        &self.screen_light.textures()[0]
+    }
+
     pub fn new_occluder_batch(&self) -> Result<OccluderBatch, gl::Error> {
         OccluderBatch::new(self.light_instances.clone())
     }
 
-    pub fn build_light_map<'a>(
+    #[must_use]
+    pub fn build_screen_light<'a>(
         &'a mut self,
         matrices: &'a UniformBuffer<MatricesBlock>,
         lights: &'a [Light],
-    ) -> Result<BuildLightMapPipelineStep, FrameError> {
+    ) -> Result<BuildScreenLightPipelineStep, FrameError> {
         if self.screen_light.textures()[0].size() != screen_light_size(self.canvas.clone()) {
             self.screen_light = new_screen_light(self.canvas.clone())?;
         }
@@ -105,19 +110,24 @@ impl LightPipeline {
                 .collect::<Vec<_>>(),
         );
 
-        Ok(BuildLightMapPipelineStep {
+        gl::with_framebuffer(&self.shadow_map, || {
+            gl::clear_color(&*self.shadow_map.gl(), Color4::new(1.0, 1.0, 1.0, 1.0));
+        });
+
+        Ok(BuildScreenLightPipelineStep {
             pipeline: self,
             lights,
         })
     }
 }
 
-pub struct BuildLightMapPipelineStep<'a> {
+pub struct BuildScreenLightPipelineStep<'a> {
     pipeline: &'a LightPipeline,
     lights: &'a [Light],
 }
 
-impl<'a> BuildLightMapPipelineStep<'a> {
+impl<'a> BuildScreenLightPipelineStep<'a> {
+    #[must_use]
     pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
         gl::with_framebuffer(&self.pipeline.shadow_map, || {
             self.pipeline.shadow_map_pass.draw(batch.draw_unit())
@@ -126,7 +136,7 @@ impl<'a> BuildLightMapPipelineStep<'a> {
         self
     }
 
-    pub fn finish() {}
+    pub fn finish(self) {}
 }
 
 fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {

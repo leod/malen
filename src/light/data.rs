@@ -42,6 +42,12 @@ pub struct OccluderLine {
     pub ignore_light_index: Option<u32>,
 }
 
+#[derive(Debug, Clone)]
+pub struct OccluderRect {
+    pub rect: Rect,
+    pub ignore_light_index: Option<u32>,
+}
+
 pub struct LightRect {
     pub rect: Rect,
     pub light: Light,
@@ -79,6 +85,24 @@ impl LightInstance {
         Self {
             position: light.position,
             radius: light.radius,
+        }
+    }
+}
+
+impl From<Line> for OccluderLine {
+    fn from(line: Line) -> Self {
+        OccluderLine {
+            line,
+            ignore_light_index: None,
+        }
+    }
+}
+
+impl From<Rect> for OccluderRect {
+    fn from(rect: Rect) -> Self {
+        OccluderRect {
+            rect,
+            ignore_light_index: None,
         }
     }
 }
@@ -125,6 +149,20 @@ impl Geometry<LineTag> for OccluderLine {
                 ignore_light_index,
             },
         ]);
+    }
+}
+
+impl Geometry<LineTag> for OccluderRect {
+    type Vertex = OccluderLineVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        for line in self.rect.lines() {
+            OccluderLine {
+                line,
+                ignore_light_index: self.ignore_light_index,
+            }
+            .write(elements, vertices);
+        }
     }
 }
 

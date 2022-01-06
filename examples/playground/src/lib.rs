@@ -12,13 +12,13 @@ use malen::{
         Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
-    light::{LightPipeline, LightPipelineParams},
+    light::{Light, LightPipeline, LightPipelineParams, OccluderBatch, OccluderRect},
     math::Circle,
     pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
     text::{Font, Text, TextBatch},
-    Camera, CanvasSizeConfig, Color4, Config, Context, FrameError, InitError, InputState, Key,
-    Rect, Screen,
+    Camera, CanvasSizeConfig, Color3, Color4, Config, Context, FrameError, InitError, InputState,
+    Key, Rect, Screen,
 };
 
 struct Wall {
@@ -165,6 +165,8 @@ struct Game {
     text_batch: TextBatch,
 
     light_pipeline: LightPipeline,
+    occluder_batch: OccluderBatch,
+    lights: Vec<Light>,
 }
 
 impl Game {
@@ -211,6 +213,8 @@ impl Game {
                 max_num_lights: 512,
             },
         )?;
+        let occluder_batch = light_pipeline.new_occluder_batch()?;
+        let lights = Vec::new();
 
         Ok(Game {
             state,
@@ -223,6 +227,8 @@ impl Game {
             wall_sprite_batch,
             text_batch,
             light_pipeline,
+            occluder_batch,
+            lights,
         })
     }
 
@@ -233,16 +239,21 @@ impl Game {
         self.wall_sprite_batch.clear();
         self.text_batch.clear();
         self.circle_instances.clear();
+        self.occluder_batch.clear();
+        self.lights.clear();
 
         for wall in &self.state.walls {
+            let rect = Rect {
+                center: wall.center,
+                size: wall.size,
+            };
+
             self.wall_sprite_batch.push(Sprite {
-                rect: Rect {
-                    center: wall.center,
-                    size: wall.size,
-                },
-                tex_rect: Rect::from_bottom_left(Point2::origin(), wall.size),
+                rect,
+                tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
                 z: 0.2,
             });
+            self.occluder_batch.push(OccluderRect::from(rect));
         }
 
         for enemy in &self.state.enemies {
@@ -252,6 +263,13 @@ impl Game {
                 color: Color4::new(0.8, 0.2, 0.2, 1.0),
                 ..ColorInstance::default()
             });
+            self.lights.push(Light {
+                position: enemy.pos,
+                radius: 1024.0,
+                angle: enemy.angle,
+                angle_size: std::f32::consts::PI,
+                color: Color3::new(0.1, 0.25, 0.1),
+            })
         }
 
         self.color_batch.push(ColorRotatedRect {
@@ -267,7 +285,7 @@ impl Game {
         Ok(())
     }
 
-    pub fn draw(&mut self, context: &Context) -> Result<(), FrameError> {
+    pub fn draw(&mut self, context: &mut Context) -> Result<(), FrameError> {
         profile!("draw");
 
         let screen = context.screen();
@@ -307,8 +325,19 @@ impl Game {
                 ..DrawParams::default()
             },
         );
+
+        self.light_pipeline
+            .build_screen_light(&self.camera_matrices, &self.lights)?
+            .draw_occluders(&mut self.occluder_batch)
+            .finish();
+
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
+
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(300.0, 200.0)),
+            &self.light_pipeline.screen_light(),
+        )?;
 
         Ok(())
     }
@@ -449,7 +478,7 @@ pub fn main() {
         }
 
         draw_timer.start_draw();
-        game.draw(&context).unwrap();
+        game.draw(&mut context).unwrap();
         context
             .plot_pass()
             .draw(&game.screen_matrices, &mut game.font, &mut plot_batch)

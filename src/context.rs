@@ -1,15 +1,16 @@
 use std::{cell::RefCell, rc::Rc};
 
-use nalgebra::Vector2;
+use nalgebra::{Matrix3, Point2, Vector2};
 use web_sys::HtmlCanvasElement;
 
 use crate::{
+    data::{Sprite, SpriteBatch},
     error::InitError,
-    gl,
+    gl::{self, DrawParams, Texture, UniformBuffer},
     input::InputState,
-    pass::{ColorPass, ColorSpritePass, InstancedColorPass, SpritePass},
+    pass::{ColorPass, ColorSpritePass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
-    Canvas, Color4, Config, Event, Screen,
+    Canvas, Color4, Config, Event, FrameError, Rect, Screen,
 };
 
 pub struct Context {
@@ -21,6 +22,9 @@ pub struct Context {
     color_pass: Rc<ColorPass>,
     instanced_color_pass: Rc<InstancedColorPass>,
     plot_pass: Rc<PlotPass>,
+
+    debug_matrices: Option<UniformBuffer<MatricesBlock>>,
+    debug_sprite_batch: Option<SpriteBatch>,
 }
 
 impl Context {
@@ -57,11 +61,23 @@ impl Context {
             color_pass,
             instanced_color_pass,
             plot_pass,
+            debug_matrices: None,
+            debug_sprite_batch: None,
         })
     }
 
     pub fn canvas(&self) -> Rc<RefCell<Canvas>> {
         self.canvas.clone()
+    }
+
+    pub fn pop_event(&mut self) -> Option<Event> {
+        let event = self.canvas.borrow_mut().pop_event()?;
+        self.input_state.handle_event(&event);
+        Some(event)
+    }
+
+    pub fn input_state(&self) -> &InputState {
+        &self.input_state
     }
 
     pub fn gl(&self) -> Rc<gl::Context> {
@@ -92,10 +108,6 @@ impl Context {
         gl::clear_depth(&*self.gl(), depth);
     }
 
-    pub fn input_state(&self) -> &InputState {
-        &self.input_state
-    }
-
     pub fn sprite_pass(&self) -> Rc<SpritePass> {
         self.sprite_pass.clone()
     }
@@ -116,9 +128,31 @@ impl Context {
         self.plot_pass.clone()
     }
 
-    pub fn pop_event(&mut self) -> Option<Event> {
-        let event = self.canvas.borrow_mut().pop_event()?;
-        self.input_state.handle_event(&event);
-        Some(event)
+    pub fn draw_debug_texture(&mut self, rect: Rect, texture: &Texture) -> Result<(), FrameError> {
+        if self.debug_matrices.is_none() {
+            self.debug_matrices = Some(UniformBuffer::new(self.gl(), MatricesBlock::default())?);
+        }
+        if self.debug_sprite_batch.is_none() {
+            self.debug_sprite_batch = Some(SpriteBatch::new(self.gl())?);
+        }
+        let matrices = self.debug_matrices.as_mut().unwrap();
+        let batch = self.debug_sprite_batch.as_mut().unwrap();
+
+        matrices.set_data(MatricesBlock {
+            projection: self.canvas.borrow().screen().orthographic_projection(),
+            view: Matrix3::identity(),
+        });
+
+        batch.clear();
+        batch.push(Sprite {
+            rect,
+            z: 0.0,
+            tex_rect: Rect::from_top_left(Point2::origin(), texture.size().cast::<f32>()),
+        });
+
+        self.sprite_pass
+            .draw(matrices, texture, batch.draw_unit(), &DrawParams::default())?;
+
+        Ok(())
     }
 }
