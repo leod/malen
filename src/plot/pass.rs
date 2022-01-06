@@ -24,6 +24,9 @@ impl PlotPass {
         font: &Font,
         batch: &mut PlotBatch,
     ) -> Result<(), FrameError> {
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("PlotPass::draw");
+
         let draw_params = DrawParams {
             blend: Some(Blend::default()),
             ..DrawParams::default()

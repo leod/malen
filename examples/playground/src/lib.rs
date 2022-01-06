@@ -343,7 +343,7 @@ pub fn main() {
 
         plot_batch.clear();
         if let Some((last_time, _)) = frame_times.back() {
-            profile!("render plots");
+            profile!("render_plots");
 
             let plot = Plot {
                 rect: Rect::from_top_left(

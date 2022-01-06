@@ -10,12 +10,12 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-malen = { path = "../../" }
+malen = { path = "../../", features = ["coarse-prof"] }
 wasm-bindgen = "0.2"
 console_log = "0.2"
 log = "0.4"
 console_error_panic_hook = "0.1"
 nalgebra = "0.25.4"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
-coarse-prof = { git = "https://github.com/leod/coarse-prof" }
+coarse-prof = { git = "https://github.com/leod/coarse-prof", branch = "string_names" }
 instant = { version = "0.1", features = ["wasm-bindgen"] }

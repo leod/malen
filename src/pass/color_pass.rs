@@ -51,6 +51,9 @@ impl ColorPass {
     ) where
         E: Element,
     {
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("ColorPass::draw");
+
         gl::draw(&self.program, matrices, [], draw_unit, params);
     }
 }

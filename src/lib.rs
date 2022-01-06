@@ -19,6 +19,8 @@ pub mod plot;
 pub mod text;
 
 // Re-export dependencies that occur in our public API.
+#[cfg(feature = "coarse-prof")]
+pub use coarse_prof;
 pub use glow;
 pub use nalgebra;
 
