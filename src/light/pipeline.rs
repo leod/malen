@@ -13,7 +13,10 @@ use crate::{
     Canvas, Context, FrameError,
 };
 
-use super::{data::LightInstance, Light, OccluderBatch};
+use super::{
+    data::LightInstance, screen_light_pass::ScreenLightPass, shadow_map_pass::ShadowMapPass, Light,
+    OccluderBatch,
+};
 
 #[derive(Debug, Clone)]
 pub struct LightPipelineParams {
@@ -28,6 +31,9 @@ pub struct LightPipeline {
     light_instances: Rc<VertexBuffer<LightInstance>>,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
+
+    shadow_map_pass: ShadowMapPass,
+    //screen_light_pass: ScreenLightPass,
 }
 
 #[derive(Debug, Error)]
@@ -50,14 +56,13 @@ impl LightPipeline {
         let canvas = context.canvas();
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
-
         let shadow_map = Framebuffer::new(
             context.gl(),
             vec![Texture::new(
                 context.gl(),
                 Vector2::new(params.shadow_map_resolution, params.max_num_lights),
                 TextureParams {
-                    value_type: TextureValueType::Depth,
+                    value_type: TextureValueType::RgbaF32,
                     min_filter: TextureMinFilter::Nearest,
                     mag_filter: TextureMagFilter::Nearest,
                     wrap_vertical: TextureWrap::ClampToEdge,
@@ -65,8 +70,9 @@ impl LightPipeline {
                 },
             )?],
         )?;
-
         let screen_light = new_screen_light(canvas.clone())?;
+
+        let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
 
         Ok(Self {
             canvas,
@@ -74,6 +80,7 @@ impl LightPipeline {
             light_instances,
             shadow_map,
             screen_light,
+            shadow_map_pass,
         })
     }
 
@@ -81,25 +88,45 @@ impl LightPipeline {
         OccluderBatch::new(self.light_instances.clone())
     }
 
-    pub fn start<'a>(
+    pub fn build_light_map<'a>(
         &'a mut self,
         matrices: &'a UniformBuffer<MatricesBlock>,
         lights: &'a [Light],
-    ) -> Result<BuildShadowMapPipelineStep, FrameError> {
+    ) -> Result<BuildLightMapPipelineStep, FrameError> {
         if self.screen_light.textures()[0].size() != screen_light_size(self.canvas.clone()) {
             self.screen_light = new_screen_light(self.canvas.clone())?;
         }
 
-        Ok(BuildShadowMapPipelineStep {
+        self.light_instances.set_data(
+            &lights
+                .iter()
+                .cloned()
+                .map(LightInstance::from_light)
+                .collect::<Vec<_>>(),
+        );
+
+        Ok(BuildLightMapPipelineStep {
             pipeline: self,
             lights,
         })
     }
 }
 
-pub struct BuildShadowMapPipelineStep<'a> {
+pub struct BuildLightMapPipelineStep<'a> {
     pipeline: &'a LightPipeline,
     lights: &'a [Light],
+}
+
+impl<'a> BuildLightMapPipelineStep<'a> {
+    pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
+        gl::with_framebuffer(&self.pipeline.shadow_map, || {
+            self.pipeline.shadow_map_pass.draw(batch.draw_unit())
+        });
+
+        self
+    }
+
+    pub fn finish() {}
 }
 
 fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {

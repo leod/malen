@@ -39,6 +39,9 @@ pub fn draw<U, V, E, const S: usize>(
     let count = range.end - range.start;
     let offset = range.start * std::mem::size_of::<E>();
 
+    // FIXME: We need to re-verify the element range here, since the buffers
+    //        references by the DrawUnit could have changed since its creation.
+
     unsafe {
         gl.draw_elements(
             draw_unit.primitive_mode().to_gl(),
@@ -84,6 +87,9 @@ pub fn draw_instanced<U, V, E, const S: usize>(
     let count = range.end - range.start;
     let offset = range.start * std::mem::size_of::<E>();
 
+    // FIXME: We need to re-verify the element range here, since the buffers
+    //        references by the DrawUnit could have changed since its creation.
+
     unsafe {
         gl.draw_elements_instanced(
             draw_unit.primitive_mode().to_gl(),
@@ -100,9 +106,9 @@ pub fn draw_instanced<U, V, E, const S: usize>(
     }
 }
 
-pub fn with_framebuffer<F, R>(framebuffer: &Framebuffer, f: F) -> R
+pub fn with_framebuffer<F, R>(framebuffer: &Framebuffer, mut f: F) -> R
 where
-    F: Fn() -> R,
+    F: FnMut() -> R,
 {
     let gl = framebuffer.gl();
 
@@ -158,6 +164,9 @@ pub fn clear_depth(gl: &Context, depth: f32) {
 }
 
 fn bind_samplers<const S: usize>(gl: Rc<Context>, samplers: [&Texture; S]) {
+    // FIXME: We need to verify that we are not sampling from the current
+    //        framebuffer.
+
     for (i, sampler) in samplers.iter().enumerate() {
         assert!(Rc::ptr_eq(&sampler.gl(), &gl));
 

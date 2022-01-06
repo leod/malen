@@ -74,6 +74,15 @@ impl Vertex for LightAreaVertex {
     }
 }
 
+impl LightInstance {
+    pub fn from_light(light: Light) -> Self {
+        Self {
+            position: light.position,
+            radius: light.radius,
+        }
+    }
+}
+
 impl Geometry<LineTag> for OccluderLine {
     type Vertex = OccluderLineVertex;
 

@@ -5,7 +5,7 @@ use crate::{
     gl::{self, ElementBuffer, InstancedDrawUnit, VertexArray, VertexBuffer},
 };
 
-use super::data::{LightInstance, OccluderLineVertex};
+use super::{data::LightInstance, OccluderLineVertex};
 
 pub struct OccluderBatch {
     buffer: GeometryBuffer<LineTag, OccluderLineVertex>,
