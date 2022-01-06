@@ -60,7 +60,7 @@ impl Atlas {
             gl,
             size,
             TextureParams {
-                value_type: TextureValueType::UnsignedByte,
+                value_type: TextureValueType::RgbaU8,
                 min_filter: TextureMinFilter::Nearest,
                 mag_filter: TextureMagFilter::Nearest,
                 wrap_vertical: TextureWrap::ClampToEdge,
