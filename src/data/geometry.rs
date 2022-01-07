@@ -177,13 +177,13 @@ pub fn quad_triangle_indices(start_index: u32) -> [u32; 6] {
 
 pub fn quad_line_indices(start_index: u32) -> [u32; 8] {
     [
-        start_index + 0,
+        start_index,
         start_index + 1,
         start_index + 1,
         start_index + 2,
         start_index + 2,
         start_index + 3,
         start_index + 3,
-        start_index + 0,
+        start_index,
     ]
 }

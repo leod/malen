@@ -268,13 +268,13 @@ impl Font {
                         atlas_index,
                         tex_rect,
                     };
-                    glyph_locs.insert(glyph_key.clone(), glyph_loc.clone());
+                    glyph_locs.insert(*glyph_key, glyph_loc.clone());
                     return Ok(glyph_loc);
                 }
             }
 
             let atlas_size = Texture::max_size(&*gl).min(MAX_ATLAS_SIZE);
-            let mut atlas = Atlas::new(gl.clone(), Vector2::new(atlas_size, atlas_size))?;
+            let mut atlas = Atlas::new(gl, Vector2::new(atlas_size, atlas_size))?;
 
             let tex_rect = atlas.insert(bitmap_buffer.as_slice(), glyph_size);
 
@@ -285,13 +285,11 @@ impl Font {
                     atlas_index: atlases.len() - 1,
                     tex_rect,
                 };
-                glyph_locs.insert(glyph_key.clone(), glyph_loc.clone());
+                glyph_locs.insert(*glyph_key, glyph_loc.clone());
                 Ok(glyph_loc)
             } else {
                 Err(WriteTextError::GlyphTooLarge(
-                    glyph_key.clone(),
-                    glyph_size,
-                    atlas_size,
+                    *glyph_key, glyph_size, atlas_size,
                 ))
             }
         }

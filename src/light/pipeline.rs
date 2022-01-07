@@ -124,7 +124,6 @@ impl LightPipeline {
         OccluderBatch::new(self.light_instances.clone())
     }
 
-    #[must_use]
     pub fn build_screen_light<'a>(
         &'a mut self,
         matrices: &'a UniformBuffer<MatricesBlock>,
@@ -157,6 +156,8 @@ impl LightPipeline {
         })
     }
 }
+
+#[must_use]
 pub struct BuildScreenLightPipelineStep<'a> {
     pipeline: &'a mut LightPipeline,
     matrices: &'a UniformBuffer<MatricesBlock>,
@@ -164,7 +165,6 @@ pub struct BuildScreenLightPipelineStep<'a> {
 }
 
 impl<'a> BuildScreenLightPipelineStep<'a> {
-    #[must_use]
     pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
         gl::with_framebuffer(&self.pipeline.shadow_map, || {
             self.pipeline.shadow_map_pass.draw(batch.draw_unit())
@@ -173,7 +173,6 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
         self
     }
 
-    #[must_use]
     pub fn finish_screen_light(self) -> DrawShadedPipelineStep<'a> {
         self.pipeline
             .light_area_batch
@@ -208,6 +207,7 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
     }
 }
 
+#[must_use]
 pub struct DrawShadedPipelineStep<'a> {
     pipeline: &'a mut LightPipeline,
     matrices: &'a UniformBuffer<MatricesBlock>,

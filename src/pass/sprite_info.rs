@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map, BTreeMap};
 
 use crevice::{glsl::GlslStruct, std140::AsStd140};
 use nalgebra::Vector2;
@@ -20,7 +20,7 @@ impl SpriteInfos {
     }
 
     pub fn get(&mut self, texture: &Texture) -> Result<&UniformBuffer<SpriteInfoBlock>, gl::Error> {
-        if !self.0.contains_key(&texture.id()) {
+        if let btree_map::Entry::Vacant(entry) = self.0.entry(texture.id()) {
             // TODO: Fails if OpenGL reuses ids -- need to introduce our own unique IDs
             // TODO: Max size for sprite info cache
             let buffer = UniformBuffer::new(
@@ -29,7 +29,8 @@ impl SpriteInfos {
                     size: texture.size().cast::<f32>(),
                 },
             )?;
-            self.0.insert(texture.id(), buffer);
+
+            entry.insert(buffer);
         }
 
         Ok(self.0.get(&texture.id()).unwrap())
