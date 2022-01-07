@@ -1,4 +1,4 @@
+mod atlas;
 mod font;
-mod packer;
 
-pub use font::{Font, TextBatch};
+pub use font::{Font, LoadFontError, Text, TextBatch, WriteTextError};

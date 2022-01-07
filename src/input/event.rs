@@ -1,13 +1,6 @@
-use std::{
-    cell::RefCell,
-    collections::{BTreeSet, VecDeque},
-    rc::Rc,
-};
+use web_sys::KeyboardEvent;
 
-use wasm_bindgen::{closure::Closure, convert::FromWasmAbi, JsCast};
-use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent};
-
-use crate::Error;
+use nalgebra::Point2;
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -15,158 +8,7 @@ pub enum Event {
     Unfocused,
     KeyPressed(Key),
     KeyReleased(Key),
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct InputState {
-    pressed_keys: BTreeSet<Key>,
-}
-
-impl InputState {
-    pub(crate) fn on_event(&mut self, event: &Event) {
-        match event {
-            Event::Unfocused => {
-                self.pressed_keys.clear();
-            }
-            Event::KeyPressed(key) => {
-                self.pressed_keys.insert(*key);
-            }
-            Event::KeyReleased(key) => {
-                self.pressed_keys.remove(key);
-            }
-            _ => (),
-        }
-    }
-
-    pub fn key(&self, key: Key) -> bool {
-        self.pressed_keys.contains(&key)
-    }
-
-    pub fn pressed_keys(&self) -> &BTreeSet<Key> {
-        &self.pressed_keys
-    }
-}
-
-#[derive(Default, Debug, Clone)]
-struct SharedState {
-    events: VecDeque<Event>,
-}
-
-pub struct EventHandlers {
-    state: Rc<RefCell<SharedState>>,
-
-    _on_focus: EventListener<FocusEvent>,
-    _on_blur: EventListener<FocusEvent>,
-    _on_key_down: EventListener<KeyboardEvent>,
-    _on_key_release: EventListener<KeyboardEvent>,
-}
-
-impl EventHandlers {
-    pub fn new(canvas: HtmlCanvasElement) -> Result<Self, Error> {
-        let state = Rc::new(RefCell::new(SharedState::default()));
-
-        let on_focus = EventListener::new_consume(&canvas, "focus", {
-            let state = state.clone();
-            move |_: FocusEvent| {
-                let mut state = state.borrow_mut();
-                state.events.push_back(Event::Focused);
-            }
-        });
-
-        let on_blur = EventListener::new_consume(&canvas, "blur", {
-            let state = state.clone();
-            move |_: FocusEvent| {
-                let mut state = state.borrow_mut();
-                state.events.push_back(Event::Unfocused);
-            }
-        });
-
-        let on_key_down = EventListener::new_consume(&canvas, "keydown", {
-            let state = state.clone();
-            move |event: KeyboardEvent| {
-                if let Some(key) = Key::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push_back(Event::KeyPressed(key));
-                }
-            }
-        });
-
-        let on_key_release = EventListener::new_consume(&canvas, "keyup", {
-            let state = state.clone();
-            move |event: KeyboardEvent| {
-                if let Some(key) = Key::from_keyboard_event(&event) {
-                    state.borrow_mut().events.push_back(Event::KeyReleased(key));
-                }
-            }
-        });
-
-        Ok(Self {
-            state,
-            _on_focus: on_focus,
-            _on_blur: on_blur,
-            _on_key_down: on_key_down,
-            _on_key_release: on_key_release,
-        })
-    }
-
-    pub fn pop_event(&mut self) -> Option<Event> {
-        self.state.borrow_mut().events.pop_front()
-    }
-}
-
-/// Event handlers without automatic clean up, inspired by
-/// <https://github.com/rustwasm/gloo/issues/30>.
-struct EventListener<T> {
-    element: web_sys::EventTarget,
-    kind: &'static str,
-    callback: Closure<dyn FnMut(T)>,
-}
-
-impl<T> EventListener<T>
-where
-    T: 'static + AsRef<web_sys::Event> + FromWasmAbi,
-{
-    pub fn new<F>(element: &web_sys::EventTarget, kind: &'static str, f: F) -> Self
-    where
-        F: 'static + FnMut(T),
-    {
-        let callback = Closure::wrap(Box::new(f) as Box<dyn FnMut(T)>);
-
-        element
-            .add_event_listener_with_callback(kind, &callback.as_ref().unchecked_ref())
-            .expect(&format!("Failed to add event listener for kind {}", kind));
-
-        Self {
-            element: element.clone(),
-            kind,
-            callback,
-        }
-    }
-
-    pub fn new_consume<F>(element: &web_sys::EventTarget, kind: &'static str, mut f: F) -> Self
-    where
-        F: 'static + FnMut(T),
-    {
-        Self::new(element, kind, move |event| {
-            {
-                let event_ref = event.as_ref();
-                event_ref.stop_propagation();
-                event_ref.cancel_bubble();
-            }
-
-            f(event);
-        })
-    }
-}
-
-impl<T> Drop for EventListener<T> {
-    fn drop(&mut self) {
-        self.element
-            .remove_event_listener_with_callback(self.kind, self.callback.as_ref().unchecked_ref())
-            .expect(&format!(
-                "Failed to remove event listener for kind {}",
-                self.kind
-            ));
-    }
+    MouseMoved(Point2<f64>),
 }
 
 /// A key that can be pressed.
@@ -504,31 +346,6 @@ impl Key {
             "OEM102" => Key::OEM102,
             "Period" => Key::Period,
             "PlayPause" => Key::PlayPause,
-            "Power" => Key::Power,
-            "PrevTrack" => Key::PrevTrack,
-            "AltRight" => Key::RAlt,
-            "BracketRight" => Key::RBracket,
-            "ControlRight" => Key::RControl,
-            "ShiftRight" => Key::RShift,
-            "MetaRight" => Key::RWin,
-            "Slash" => Key::Slash,
-            "Sleep" => Key::Sleep,
-            "Stop" => Key::Stop,
-            "Sysrq" => Key::Sysrq,
-            "Tab" => Key::Tab,
-            "Underline" => Key::Underline,
-            "Unlabeled" => Key::Unlabeled,
-            "AudioVolumeDown" => Key::VolumeDown,
-            "AudioVolumeUp" => Key::VolumeUp,
-            "Wake" => Key::Wake,
-            "WebBack" => Key::WebBack,
-            "WebFavorites" => Key::WebFavorites,
-            "WebForward" => Key::WebForward,
-            "WebHome" => Key::WebHome,
-            "WebRefresh" => Key::WebRefresh,
-            "WebSearch" => Key::WebSearch,
-            "WebStop" => Key::WebStop,
-            "Yen" => Key::Yen,
             _ => return None,
         })
     }

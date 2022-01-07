@@ -1,8 +1,8 @@
 [package]
 name = "malen"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["leod <subtle.frustration@proton.me>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,21 +10,34 @@ edition = "2018"
 log = "0.4"
 thiserror = "1.0"
 wasm-bindgen = "0.2"
-nalgebra = "0.23"
-fontdue = "0.5"
+nalgebra = { version = "0.25.4", features = ["convert-bytemuck"] }
+fontdue = "0.6"
+bytemuck = "1.7"
+bytemuck_derive = "1.0"
+glow = "0.11"
+platter = { git = "https://github.com/TannerRogalsky/platter.git", branch = "leak_closure", features = ["web-sys"] }
+image = "0.23"
+instant = { version = "0.1", features = ["wasm-bindgen"] }
 
-golem = { git = "https://github.com/ryanisaacg/golem.git", features = ["web-sys"] }
+# Downgrade nalgebra for VS Code
+#crevice = { version = "0.8", features = ["nalgebra"] }
+crevice = { git = "https://github.com/leod/crevice.git", branch = "nalgebra-0.25.4", features = ["nalgebra"] }
+
+coarse-prof = { git = "https://github.com/leod/coarse-prof", branch = "string_names", optional = true }
 
 [dependencies.web-sys]
 version = "0.3"
 features = [
-    "WebGlRenderingContext",
+    "WebGl2RenderingContext",
     "HtmlCanvasElement",
     "Window",
     "KeyboardEvent",
     "Event",
     "FocusEvent",
     "CssStyleDeclaration",
+    "Element",
+    "DomRect",
+    "MouseEvent",
 ]
 
 [workspace]
