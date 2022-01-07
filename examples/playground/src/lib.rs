@@ -32,6 +32,7 @@ struct Wall {
 struct Enemy {
     pos: Point2<f32>,
     angle: f32,
+    rot: f32,
 }
 
 struct Player {
@@ -51,7 +52,7 @@ pub const MAP_SIZE: f32 = 2048.0;
 impl State {
     pub fn new() -> Self {
         let num_walls = 50;
-        let num_enemies = 30;
+        let num_enemies = 200;
 
         let mut rng = rand::thread_rng();
         let walls = (0..num_walls)
@@ -82,6 +83,7 @@ impl State {
                 Enemy {
                     pos,
                     angle: rng.gen::<f32>() * std::f32::consts::PI,
+                    rot: (0.05 + rng.gen::<f32>() * 0.3) * std::f32::consts::PI,
                 }
             })
             .collect();
@@ -144,12 +146,12 @@ impl State {
             offset.y.atan2(offset.x)
         };
 
-        for (i, thingy) in self.enemies.iter_mut().enumerate() {
-            let mut delta = 0.2 * std::f32::consts::PI * dt_secs;
+        for (i, enemy) in self.enemies.iter_mut().enumerate() {
+            let mut delta = enemy.rot * dt_secs;
             if i % 2 == 0 {
                 delta *= -1.0;
             }
-            thingy.angle += delta;
+            enemy.angle += delta;
         }
     }
 }
@@ -216,7 +218,7 @@ impl Game {
             context,
             LightPipelineParams {
                 shadow_map_resolution: 2048,
-                max_num_lights: 40,
+                max_num_lights: 300,
             },
         )?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
@@ -292,10 +294,10 @@ impl Game {
             });
             self.lights.push(Light {
                 position: enemy.pos,
-                radius: 512.0,
+                radius: 640.0,
                 angle: enemy.angle,
-                angle_size: std::f32::consts::PI / 4.0,
-                color: Color3::new(0.9, 0.7, 0.7),
+                angle_size: std::f32::consts::PI / 5.0,
+                color: Color3::new(0.9 / 4.0, 0.7 / 4.0, 0.7 / 4.0),
             });
         }
 
@@ -319,14 +321,14 @@ impl Game {
             radius: 1024.0,
             angle: self.state.player.angle,
             angle_size: std::f32::consts::PI / 16.0,
-            color: Color3::new(0.8, 0.8, 0.9),
+            color: Color3::new(0.8, 0.8, 2.0),
         });
         self.lights.push(Light {
             position: self.state.player.pos,
             radius: 100.0,
             angle: self.state.player.angle,
             angle_size: 2.0 * std::f32::consts::PI,
-            color: Color3::new(0.8, 0.8, 0.9),
+            color: Color3::new(0.8, 0.8, 2.0),
         });
 
         Ok(())
