@@ -2,7 +2,7 @@
 name = "playground"
 version = "0.1.0"
 authors = ["leod <subtle.frustration@proton.me>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,3 +21,7 @@ instant = { version = "0.1", features = ["wasm-bindgen"] }
 
 malen = { path = "../../", features = ["coarse-prof"] }
 coarse-prof = { git = "https://github.com/leod/coarse-prof", branch = "string_names" }
+
+# `wasm-opt` takes a long time for me. Do not use this for production builds!
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
