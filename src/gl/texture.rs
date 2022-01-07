@@ -1,4 +1,4 @@
-use std::{rc::Rc, path::Path, io};
+use std::{io, path::Path, rc::Rc};
 
 use glow::HasContext;
 use nalgebra::{Point2, Vector2};
@@ -146,8 +146,7 @@ impl Texture {
         gl: Rc<Context>,
         path: impl AsRef<Path>,
         params: TextureParams,
-    ) -> Result<Self, LoadTextureError>
-    {
+    ) -> Result<Self, LoadTextureError> {
         let data = platter::load_file(path).await?;
         Self::load_from_memory(gl, &data, params)
     }
