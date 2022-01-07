@@ -1,14 +1,14 @@
 use std::{cell::RefCell, rc::Rc};
 
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 use thiserror::Error;
 
 use crate::{
-    data::TriangleBatch,
+    data::{ColorVertex, TriangleBatch},
     gl::{
-        self, Framebuffer, NewFramebufferError, NewTextureError, Texture, TextureMagFilter,
-        TextureMinFilter, TextureParams, TextureValueType, TextureWrap, UniformBuffer,
-        VertexBuffer,
+        self, DrawParams, DrawUnit, Framebuffer, NewFramebufferError, NewTextureError, Texture,
+        TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
+        UniformBuffer, VertexBuffer,
     },
     pass::MatricesBlock,
     Canvas, Color4, Context, FrameError,
@@ -18,7 +18,7 @@ use super::{
     data::{LightAreaVertex, LightInstance, LightRect},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
-    Light, OccluderBatch,
+    ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
 };
 
 #[derive(Debug, Clone)]
@@ -38,6 +38,9 @@ pub struct LightPipeline {
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     light_area_batch: TriangleBatch<LightAreaVertex>,
+
+    color_pass: ColorPass,
+    global_light_params: UniformBuffer<GlobalLightParamsBlock>,
 }
 
 #[derive(Debug, Error)]
@@ -84,6 +87,14 @@ impl LightPipeline {
         )?;
         let light_area_batch = TriangleBatch::new(context.gl())?;
 
+        let color_pass = ColorPass::new(context.gl())?;
+        let global_light_params = UniformBuffer::new(
+            context.gl(),
+            GlobalLightParamsBlock {
+                ambient: Vector3::zeros(),
+            },
+        )?;
+
         Ok(Self {
             canvas,
             params,
@@ -93,6 +104,8 @@ impl LightPipeline {
             shadow_map_pass,
             screen_light_pass,
             light_area_batch,
+            color_pass,
+            global_light_params,
         })
     }
 
@@ -112,6 +125,7 @@ impl LightPipeline {
     pub fn build_screen_light<'a>(
         &'a mut self,
         matrices: &'a UniformBuffer<MatricesBlock>,
+        global_light_params: GlobalLightParams,
         lights: &'a [Light],
     ) -> Result<BuildScreenLightPipelineStep, FrameError> {
         if self.screen_light.textures()[0].size() != screen_light_size(self.canvas.clone()) {
@@ -125,6 +139,9 @@ impl LightPipeline {
                 .map(LightInstance::from_light)
                 .collect::<Vec<_>>(),
         );
+
+        self.global_light_params
+            .set_data(global_light_params.into());
 
         gl::with_framebuffer(&self.shadow_map, || {
             gl::clear_color(&*self.shadow_map.gl(), Color4::new(1.0, 1.0, 1.0, 1.0));
@@ -153,7 +170,8 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
         self
     }
 
-    pub fn finish(self) {
+    #[must_use]
+    pub fn finish_screen_light(self) -> DrawShadedPipelineStep<'a> {
         self.pipeline
             .light_area_batch
             .reset(
@@ -179,7 +197,37 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
                 self.pipeline.light_area_batch.draw_unit(),
             );
         });
+
+        DrawShadedPipelineStep {
+            pipeline: self.pipeline,
+            matrices: self.matrices,
+        }
     }
+}
+
+pub struct DrawShadedPipelineStep<'a> {
+    pipeline: &'a mut LightPipeline,
+    matrices: &'a UniformBuffer<MatricesBlock>,
+}
+
+impl<'a> DrawShadedPipelineStep<'a> {
+    pub fn draw_shaded_colors(
+        self,
+        draw_unit: DrawUnit<ColorVertex>,
+        draw_params: &DrawParams,
+    ) -> Self {
+        self.pipeline.color_pass.draw(
+            self.matrices,
+            &self.pipeline.global_light_params,
+            &self.pipeline.screen_light.textures()[0],
+            draw_unit,
+            draw_params,
+        );
+
+        self
+    }
+
+    pub fn finish(self) {}
 }
 
 fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {
