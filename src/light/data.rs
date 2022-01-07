@@ -195,7 +195,13 @@ impl Geometry<LineTag> for OccluderRect {
     type Vertex = OccluderLineVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        for line in self.rect.lines() {
+        for line in self
+            .rect
+            .lines()
+            .iter()
+            .chain(self.rect.caps().iter())
+            .copied()
+        {
             OccluderLine {
                 line,
                 ignore_light_index: self.ignore_light_index,
