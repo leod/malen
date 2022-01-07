@@ -12,20 +12,13 @@ Build and run using the [`Makefile`](Makefile):
 make run
 ```
 
+Then open http://localhost:8080/ in a browser.
+
 ### Step by step
 If the `Makefile` does not work for you, you can run the steps manually.
 
-Build:
 ```
-wasm-pack build --target web --no-typescript
-cp static/* pkg/
-```
-
-Run:
-```
-(cd static && python3 -m http.server)
-```
-(or using any other HTTP server)
+wasm-pack build --target web --no-typescript ; cp static/* pkg/ ; python3 server.py pkg
 
 ### Windows Setup
 
@@ -46,3 +39,11 @@ There are many different installation instructions flying around. This one actua
    cargo install wasm-pack --target-dir tmp-wasm-pack-cache
    ```
    (the cache directory is not needed, but allows for faster iteration if compilation fails.)
+
+## Resource Credits
+
+- [`04muroch256.png`](resources/04muroch256.png)
+
+   Author: Tiziana
+
+   URL: https://opengameart.org/content/grey-stone-wall-256px

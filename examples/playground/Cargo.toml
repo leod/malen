@@ -2,7 +2,7 @@
 name = "playground"
 version = "0.1.0"
 authors = ["Leonard Dahlmann <leo.dahlmann@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,15 +10,18 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-malen = { path = "../../" }
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 console_log = "0.2"
 log = "0.4"
 console_error_panic_hook = "0.1"
-nalgebra = "0.23"
+nalgebra = "0.25.4"
+rand = { version = "0.7", features = ["wasm-bindgen"] }
+instant = { version = "0.1", features = ["wasm-bindgen"] }
 
-rand = "0.7"
-rand_distr = "0.3"
+malen = { path = "../../", features = ["coarse-prof"] }
+coarse-prof = { git = "https://github.com/leod/coarse-prof", branch = "string_names" }
 
-# This is necessary so that thread_rng() does not panic on wasm targets
-getrandom = { version = "0.1", features = ["wasm-bindgen"] }
+# `wasm-opt` takes a long time for me. Do not use this for production builds!
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

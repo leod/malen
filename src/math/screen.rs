@@ -4,11 +4,8 @@ use super::Rect;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Screen {
-    pub logical_size: Vector2<u32>,
-
-    /// The screen size in physical pixels.
+    pub logical_size: Vector2<f32>,
     pub physical_size: Vector2<u32>,
-
     pub device_pixel_ratio: f64,
 }
 
@@ -24,8 +21,8 @@ impl Screen {
     /// - We assume the Z coordinate of the input vector to be set to 1.
     pub fn orthographic_projection(&self) -> Matrix3<f32> {
         let scale_to_unit = Matrix3::new_nonuniform_scaling(&Vector2::new(
-            1.0 / self.logical_size.x as f32,
-            1.0 / self.logical_size.y as f32,
+            1.0 / self.logical_size.x,
+            1.0 / self.logical_size.y,
         ));
         let shift = Matrix3::new_translation(&Vector2::new(-0.5, -0.5));
         let scale_and_flip_y = Matrix3::new_nonuniform_scaling(&Vector2::new(2.0, -2.0));

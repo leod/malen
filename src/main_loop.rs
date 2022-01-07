@@ -2,8 +2,6 @@ use std::{cell::RefCell, rc::Rc};
 
 use wasm_bindgen::{closure::Closure, JsCast};
 
-use crate::Error;
-
 /// Run the `malen` main loop.
 ///
 /// The callback is called once per frame, and it is passed the following
@@ -13,16 +11,16 @@ use crate::Error;
 ///    loop.
 ///
 /// The callback should be used to do the following things:
-/// - Handle input events.
-/// - Update the game state, relying on the elapsed time as given to the
-///   callback.
-///
-///   We recommend that you do *not* do your own time measurements for delta
-///   time, since the time that most browsers give us with e.g.
-///   [`performance.now()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/now)
-///   is limited in resolution to mitigate potential security threats.
+/// - Consume input events.
+/// - Update the game state.
 /// - Render the game.
-pub fn main_loop<F>(mut callback: F) -> Result<(), Error>
+///
+/// For updating the game state, we recommend that you do *not* do your own time
+/// measurements for delta time, since the time that most browsers give us with
+/// e.g.
+/// [`performance.now()`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/now)
+/// is limited in resolution to mitigate potential security threats.
+pub fn main_loop<F>(mut callback: F)
 where
     F: FnMut(f64, &mut bool) + 'static,
 {
@@ -56,6 +54,4 @@ where
     }) as Box<dyn FnMut(f64)>));
 
     request_animation_frame(f.borrow().as_ref().unwrap());
-
-    Ok(())
 }

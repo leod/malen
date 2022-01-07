@@ -1,11 +1,15 @@
-#[derive(Debug, Clone, Copy, Default)]
+use bytemuck_derive::{Pod, Zeroable};
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Zeroable, Pod)]
+#[repr(C)]
 pub struct Color3 {
     pub r: f32,
     pub g: f32,
     pub b: f32,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Zeroable, Pod)]
+#[repr(C)]
 pub struct Color4 {
     pub r: f32,
     pub g: f32,
