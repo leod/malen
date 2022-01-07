@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Vector3};
+use nalgebra::{Point2, Vector2, Vector3};
 
 use bytemuck::Zeroable;
 use bytemuck_derive::{Pod, Zeroable};
@@ -27,6 +27,12 @@ pub struct LightInstance {
     pub radius: f32,
 }
 
+impl Vertex for LightInstance {
+    fn attributes() -> Vec<Attribute> {
+        attributes!["i_light_": position, radius]
+    }
+}
+
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
 pub struct OccluderLineVertex {
@@ -34,6 +40,34 @@ pub struct OccluderLineVertex {
     pub line_1: Point2<f32>,
     pub order: i32,
     pub ignore_light_index: i32,
+}
+
+impl Vertex for OccluderLineVertex {
+    fn attributes() -> Vec<Attribute> {
+        attributes!["a_": line_0, line_1, order, ignore_light_index]
+    }
+}
+
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+#[repr(C)]
+pub struct LightAreaVertex {
+    pub position: Point2<f32>,
+    pub light_index: i32,
+    pub light_position: Point2<f32>,
+    pub light_params: Vector3<f32>,
+    pub light_color: Color3,
+}
+
+impl Vertex for LightAreaVertex {
+    fn attributes() -> Vec<Attribute> {
+        attributes![
+            "a_": position,
+            light_index,
+            light_position,
+            light_params,
+            light_color
+        ]
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -48,35 +82,19 @@ pub struct OccluderRect {
     pub ignore_light_index: Option<u32>,
 }
 
+#[derive(Debug, Clone)]
 pub struct LightRect {
-    pub rect: Rect,
+    pub light_index: i32,
     pub light: Light,
+    pub rect: Rect,
 }
 
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
-#[repr(C)]
-pub struct LightAreaVertex {
-    pub position: Point2<f32>,
-    pub light_position: Point2<f32>,
-    pub light_params: Vector3<f32>,
-    pub light_color: Color3,
-}
-
-impl Vertex for LightInstance {
-    fn attributes() -> Vec<Attribute> {
-        attributes!["i_light_": position, radius]
-    }
-}
-
-impl Vertex for OccluderLineVertex {
-    fn attributes() -> Vec<Attribute> {
-        attributes!["a_": line_0, line_1, order, ignore_light_index]
-    }
-}
-
-impl Vertex for LightAreaVertex {
-    fn attributes() -> Vec<Attribute> {
-        attributes!["a_": position, light_position, light_params, light_color]
+impl Light {
+    pub fn rect(&self) -> Rect {
+        Rect {
+            center: self.position,
+            size: 2.0 * self.radius * Vector2::new(1.0, 1.0),
+        }
     }
 }
 
@@ -175,6 +193,7 @@ impl Geometry<TriangleTag> for LightRect {
         for p in self.rect.corners() {
             vertices.push(LightAreaVertex {
                 position: p,
+                light_index: self.light_index,
                 light_position: self.light.position,
                 light_params: Vector3::new(
                     self.light.radius,

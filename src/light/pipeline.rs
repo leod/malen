@@ -4,6 +4,7 @@ use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::{
+    data::TriangleBatch,
     gl::{
         self, Framebuffer, NewFramebufferError, NewTextureError, Texture, TextureMagFilter,
         TextureMinFilter, TextureParams, TextureValueType, TextureWrap, UniformBuffer,
@@ -14,8 +15,10 @@ use crate::{
 };
 
 use super::{
-    data::LightInstance, screen_light_pass::ScreenLightPass, shadow_map_pass::ShadowMapPass, Light,
-    OccluderBatch,
+    data::{LightAreaVertex, LightInstance, LightRect},
+    screen_light_pass::ScreenLightPass,
+    shadow_map_pass::ShadowMapPass,
+    Light, OccluderBatch,
 };
 
 #[derive(Debug, Clone)]
@@ -33,7 +36,8 @@ pub struct LightPipeline {
     screen_light: Framebuffer,
 
     shadow_map_pass: ShadowMapPass,
-    //screen_light_pass: ScreenLightPass,
+    screen_light_pass: ScreenLightPass,
+    light_area_batch: TriangleBatch<LightAreaVertex>,
 }
 
 #[derive(Debug, Error)]
@@ -73,6 +77,12 @@ impl LightPipeline {
         let screen_light = new_screen_light(canvas.clone())?;
 
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
+        let screen_light_pass = ScreenLightPass::new(
+            context.gl(),
+            params.shadow_map_resolution,
+            params.max_num_lights,
+        )?;
+        let light_area_batch = TriangleBatch::new(context.gl())?;
 
         Ok(Self {
             canvas,
@@ -81,6 +91,8 @@ impl LightPipeline {
             shadow_map,
             screen_light,
             shadow_map_pass,
+            screen_light_pass,
+            light_area_batch,
         })
     }
 
@@ -120,13 +132,14 @@ impl LightPipeline {
 
         Ok(BuildScreenLightPipelineStep {
             pipeline: self,
+            matrices,
             lights,
         })
     }
 }
-
 pub struct BuildScreenLightPipelineStep<'a> {
-    pipeline: &'a LightPipeline,
+    pipeline: &'a mut LightPipeline,
+    matrices: &'a UniformBuffer<MatricesBlock>,
     lights: &'a [Light],
 }
 
@@ -140,7 +153,33 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
         self
     }
 
-    pub fn finish(self) {}
+    pub fn finish(self) {
+        self.pipeline
+            .light_area_batch
+            .reset(
+                self.lights
+                    .iter()
+                    .enumerate()
+                    .map(|(light_index, light)| LightRect {
+                        light_index: light_index as i32,
+                        light: light.clone(),
+                        rect: light.rect(),
+                    }),
+            );
+
+        gl::with_framebuffer(&self.pipeline.screen_light, || {
+            gl::clear_color(
+                &*self.pipeline.screen_light.gl(),
+                Color4::new(0.0, 0.0, 0.0, 1.0),
+            );
+
+            self.pipeline.screen_light_pass.draw(
+                self.matrices,
+                &self.pipeline.shadow_map.textures()[0],
+                self.pipeline.light_area_batch.draw_unit(),
+            );
+        });
+    }
 }
 
 fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {

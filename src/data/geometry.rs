@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Point3};
+use nalgebra::Point3;
 
 use crate::{
     gl::{PrimitiveMode, Vertex},

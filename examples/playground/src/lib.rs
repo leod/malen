@@ -352,6 +352,10 @@ impl Game {
             Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.shadow_map(),
         )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
+            &self.light_pipeline.screen_light(),
+        )?;
 
         Ok(())
     }
