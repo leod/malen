@@ -37,6 +37,10 @@ impl Color3 {
     pub fn to_linear(self) -> Color3 {
         Color3::new(self.r.powf(2.2), self.g.powf(2.2), self.b.powf(2.2))
     }
+
+    pub fn scale(self, t: f32) -> Color3 {
+        Color3::new(self.r * t, self.g * t, self.b * t)
+    }
 }
 
 impl Color4 {

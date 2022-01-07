@@ -107,7 +107,7 @@ void main() {
 
     float is_non_orth = abs(dot(v_line_normal, normalize(delta))) < 0.1 ? 0.0: 1.0;
 
-    vec3 color = v * is_non_orth * 3.0 * max(dot(v_line_normal, normalize(delta)), 0.0) * v_line_color * v_light_color;
+    vec3 color = v * is_non_orth * 10.0 * max(dot(v_line_normal, normalize(delta)), 0.0) * v_line_color * v_light_color;
     f_color = vec4(color, 1.0);
 }
 "#;
