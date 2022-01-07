@@ -280,13 +280,13 @@ impl Game {
                 z: 0.3,
                 ..ColorInstance::default()
             });
-            /*self.lights.push(Light {
+            self.lights.push(Light {
                 position: enemy.pos,
-                radius: 1024.0,
+                radius: 256.0,
                 angle: enemy.angle,
-                angle_size: std::f32::consts::PI,
+                angle_size: std::f32::consts::PI / 8.0,
                 color: Color3::new(0.9, 0.8, 0.8),
-            });*/
+            });
         }
 
         self.color_batch.push(ColorRotatedRect {
@@ -300,18 +300,18 @@ impl Game {
         });
         self.lights.push(Light {
             position: self.state.player.pos,
-            radius: 512.0,
+            radius: 1024.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 4.0,
+            angle_size: std::f32::consts::PI / 16.0,
             color: Color3::new(0.8, 0.8, 0.9),
         });
-        /*self.lights.push(Light {
+        self.lights.push(Light {
             position: self.state.player.pos,
-            radius: 100.0,
+            radius: 200.0,
             angle: self.state.player.angle,
             angle_size: 2.0 * std::f32::consts::PI,
             color: Color3::new(0.8, 0.8, 0.9),
-        });*/
+        });
 
         Ok(())
     }
