@@ -166,7 +166,7 @@ impl<'a> Render<'a> {
 
         while current_offset <= range.1 {
             let text = &format!("{:.*}", self.style.tic_precision, current_offset);
-            let text_size = self.font.text_size(self.style.normal_font_size, &text);
+            let text_size = self.font.text_size(self.style.normal_font_size, text);
 
             let pos = self.map_point(
                 Point2::new(self.x_range.0, self.y_range.0) + (current_offset - range.0) * axis,
@@ -183,7 +183,7 @@ impl<'a> Render<'a> {
                     size: self.style.normal_font_size,
                     z: 0.0,
                     color: self.style.text_color,
-                    text: &text,
+                    text,
                 },
                 &mut self.batch.text_batch,
             )?;
