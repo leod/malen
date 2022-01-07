@@ -12,9 +12,9 @@ use super::data::LightAreaVertex;
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_delta;
-out vec3 v_light_params;
-out vec3 v_light_color;
-out float v_light_offset;
+flat out vec3 v_light_params;
+flat out vec3 v_light_color;
+flat out float v_light_offset;
 
 void main() {
     vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
@@ -29,9 +29,9 @@ void main() {
 
 const FRAGMENT_SOURCE: &str = r#"
 in vec2 v_delta;
-in vec3 v_light_params;
-in vec3 v_light_color;
-in float v_light_offset;
+flat in vec3 v_light_params;
+flat in vec3 v_light_color;
+flat in float v_light_offset;
 out vec4 f_color;
 
 const float PI = 3.141592;
@@ -65,8 +65,10 @@ void main() {
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
     //visibility *= pow(exp(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0)), 0.3); 
-    visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.2); 
-    visibility *= step(angle_diff, v_light_params.z);
+
+    float tau = clamp(2.0 * angle_diff / v_light_params.z, 0.0, 1.0);
+    visibility *= pow(1.0 - tau, 0.2); 
+    visibility *= step(tau, v_light_params.z);
 
     vec3 color = v_light_color * visibility;
     f_color = vec4(color, 1.0);
