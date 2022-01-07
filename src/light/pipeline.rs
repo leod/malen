@@ -175,17 +175,17 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
 
     pub fn finish_screen_light(self) -> DrawShadedPipelineStep<'a> {
         /*self.pipeline
-            .light_area_batch
-            .reset(
-                self.lights
-                    .iter()
-                    .enumerate()
-                    .map(|(light_index, light)| LightRect {
-                        light_index: light_index as i32,
-                        light: light.clone(),
-                        rect: light.rect(),
-                    }),
-            );*/
+        .light_area_batch
+        .reset(
+            self.lights
+                .iter()
+                .enumerate()
+                .map(|(light_index, light)| LightRect {
+                    light_index: light_index as i32,
+                    light: light.clone(),
+                    rect: light.rect(),
+                }),
+        );*/
         self.pipeline
             .light_area_batch
             .reset(
