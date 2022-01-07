@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc, path::Path, io};
 
 use fontdue::{
     layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle},
@@ -22,6 +22,9 @@ pub enum LoadFontError {
 
     #[error("fontdue error: {0}")]
     Fontdue(&'static str),
+
+    #[error("io error: {0}")]
+    IO(#[from] io::Error),
 }
 
 #[derive(Error, Debug)]
@@ -85,7 +88,12 @@ impl TextBatch {
 }
 
 impl Font {
-    pub fn load(context: &Context, data: &[u8], scale: f32) -> Result<Self, LoadFontError> {
+    pub async fn load(context: &Context, path: impl AsRef<Path>, scale: f32) -> Result<Self, LoadFontError> {
+        let data = platter::load_file(path).await?;
+        Self::load_from_memory(context, &data, scale)
+    }
+
+    pub fn load_from_memory(context: &Context, data: &[u8], scale: f32) -> Result<Self, LoadFontError> {
         let settings = FontSettings {
             scale,
             ..Default::default()

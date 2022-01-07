@@ -177,19 +177,16 @@ struct Game {
 }
 
 impl Game {
-    pub fn new(context: &Context) -> Result<Game, InitError> {
+    pub async fn new(context: &Context) -> Result<Game, InitError> {
         let state = State::new();
 
-        let font = Font::load(
-            context,
-            include_bytes!("../resources/RobotoMono-Regular.ttf"),
-            40.0,
-        )?;
+        let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let wall_texture = Texture::load(
             context.gl(),
-            include_bytes!("../resources/04muroch256.png"),
+            "resources/04muroch256.png",
             TextureParams::default(),
-        )?;
+        )
+        .await?;
 
         let camera_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
@@ -406,7 +403,7 @@ impl Game {
 }
 
 #[wasm_bindgen(start)]
-pub fn main() {
+pub async fn main() {
     console_error_panic_hook::set_once();
     console_log::init_with_level(log::Level::Debug).unwrap();
     log::info!("Starting the malen example");
@@ -419,7 +416,7 @@ pub fn main() {
     let mut context = Context::from_canvas_element_id("canvas", config).unwrap();
     log::info!("Initialized malen context");
 
-    let mut game = Game::new(&context).unwrap();
+    let mut game = Game::new(&context).await.unwrap();
 
     let plot_secs = 5;
     let mut draw_timer = DrawTimer::new(context.gl(), Duration::from_secs(plot_secs));
