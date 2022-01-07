@@ -255,7 +255,7 @@ impl Game {
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
             z: 0.8,
-            color: Color3::from_u8(241, 241, 241).to_linear().to_color4(),
+            color: Color3::from_u8(241, 241, 241).scale(0.5).to_linear().to_color4(),
         });
 
         for wall in &self.state.walls {
@@ -269,7 +269,7 @@ impl Game {
                 tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
                 z: 0.2,
             });*/
-            let color = Color3::from_u8(27, 67, 50);
+            let color = Color3::from_u8(27, 67, 50).scale(0.1);
             self.color_batch.push(ColorRect {
                 rect,
                 z: 0.2,
@@ -283,7 +283,7 @@ impl Game {
         }
 
         for enemy in &self.state.enemies {
-            let color = Color3::from_u8(230, 57, 70);
+            let color = Color3::from_u8(230, 57, 70).scale(0.1);
             self.circle_instances.push(ColorInstance {
                 position: enemy.pos,
                 angle: enemy.angle,
@@ -320,7 +320,7 @@ impl Game {
             });
         }
 
-        let color = Color3::from_u8(69, 123, 157);
+        let color = Color3::from_u8(69, 123, 157).scale(0.1);
         let player_rect = Rect {
             center: self.state.player.pos,
             size: Vector2::new(50.0, 50.0),
@@ -375,7 +375,7 @@ impl Game {
             .build_screen_light(
                 &self.camera_matrices,
                 GlobalLightParams {
-                    ambient: Color3::new(0.02, 0.02, 0.02),
+                    ambient: Color3::new(0.0, 0.0, 0.0),
                 },
                 &self.lights,
             )?
