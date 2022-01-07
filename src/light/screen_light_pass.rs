@@ -64,7 +64,7 @@ void main() {
     float angle_diff = mod(abs(angle - v_light_params.y), 2.0 * PI);
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
-    //visibility *= pow(exp(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0)), 0.5); 
+    //visibility *= pow(exp(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0)), 0.3); 
     visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.2); 
     visibility *= step(angle_diff, v_light_params.z);
 

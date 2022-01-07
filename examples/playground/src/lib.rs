@@ -13,7 +13,8 @@ use malen::{
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     light::{
-        GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch, OccluderRect,
+        GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch,
+        OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
     math::Circle,
     pass::{ColorInstance, MatricesBlock},
@@ -214,7 +215,7 @@ impl Game {
         let light_pipeline = LightPipeline::new(
             context,
             LightPipelineParams {
-                shadow_map_resolution: 512,
+                shadow_map_resolution: 2048,
                 max_num_lights: 40,
             },
         )?;
@@ -280,6 +281,15 @@ impl Game {
                 z: 0.3,
                 ..ColorInstance::default()
             });
+            self.occluder_batch.push(OccluderCircle {
+                circle: Circle {
+                    center: enemy.pos,
+                    radius: 20.0,
+                },
+                angle: 0.0,
+                num_segments: 16,
+                ignore_light_index: Some(self.lights.len() as u32),
+            });
             self.lights.push(Light {
                 position: enemy.pos,
                 radius: 512.0,
@@ -289,14 +299,20 @@ impl Game {
             });
         }
 
+        let player_rect = Rect {
+            center: self.state.player.pos,
+            size: Vector2::new(50.0, 50.0),
+        }
+        .rotate(self.state.player.angle);
+
         self.color_batch.push(ColorRotatedRect {
-            rect: Rect {
-                center: self.state.player.pos,
-                size: Vector2::new(50.0, 50.0),
-            }
-            .rotate(self.state.player.angle),
+            rect: player_rect,
             z: 0.4,
             color: Color4::new(0.2, 0.8, 0.2, 1.0),
+        });
+        self.occluder_batch.push(OccluderRotatedRect {
+            rect: player_rect,
+            ignore_light_index: Some(self.lights.len() as u32),
         });
         self.lights.push(Light {
             position: self.state.player.pos,

@@ -21,10 +21,10 @@ float angle_to_light(vec2 position) {
 const float PI = 3.141592;
 
 void main() {
-    /*if (gl_InstanceID == a_ignore_light_index) {
+    if (gl_InstanceID == a_ignore_light_index) {
         gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
         return;
-    }*/
+    }
 
     v_light_position = i_light_position;
     v_light_radius = i_light_radius;
