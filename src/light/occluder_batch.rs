@@ -5,16 +5,16 @@ use crate::{
     gl::{self, ElementBuffer, InstancedDrawUnit, VertexArray, VertexBuffer},
 };
 
-use super::{data::LightInstance, OccluderLineVertex};
+use super::{Light, OccluderLineVertex};
 
 pub struct OccluderBatch {
     buffer: GeometryBuffer<LineTag, OccluderLineVertex>,
-    vertex_array: VertexArray<(OccluderLineVertex, LightInstance)>,
+    vertex_array: VertexArray<(OccluderLineVertex, Light)>,
     dirty: bool,
 }
 
 impl OccluderBatch {
-    pub(super) fn new(light_instances: Rc<VertexBuffer<LightInstance>>) -> Result<Self, gl::Error> {
+    pub(super) fn new(light_instances: Rc<VertexBuffer<Light>>) -> Result<Self, gl::Error> {
         let buffer = GeometryBuffer::new();
         let element_buffer = Rc::new(ElementBuffer::new(light_instances.gl())?);
         let vertex_buffer = Rc::new(VertexBuffer::new(light_instances.gl())?);
@@ -43,7 +43,7 @@ impl OccluderBatch {
         }
     }
 
-    pub(super) fn draw_unit(&mut self) -> InstancedDrawUnit<(OccluderLineVertex, LightInstance)> {
+    pub(super) fn draw_unit(&mut self) -> InstancedDrawUnit<(OccluderLineVertex, Light)> {
         self.flush();
         InstancedDrawUnit::new(
             &self.vertex_array,

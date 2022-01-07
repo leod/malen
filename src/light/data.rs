@@ -23,7 +23,8 @@ pub struct GlobalLightParamsBlock {
 
 impl UniformBlock for GlobalLightParamsBlock {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+#[repr(C)]
 pub struct Light {
     pub position: Point2<f32>,
     pub radius: f32,
@@ -32,16 +33,9 @@ pub struct Light {
     pub color: Color3,
 }
 
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
-#[repr(C)]
-pub struct LightInstance {
-    pub position: Point2<f32>,
-    pub radius: f32,
-}
-
-impl Vertex for LightInstance {
+impl Vertex for Light {
     fn attributes() -> Vec<Attribute> {
-        attributes!["i_light_": position, radius]
+        attributes!["i_light_": position, radius, angle, angle_size, color]
     }
 }
 
@@ -104,15 +98,6 @@ impl Light {
             light_position: self.position,
             light_params: Vector3::new(self.radius, self.angle, self.angle_size),
             light_color: self.color,
-        }
-    }
-}
-
-impl LightInstance {
-    pub fn from_light(light: Light) -> Self {
-        Self {
-            position: light.position,
-            radius: light.radius,
         }
     }
 }

@@ -5,7 +5,7 @@ use crate::gl::{
     Program, ProgramDef,
 };
 
-use super::{data::LightInstance, OccluderLineVertex};
+use super::{Light, OccluderLineVertex};
 
 const VERTEX_SOURCE: &str = r#"
 flat out vec2 v_light_position;
@@ -113,7 +113,7 @@ void main() {
 "#;
 
 pub struct ShadowMapPass {
-    program: Program<(), (OccluderLineVertex, LightInstance), 0>,
+    program: Program<(), (OccluderLineVertex, Light), 0>,
 }
 
 impl ShadowMapPass {
@@ -129,7 +129,7 @@ impl ShadowMapPass {
         Ok(Self { program })
     }
 
-    pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, LightInstance)>) {
+    pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, Light)>) {
         gl::draw_instanced(
             &self.program,
             (),
