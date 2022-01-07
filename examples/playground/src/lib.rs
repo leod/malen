@@ -12,7 +12,9 @@ use malen::{
         Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
-    light::{Light, LightPipeline, LightPipelineParams, OccluderBatch, OccluderRect},
+    light::{
+        GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch, OccluderRect,
+    },
     math::Circle,
     pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
@@ -43,17 +45,18 @@ struct State {
     last_timestamp_secs: Option<f64>,
 }
 
+pub const MAP_SIZE: f32 = 2048.0;
+
 impl State {
     pub fn new() -> Self {
-        let map_size = 2048.0;
         let num_walls = 50;
         let num_enemies = 30;
 
         let mut rng = rand::thread_rng();
         let walls = (0..num_walls)
             .map(|_| {
-                let center = Point2::new(rng.gen(), rng.gen()) * 2.0 * map_size
-                    - Vector2::new(1.0, 1.0) * map_size;
+                let center = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
+                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
 
                 let choice = rng.gen_range(0, 3);
                 let size = match choice {
@@ -72,8 +75,8 @@ impl State {
 
         let enemies = (0..num_enemies)
             .map(|_| {
-                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * map_size
-                    - Vector2::new(1.0, 1.0) * map_size;
+                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
+                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
 
                 Enemy {
                     pos,
@@ -161,6 +164,7 @@ struct Game {
 
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
+    shaded_color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
     text_batch: TextBatch,
 
@@ -203,6 +207,7 @@ impl Game {
 
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
+        let shaded_color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
 
@@ -224,6 +229,7 @@ impl Game {
             screen_matrices,
             circle_instances,
             color_batch,
+            shaded_color_batch,
             wall_sprite_batch,
             text_batch,
             light_pipeline,
@@ -235,12 +241,22 @@ impl Game {
     pub fn render(&mut self) -> Result<(), FrameError> {
         profile!("render");
 
+        self.circle_instances.clear();
         self.color_batch.clear();
+        self.shaded_color_batch.clear();
         self.wall_sprite_batch.clear();
         self.text_batch.clear();
-        self.circle_instances.clear();
         self.occluder_batch.clear();
         self.lights.clear();
+
+        self.shaded_color_batch.push(ColorRect {
+            rect: Rect {
+                center: Point2::origin(),
+                size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
+            },
+            z: 0.2,
+            color: Color4::new(0.3, 0.3, 0.3, 1.0),
+        });
 
         for wall in &self.state.walls {
             let rect = Rect {
@@ -268,7 +284,7 @@ impl Game {
                 radius: 1024.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI,
-                color: Color3::new(0.1, 0.25, 0.1),
+                color: Color3::new(0.9, 0.8, 0.8),
             })
         }
 
@@ -286,14 +302,14 @@ impl Game {
             radius: 512.0,
             angle: self.state.player.angle,
             angle_size: std::f32::consts::PI / 4.0,
-            color: Color3::new(0.0, 0.5, 0.0),
+            color: Color3::new(0.8, 0.8, 0.9),
         });
         self.lights.push(Light {
             position: self.state.player.pos,
             radius: 100.0,
             angle: self.state.player.angle,
             angle_size: 2.0 * std::f32::consts::PI,
-            color: Color3::new(0.0, 0.5, 0.0),
+            color: Color3::new(0.8, 0.8, 0.9),
         });
 
         Ok(())
@@ -314,6 +330,20 @@ impl Game {
         });
 
         context.clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
+
+        self.light_pipeline
+            .build_screen_light(
+                &self.camera_matrices,
+                GlobalLightParams {
+                    ambient: Color3::new(0.1, 0.1, 0.1),
+                },
+                &self.lights,
+            )?
+            .draw_occluders(&mut self.occluder_batch)
+            .finish_screen_light()
+            .draw_shaded_colors(self.shaded_color_batch.draw_unit(), &DrawParams::default())
+            .finish();
+
         context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
@@ -340,22 +370,17 @@ impl Game {
             },
         );
 
-        self.light_pipeline
-            .build_screen_light(&self.camera_matrices, &self.lights)?
-            .draw_occluders(&mut self.occluder_batch)
-            .finish();
-
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        context.draw_debug_texture(
+        /*context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.screen_light(),
-        )?;
+        )?;*/
 
         Ok(())
     }

@@ -10,6 +10,8 @@ pub struct SpriteInfoBlock {
     size: Vector2<f32>,
 }
 
+impl UniformBlock for SpriteInfoBlock {}
+
 pub struct SpriteInfos(BTreeMap<glow::Texture, UniformBuffer<SpriteInfoBlock>>);
 
 impl SpriteInfos {
@@ -33,5 +35,3 @@ impl SpriteInfos {
         Ok(self.0.get(&texture.id()).unwrap())
     }
 }
-
-impl UniformBlock for SpriteInfoBlock {}
