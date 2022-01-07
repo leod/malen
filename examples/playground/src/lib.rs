@@ -254,7 +254,7 @@ impl Game {
                 center: Point2::origin(),
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
-            z: 0.2,
+            z: 0.8,
             color: Color4::new(0.3, 0.3, 0.3, 1.0),
         });
 
@@ -277,15 +277,16 @@ impl Game {
                 position: enemy.pos,
                 angle: enemy.angle,
                 color: Color4::new(0.8, 0.2, 0.2, 1.0),
+                z: 0.3,
                 ..ColorInstance::default()
             });
-            self.lights.push(Light {
+            /*self.lights.push(Light {
                 position: enemy.pos,
                 radius: 1024.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI,
                 color: Color3::new(0.9, 0.8, 0.8),
-            })
+            });*/
         }
 
         self.color_batch.push(ColorRotatedRect {
@@ -304,13 +305,13 @@ impl Game {
             angle_size: std::f32::consts::PI / 4.0,
             color: Color3::new(0.8, 0.8, 0.9),
         });
-        self.lights.push(Light {
+        /*self.lights.push(Light {
             position: self.state.player.pos,
             radius: 100.0,
             angle: self.state.player.angle,
             angle_size: 2.0 * std::f32::consts::PI,
             color: Color3::new(0.8, 0.8, 0.9),
-        });
+        });*/
 
         Ok(())
     }
@@ -373,14 +374,14 @@ impl Game {
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        /*context.draw_debug_texture(
+        context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.screen_light(),
-        )?;*/
+        )?;
 
         Ok(())
     }
