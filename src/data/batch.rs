@@ -63,6 +63,15 @@ where
         }
     }
 
+    pub fn reset<G, I>(&mut self, iter: I)
+    where
+        G: Geometry<P, Vertex = V>,
+        I: IntoIterator<Item = G>,
+    {
+        self.clear();
+        self.extend(iter);
+    }
+
     pub fn into_mesh(mut self) -> Mesh<V> {
         self.flush();
         let element_range = 0..self.vertex_array.element_buffer().len();
@@ -80,6 +89,22 @@ where
             P::primitive_mode(),
             0..self.vertex_array.element_buffer().len(),
         )
+    }
+}
+
+impl<G, P, V> Extend<G> for GeometryBatch<P, V>
+where
+    P: PrimitiveTag,
+    V: Vertex,
+    G: Geometry<P, Vertex = V>,
+{
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = G>,
+    {
+        for geometry in iter.into_iter() {
+            self.push(geometry);
+        }
     }
 }
 

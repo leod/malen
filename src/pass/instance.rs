@@ -1,4 +1,4 @@
-use bytemuck::{offset_of, Zeroable};
+use bytemuck::Zeroable;
 use bytemuck_derive::{Pod, Zeroable};
 use nalgebra::{Point2, Vector2};
 

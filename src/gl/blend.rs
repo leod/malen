@@ -59,6 +59,18 @@ impl Default for Blend {
     }
 }
 
+impl Default for BlendEquation {
+    fn default() -> BlendEquation {
+        Self::same(BlendOp::Add)
+    }
+}
+
+impl Default for BlendFunc {
+    fn default() -> Self {
+        Self::same(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha)
+    }
+}
+
 impl BlendEquation {
     pub fn same(op: BlendOp) -> Self {
         Self {
@@ -69,12 +81,6 @@ impl BlendEquation {
 
     pub fn is_same(self) -> bool {
         self.color == self.alpha
-    }
-}
-
-impl Default for BlendEquation {
-    fn default() -> BlendEquation {
-        Self::same(BlendOp::Add)
     }
 }
 
@@ -104,12 +110,6 @@ impl BlendFunc {
 
     pub fn is_same(self) -> bool {
         self.src_color == self.src_alpha && self.dst_color == self.dst_alpha
-    }
-}
-
-impl Default for BlendFunc {
-    fn default() -> Self {
-        Self::same(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha)
     }
 }
 
