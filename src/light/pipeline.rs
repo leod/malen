@@ -1,3 +1,6 @@
+//! This implementation follows the following with some modifications:
+//! https://www.gamasutra.com/blogs/RobWare/20180226/313491/Fast_2D_shadows_in_Unity_using_1D_shadow_mapping.php
+
 use std::{cell::RefCell, rc::Rc};
 
 use nalgebra::{Vector2, Vector3};
