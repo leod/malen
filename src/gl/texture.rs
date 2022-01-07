@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, path::Path, io};
 
 use glow::HasContext;
 use nalgebra::{Point2, Vector2};
@@ -22,6 +22,9 @@ pub enum LoadTextureError {
 
     #[error("image error: {0}")]
     Image(#[from] image::ImageError),
+
+    #[error("io error: {0}")]
+    IO(#[from] io::Error),
 }
 
 #[derive(Debug, Clone)]
@@ -139,12 +142,22 @@ impl Texture {
         Ok(texture)
     }
 
-    pub fn load(
+    pub async fn load(
         gl: Rc<Context>,
-        encoded_bytes: &[u8],
+        path: impl AsRef<Path>,
+        params: TextureParams,
+    ) -> Result<Self, LoadTextureError>
+    {
+        let data = platter::load_file(path).await?;
+        Self::load_from_memory(gl, &data, params)
+    }
+
+    pub fn load_from_memory(
+        gl: Rc<Context>,
+        data: &[u8],
         params: TextureParams,
     ) -> Result<Self, LoadTextureError> {
-        let image = image::load_from_memory(encoded_bytes)?.to_rgba8();
+        let image = image::load_from_memory(data)?.to_rgba8();
         let size = Vector2::new(image.width(), image.height());
 
         Ok(Self::from_rgba(

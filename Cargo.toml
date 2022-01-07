@@ -15,6 +15,7 @@ fontdue = "0.6"
 bytemuck = "1.7"
 bytemuck_derive = "1.0"
 glow = "0.11"
+platter = { git = "https://github.com/TannerRogalsky/platter.git", branch = "leak_closure", features = ["web-sys"] }
 image = "0.23"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 
