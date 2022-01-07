@@ -23,7 +23,7 @@ void main() {
     v_delta = a_position.xy - a_light_position;
     v_light_params = a_light_params;
     v_light_color = a_light_color;
-    v_light_offset = float(a_light_index) / float({max_num_lights});
+    v_light_offset = (float(a_light_index) + 0.5) / float({max_num_lights});
 }
 "#;
 
@@ -44,12 +44,18 @@ void main() {
     vec2 tex_coords = vec2(angle / (2.0 * PI) + 0.5, v_light_offset);
     //vec2 texel = vec2(1.0 / float({shadow_map_resolution}), 0.0);
     vec2 texel = vec2(1.0 / float(textureSize(shadow_map, 0).x), 0.0);
-    float dist1 = texture(shadow_map, tex_coords).r * light_radius + 1.0;
-    float dist2 = texture(shadow_map, tex_coords - 1.0 * texel).r * light_radius + 1.0;
-    float dist3 = texture(shadow_map, tex_coords + 1.0 * texel).r * light_radius + 1.0;
+    float dist1 = texture(shadow_map, tex_coords).r * light_radius;
+    float dist2 = texture(shadow_map, tex_coords - 1.0 * texel).r * light_radius;
+    float dist3 = texture(shadow_map, tex_coords + 1.0 * texel).r * light_radius;
 
-    float visibility = step(dist_to_light, dist1);
-    visibility *= 0.5;
+    float vis1 = step(dist_to_light, dist1);
+    float vis2 = step(dist_to_light, dist2);
+    float vis3 = step(dist_to_light, dist3);
+
+    //float visibility = step(dist_to_light, dist1);
+    float visibility = max(vis1, max(vis2, vis3));
+
+    /*visibility *= 0.5;
     visibility += step(dist_to_light, dist2) * 0.25;
     visibility += step(dist_to_light, dist3) * 0.25;
     visibility *= pow(1.0 - dist_to_light / light_radius, 2.0);
@@ -57,7 +63,7 @@ void main() {
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
     //visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.5); 
-    visibility *= step(angle_diff, v_light_params.z);
+    visibility *= step(angle_diff, v_light_params.z);*/
 
     vec3 color = v_light_color * visibility;
     f_color = vec4(color, 1.0);

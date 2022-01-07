@@ -46,7 +46,7 @@ void main() {
 
     gl_Position = vec4(
         v_angle / PI,
-        float(gl_InstanceID) / float({max_num_lights}) * 2.0 - 1.0,
+        (float(gl_InstanceID) + 0.5) / float({max_num_lights}) * 2.0 - 1.0,
         0.0,
         1.0
     );
