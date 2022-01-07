@@ -52,8 +52,9 @@ void main() {
     float vis2 = step(dist_to_light, dist2);
     float vis3 = step(dist_to_light, dist3);
 
-    //float visibility = step(dist_to_light, dist1);
     float visibility = max(vis1, max(vis2, vis3));
+    //float visibility = vis1;
+
     /*visibility *= 0.5;
     visibility += step(dist_to_light, dist2) * 0.25;
     visibility += step(dist_to_light, dist3) * 0.25;*/
@@ -64,7 +65,7 @@ void main() {
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
     //visibility *= pow(exp(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0)), 0.5); 
-    //visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.1); 
+    visibility *= pow(1.0 - clamp(angle_diff / v_light_params.z, 0.0, 1.0), 0.2); 
     visibility *= step(angle_diff, v_light_params.z);
 
     vec3 color = v_light_color * visibility;

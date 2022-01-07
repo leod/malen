@@ -65,7 +65,7 @@ impl Vertex for OccluderLineVertex {
 #[repr(C)]
 pub struct LightAreaVertex {
     pub position: Point2<f32>,
-    pub light_index: i32,
+    pub light_index: f32,
     pub light_position: Point2<f32>,
     pub light_params: Vector3<f32>,
     pub light_color: Color3,
@@ -215,12 +215,12 @@ impl Geometry<TriangleTag> for LightRect {
     type Vertex = LightAreaVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        elements.extend_from_slice(&quad_triangle_indices(elements.len() as u32));
+        elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
             vertices.push(LightAreaVertex {
                 position: p,
-                light_index: self.light_index,
+                light_index: self.light_index as f32,
                 light_position: self.light.position,
                 light_params: Vector3::new(
                     self.light.radius,
