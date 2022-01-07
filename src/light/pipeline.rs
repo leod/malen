@@ -18,7 +18,7 @@ use crate::{
 };
 
 use super::{
-    data::{LightAreaVertex, LightInstance, LightRect},
+    data::{LightAreaVertex, LightCircleSegment, LightInstance, LightRect},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
@@ -174,7 +174,7 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
     }
 
     pub fn finish_screen_light(self) -> DrawShadedPipelineStep<'a> {
-        self.pipeline
+        /*self.pipeline
             .light_area_batch
             .reset(
                 self.lights
@@ -184,6 +184,18 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
                         light_index: light_index as i32,
                         light: light.clone(),
                         rect: light.rect(),
+                    }),
+            );*/
+        self.pipeline
+            .light_area_batch
+            .reset(
+                self.lights
+                    .iter()
+                    .enumerate()
+                    .map(|(light_index, light)| LightCircleSegment {
+                        light_index: light_index as i32,
+                        light: light.clone(),
+                        num_segments: 16,
                     }),
             );
 

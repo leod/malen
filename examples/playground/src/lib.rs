@@ -52,7 +52,7 @@ pub const MAP_SIZE: f32 = 2048.0;
 impl State {
     pub fn new() -> Self {
         let num_walls = 50;
-        let num_enemies = 200;
+        let num_enemies = 50;
 
         let mut rng = rand::thread_rng();
         let walls = (0..num_walls)
@@ -293,7 +293,7 @@ impl Game {
                 position: enemy.pos,
                 radius: 640.0,
                 angle: enemy.angle,
-                angle_size: std::f32::consts::PI / 5.0,
+                angle_size: std::f32::consts::PI / 2.5,
                 color: Color3::new(0.9 / 4.0, 0.7 / 4.0, 0.7 / 4.0),
             });
         }
@@ -317,7 +317,7 @@ impl Game {
             position: self.state.player.pos,
             radius: 1024.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 16.0,
+            angle_size: std::f32::consts::PI / 6.0,
             color: Color3::new(0.8, 0.8, 2.0),
         });
         self.lights.push(Light {

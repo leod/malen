@@ -74,6 +74,13 @@ pub struct LightRect {
     pub rect: Rect,
 }
 
+#[derive(Debug, Clone)]
+pub struct LightCircleSegment {
+    pub light_index: i32,
+    pub light: Light,
+    pub num_segments: usize,
+}
+
 impl From<GlobalLightParams> for GlobalLightParamsBlock {
     fn from(params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
@@ -87,6 +94,16 @@ impl Light {
         Rect {
             center: self.position,
             size: 2.0 * self.radius * Vector2::new(1.0, 1.0),
+        }
+    }
+
+    pub fn to_light_vertex(&self, position: Point2<f32>, light_index: i32) -> LightAreaVertex {
+        LightAreaVertex {
+            position,
+            light_index: light_index as f32,
+            light_position: self.position,
+            light_params: Vector3::new(self.radius, self.angle, self.angle_size),
+            light_color: self.color,
         }
     }
 }
@@ -107,17 +124,36 @@ impl Geometry<TriangleTag> for LightRect {
         elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
 
         for p in self.rect.corners() {
-            vertices.push(LightAreaVertex {
-                position: p,
-                light_index: self.light_index as f32,
-                light_position: self.light.position,
-                light_params: Vector3::new(
-                    self.light.radius,
-                    self.light.angle,
-                    self.light.angle_size,
-                ),
-                light_color: self.light.color,
-            });
+            vertices.push(self.light.to_light_vertex(p, self.light_index));
+        }
+    }
+}
+
+impl Geometry<TriangleTag> for LightCircleSegment {
+    type Vertex = LightAreaVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        let start_index = vertices.len() as u32;
+
+        vertices.push(
+            self.light
+                .to_light_vertex(self.light.position, self.light_index),
+        );
+
+        for i in 0..=self.num_segments {
+            let angle = self.light.angle - self.light.angle_size / 2.0
+                + i as f32 / self.num_segments as f32 * self.light.angle_size;
+            let p =
+                self.light.position + Vector2::new(angle.cos(), angle.sin()) * self.light.radius;
+            vertices.push(self.light.to_light_vertex(p, self.light_index));
+
+            if i != self.num_segments {
+                elements.extend_from_slice(&[
+                    start_index,
+                    start_index + 1 + ((i + 1) % (self.num_segments + 1)) as u32,
+                    start_index + 1 + i as u32,
+                ]);
+            }
         }
     }
 }
