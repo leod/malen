@@ -18,7 +18,8 @@ use crate::{
 };
 
 use super::{
-    data::{LightAreaVertex, LightCircleSegment, LightInstance, LightRect},
+    data::{LightAreaVertex, LightCircleSegment, LightRect},
+    screen_glow_pass::ScreenGlowPass,
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
@@ -34,13 +35,14 @@ pub struct LightPipeline {
     canvas: Rc<RefCell<Canvas>>,
     params: LightPipelineParams,
 
-    light_instances: Rc<VertexBuffer<LightInstance>>,
+    light_instances: Rc<VertexBuffer<Light>>,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
 
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     light_area_batch: TriangleBatch<LightAreaVertex>,
+    screen_glow_pass: ScreenGlowPass,
 
     color_pass: ColorPass,
     global_light_params: UniformBuffer<GlobalLightParamsBlock>,
@@ -83,12 +85,9 @@ impl LightPipeline {
         let screen_light = new_screen_light(canvas.clone())?;
 
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
-        let screen_light_pass = ScreenLightPass::new(
-            context.gl(),
-            params.shadow_map_resolution,
-            params.max_num_lights,
-        )?;
+        let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
         let light_area_batch = TriangleBatch::new(context.gl())?;
+        let screen_glow_pass = ScreenGlowPass::new(context.gl(), params.clone())?;
 
         let color_pass = ColorPass::new(context.gl())?;
         let global_light_params = UniformBuffer::new(
@@ -107,6 +106,7 @@ impl LightPipeline {
             shadow_map_pass,
             screen_light_pass,
             light_area_batch,
+            screen_glow_pass,
             color_pass,
             global_light_params,
         })
@@ -134,13 +134,7 @@ impl LightPipeline {
             self.screen_light = new_screen_light(self.canvas.clone())?;
         }
 
-        self.light_instances.set_data(
-            &lights
-                .iter()
-                .cloned()
-                .map(LightInstance::from_light)
-                .collect::<Vec<_>>(),
-        );
+        self.light_instances.set_data(&lights);
 
         self.global_light_params
             .set_data(global_light_params.into());
@@ -226,6 +220,18 @@ pub struct DrawShadedPipelineStep<'a> {
 }
 
 impl<'a> DrawShadedPipelineStep<'a> {
+    pub fn draw_occluder_glow(self, occluder_batch: &mut OccluderBatch) -> Self {
+        gl::with_framebuffer(&self.pipeline.screen_light, || {
+            self.pipeline.screen_glow_pass.draw(
+                self.matrices,
+                &self.pipeline.shadow_map.textures()[0],
+                occluder_batch.draw_unit(),
+            )
+        });
+
+        self
+    }
+
     pub fn draw_shaded_colors(
         self,
         draw_unit: DrawUnit<ColorVertex>,

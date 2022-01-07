@@ -123,7 +123,15 @@ where
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
 
-                log::info!("{}", shader_source);
+                log::info!(
+                    "{}",
+                    shader_source
+                        .split("\n")
+                        .enumerate()
+                        .map(|(i, line)| format!("{}: {}", i + 1, line))
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                );
 
                 if !gl.get_shader_compile_status(shader) {
                     return Err(Error::OpenGL(format!(

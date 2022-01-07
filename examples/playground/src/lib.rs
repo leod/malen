@@ -287,15 +287,15 @@ impl Game {
                 },
                 angle: 0.0,
                 num_segments: 16,
-                ignore_light_index: Some(self.lights.len() as u32),
+                ignore_light_index: None, //Some(self.lights.len() as u32),
             });
-            self.lights.push(Light {
+            /*self.lights.push(Light {
                 position: enemy.pos,
                 radius: 640.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 2.5,
                 color: Color3::new(0.9 / 4.0, 0.7 / 4.0, 0.7 / 4.0),
-            });
+            });*/
         }
 
         let player_rect = Rect {
@@ -320,13 +320,13 @@ impl Game {
             angle_size: std::f32::consts::PI / 6.0,
             color: Color3::new(0.8, 0.8, 2.0),
         });
-        self.lights.push(Light {
+        /*self.lights.push(Light {
             position: self.state.player.pos,
             radius: 100.0,
             angle: self.state.player.angle,
             angle_size: 2.0 * std::f32::consts::PI,
             color: Color3::new(0.8, 0.8, 2.0),
-        });
+        });*/
 
         Ok(())
     }
@@ -357,6 +357,7 @@ impl Game {
             )?
             .draw_occluders(&mut self.occluder_batch)
             .finish_screen_light()
+            .draw_occluder_glow(&mut self.occluder_batch)
             .draw_shaded_colors(self.shaded_color_batch.draw_unit(), &DrawParams::default())
             .finish();
 
@@ -368,7 +369,7 @@ impl Game {
                 ..DrawParams::default()
             },
         );
-        context.sprite_pass().draw(
+        /*context.sprite_pass().draw(
             &self.camera_matrices,
             &self.wall_texture,
             self.wall_sprite_batch.draw_unit(),
@@ -384,19 +385,19 @@ impl Game {
                 depth_test: Some(DepthTest::default()),
                 ..DrawParams::default()
             },
-        );
+        );*/
 
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        /*context.draw_debug_texture(
+        context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.screen_light(),
-        )?;*/
+        )?;
 
         Ok(())
     }
