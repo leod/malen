@@ -255,7 +255,7 @@ impl Game {
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
             z: 0.8,
-            color: Color3::from_u8(241, 250, 238).to_linear().to_color4(),
+            color: Color3::from_u8(241, 241, 241).to_linear().to_color4(),
         });
 
         for wall in &self.state.walls {
@@ -269,7 +269,7 @@ impl Game {
                 tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
                 z: 0.2,
             });*/
-            let color = Color3::from_u8(29, 53, 87);
+            let color = Color3::from_u8(27, 67, 50);
             self.color_batch.push(ColorRect {
                 rect,
                 z: 0.2,
@@ -277,7 +277,7 @@ impl Game {
             });
             self.occluder_batch.push(OccluderRect {
                 rect,
-                color: color.to_linear(),
+                color: Color3::from_u8(69, 157, 69).to_linear(),
                 ignore_light_index: None,
             });
         }
@@ -316,7 +316,7 @@ impl Game {
                 radius: 640.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 2.5,
-                color: Color3::new(0.7, 0.7, 0.7).to_linear(),
+                color: Color3::new(0.4, 0.3, 0.3).to_linear(),
             });
         }
 
@@ -341,7 +341,7 @@ impl Game {
             position: self.state.player.pos,
             radius: 1024.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 6.0,
+            angle_size: std::f32::consts::PI / 5.0,
             color: Color3::from_u8(168, 218, 220).to_linear(),
         });
         /*self.lights.push(Light {
