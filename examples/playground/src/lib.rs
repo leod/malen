@@ -255,7 +255,7 @@ impl Game {
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
             z: 0.8,
-            color: Color4::new(0.3, 0.3, 0.3, 1.0),
+            color: Color3::from_u8(241, 250, 238).to_linear().to_color4(),
         });
 
         for wall in &self.state.walls {
@@ -264,22 +264,43 @@ impl Game {
                 size: wall.size,
             };
 
-            self.wall_sprite_batch.push(Sprite {
+            /*self.wall_sprite_batch.push(Sprite {
                 rect,
                 tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
                 z: 0.2,
+            });*/
+            let color = Color3::from_u8(29, 53, 87);
+            self.color_batch.push(ColorRect {
+                rect,
+                z: 0.2,
+                color: color.to_color4(),
             });
-            self.occluder_batch.push(OccluderRect::from(rect));
+            self.occluder_batch.push(OccluderRect {
+                rect,
+                color: color.to_linear(),
+                ignore_light_index: None,
+            });
         }
 
         for enemy in &self.state.enemies {
+            let color = Color3::from_u8(230, 57, 70);
             self.circle_instances.push(ColorInstance {
                 position: enemy.pos,
                 angle: enemy.angle,
-                color: Color4::new(0.8, 0.2, 0.2, 1.0),
+                color: color.to_color4(),
                 z: 0.3,
                 ..ColorInstance::default()
             });
+            /*self.color_batch.push(ColorCircle {
+                circle: Circle {
+                    center: enemy.pos,
+                    radius: 20.0,
+                },
+                angle: enemy.angle,
+                z: 0.3,
+                num_segments: 16,
+                color: color.to_linear().to_color4(),
+            });*/
             self.occluder_batch.push(OccluderCircle {
                 circle: Circle {
                     center: enemy.pos,
@@ -287,17 +308,19 @@ impl Game {
                 },
                 angle: 0.0,
                 num_segments: 16,
-                ignore_light_index: None, //Some(self.lights.len() as u32),
+                color: color.to_linear(),
+                ignore_light_index: Some(self.lights.len() as u32),
             });
-            /*self.lights.push(Light {
+            self.lights.push(Light {
                 position: enemy.pos,
                 radius: 640.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 2.5,
-                color: Color3::new(0.9 / 4.0, 0.7 / 4.0, 0.7 / 4.0),
-            });*/
+                color: Color3::new(0.7, 0.7, 0.7).to_linear(),
+            });
         }
 
+        let color = Color3::from_u8(69, 123, 157);
         let player_rect = Rect {
             center: self.state.player.pos,
             size: Vector2::new(50.0, 50.0),
@@ -307,10 +330,11 @@ impl Game {
         self.color_batch.push(ColorRotatedRect {
             rect: player_rect,
             z: 0.4,
-            color: Color4::new(0.2, 0.8, 0.2, 1.0),
+            color: color.to_color4(),
         });
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player_rect,
+            color: color.to_linear(),
             ignore_light_index: Some(self.lights.len() as u32),
         });
         self.lights.push(Light {
@@ -318,7 +342,7 @@ impl Game {
             radius: 1024.0,
             angle: self.state.player.angle,
             angle_size: std::f32::consts::PI / 6.0,
-            color: Color3::new(0.8, 0.8, 2.0),
+            color: Color3::from_u8(168, 218, 220).to_linear(),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
@@ -351,7 +375,7 @@ impl Game {
             .build_screen_light(
                 &self.camera_matrices,
                 GlobalLightParams {
-                    ambient: Color3::new(0.1, 0.1, 0.1),
+                    ambient: Color3::new(0.02, 0.02, 0.02),
                 },
                 &self.lights,
             )?
@@ -369,7 +393,7 @@ impl Game {
                 ..DrawParams::default()
             },
         );
-        /*context.sprite_pass().draw(
+        context.sprite_pass().draw(
             &self.camera_matrices,
             &self.wall_texture,
             self.wall_sprite_batch.draw_unit(),
@@ -385,17 +409,17 @@ impl Game {
                 depth_test: Some(DepthTest::default()),
                 ..DrawParams::default()
             },
-        );*/
+        );
 
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
+            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
+            Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
             &self.light_pipeline.screen_light(),
         )?;
 

@@ -58,23 +58,23 @@ impl Rect {
         ]
     }
 
-    pub fn top_left(&self) -> Point2<f32> {
+    pub fn top_left(self) -> Point2<f32> {
         self.corners()[0]
     }
 
-    pub fn top_right(&self) -> Point2<f32> {
+    pub fn top_right(self) -> Point2<f32> {
         self.corners()[1]
     }
 
-    pub fn bottom_right(&self) -> Point2<f32> {
+    pub fn bottom_right(self) -> Point2<f32> {
         self.corners()[2]
     }
 
-    pub fn bottom_left(&self) -> Point2<f32> {
+    pub fn bottom_left(self) -> Point2<f32> {
         self.corners()[3]
     }
 
-    pub fn lines(&self) -> [Line; 4] {
+    pub fn lines(self) -> [Line; 4] {
         let corners = self.corners();
 
         [
@@ -85,13 +85,13 @@ impl Rect {
         ]
     }
 
-    pub fn diagonals(&self) -> [Line; 2] {
+    pub fn diagonals(self) -> [Line; 2] {
         let corners = self.corners();
 
         [Line(corners[0], corners[2]), Line(corners[1], corners[3])]
     }
 
-    pub fn caps(&self) -> [Line; 4] {
+    pub fn caps(self) -> [Line; 4] {
         let corners = self.corners();
 
         let dx = Vector2::new((0.25 * self.size.x).min(30.0), 0.0);
@@ -103,6 +103,11 @@ impl Rect {
             Line(corners[2] - dx, corners[2] - dy),
             Line(corners[3] + dx, corners[3] - dy),
         ]
+    }
+
+    pub fn enlarge(mut self, add: Vector2<f32>) -> Rect {
+        self.size += add;
+        self
     }
 }
 

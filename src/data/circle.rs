@@ -16,7 +16,7 @@ impl Geometry<TriangleTag> for ColorCircle {
     type Vertex = ColorVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        let start_index = elements.len() as u32;
+        let start_index = vertices.len() as u32;
 
         vertices.push(ColorVertex {
             position: Point3::new(self.circle.center.x, self.circle.center.y, self.z),
