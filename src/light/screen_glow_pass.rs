@@ -36,8 +36,17 @@ float visibility(
     float vis3 = step(dist_to_light, dist3);
 
     float v = max(vis1, max(vis2, vis3));
+    v *= pow(1.0 - dist_to_light / light_radius, 2.0);
 
-    return vis1;
+    float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
+    if (angle_diff > PI)
+        angle_diff = 2.0 * PI - angle_diff;
+    float angle_tau = clamp(2.0 * angle_diff / light_angle_size, 0.0, 1.0);
+
+    v *= pow(1.0 - angle_tau, 0.2); 
+    v *= step(angle_tau, light_angle_size);
+
+    return v;
 }
 "#;
 
@@ -46,6 +55,7 @@ flat out vec3 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
 flat out vec2 v_light_position;
+flat out vec3 v_line_color;
 flat out vec2 v_line_normal;
 out vec2 v_line_position;
 
@@ -69,6 +79,11 @@ void main() {
     vec3 p = matrices.projection * matrices.view * vec3(s, 1.0);
     gl_Position = vec4(p.xy, 0.0, 1.0);
     v_line_position = a_line_0;
+
+    vec2 edge = a_order == 0 ? a_line_0 - a_line_1 : a_line_1 - a_line_0;
+
+    v_line_color = a_color;
+    v_line_normal = normalize(vec2(edge.y, -edge.x));
 }
 "#;
 
@@ -77,16 +92,23 @@ flat in vec3 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
 flat in vec2 v_light_position;
+flat in vec3 v_line_color;
+flat in vec2 v_line_normal;
 in vec2 v_line_position;
 out vec4 f_color;
 
 void main() {
+    vec2 delta = v_line_position - v_light_position;
     float v = visibility(
         v_light_offset,
         v_light_params,
-        v_line_position - v_light_position
+        delta
     );
-    f_color = v * vec4(.0, 1.0, 0.0, 1.0);
+
+    float is_non_orth = abs(dot(v_line_normal, normalize(delta))) < 0.1 ? 0.0: 1.0;
+
+    vec3 color = v * is_non_orth * 3.0 * max(dot(v_line_normal, normalize(delta)), 0.0) * v_line_color * v_light_color;
+    f_color = vec4(color, 1.0);
 }
 "#;
 
