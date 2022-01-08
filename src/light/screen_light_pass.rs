@@ -40,20 +40,29 @@ float visibility(
     float back2 = texture(shadow_map, tex_coords - 1.0 * texel).g * light_radius;
     float back3 = texture(shadow_map, tex_coords + 1.0 * texel).g * light_radius;
 
-    // we start 2 pixels outside of the wall to achive "glow" effect
-    float front = min(min(front1, front2), front3) - 2.0;
+    float front_glow = 5.0;
+    float back_glow = 40.0;
+    float front = min(min(front1, front2), front3) - front_glow;
     float back = min(min(back1, back2), back3);
 
     float v_front = step(dist_to_light, front);
     float v_back = step(dist_to_light, back);
 
     float front_light = pow(1.0 - dist_to_light / light_radius, 2.0);
-    float inner_light =
-        (front_light * 10.0) * pow(
-        clamp(
-            1.0 - (dist_to_light - front) / 50.0,
-            0.0, 1.0)
-        , 4.0);
+
+    float inner_light = front_light;
+    float to_front = dist_to_light - front;
+    if (to_front < front_glow) {
+        inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
+    } else {
+        inner_light *= 2.0 + sin(
+            PI * (1.0/2.0 + 
+                clamp(
+                    (to_front - front_glow) / back_glow, 0.0, 1.0
+                )
+            )
+        );
+    } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
 
