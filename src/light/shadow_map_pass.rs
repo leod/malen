@@ -10,6 +10,7 @@ use super::{Light, OccluderLineVertex};
 const VERTEX_SOURCE: &str = r#"
 flat out vec2 v_light_position;
 flat out float v_light_radius;
+flat out int v_is_front;
 out vec4 v_edge;
 out float v_angle;
 
@@ -31,11 +32,9 @@ void main() {
 
     vec3 c = cross(vec3(a_line_0 - i_light_position, 0.0),
                    vec3(a_line_1 - i_light_position, 0.0));
-    if (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
-        ((a_order == 1 || a_order == 3) && c.z > 0.0)) {
-        gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
-        return;
-    }
+    v_is_front = (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
+                  ((a_order == 1 || a_order == 3) && c.z > 0.0))
+                 ? 1 : 0;
 
     float angle_0 = angle_to_light(a_line_0);
     float angle_1 = angle_to_light(a_line_1);
@@ -65,6 +64,7 @@ void main() {
 const FRAGMENT_SOURCE: &str = r#"
 flat in vec2 v_light_position;
 flat in float v_light_radius;
+flat in int v_is_front;
 in vec4 v_edge;
 in float v_angle;
 out vec4 f_color;
@@ -110,7 +110,12 @@ void main() {
         v_edge.xy,
         v_edge.zw
     );
-    f_color = vec4(t, t, t, 1.0);
+    f_color = vec4(
+        v_is_front == 0 ? t : 1.0,
+        v_is_front == 1 ? t : 1.0,
+        0.0,
+        1.0
+    );
 }
 "#;
 

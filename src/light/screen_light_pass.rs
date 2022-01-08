@@ -39,11 +39,7 @@ float visibility(
 
     //float v = max(vis1, max(vis2, vis3));
     float v = min(vis1, min(vis2, vis3));
-    //float visibility = vis1;
-
-    /*visibility *= 0.5;
-    visibility += step(dist_to_light, dist2) * 0.25;
-    visibility += step(dist_to_light, dist3) * 0.25;*/
+    //float v = 0.5 * vis1 + 0.25 * vis2 + 0.25 * vis3;
 
     v *= pow(1.0 - dist_to_light / light_radius, 2.0);
 
