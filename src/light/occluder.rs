@@ -114,7 +114,7 @@ impl Geometry<LineTag> for OccluderRect {
             .rect
             .lines()
             .iter()
-            .chain(self.rect.caps().iter())
+            //.chain(self.rect.caps().iter())
             .copied()
         {
             OccluderLine {
@@ -135,7 +135,7 @@ impl Geometry<LineTag> for OccluderRotatedRect {
             .rect
             .lines()
             .iter()
-            .chain(self.rect.caps().iter())
+            //.chain(self.rect.caps().iter())
             .copied()
         {
             OccluderLine {
