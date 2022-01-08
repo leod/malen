@@ -14,7 +14,7 @@ pub(super) const VISIBILITY_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
-    in vec3 light_params,
+    in vec4 light_params,
     in vec2 delta
 ) {
     const float PI = 3.141592;
@@ -22,6 +22,7 @@ float visibility(
     float light_radius = light_params.x;
     float light_angle = light_params.y;
     float light_angle_size = light_params.z;
+    float light_start = light_params.w;
 
     float dist_to_light = length(delta);
     if (dist_to_light > light_radius)
@@ -48,23 +49,24 @@ float visibility(
     float v_front = step(dist_to_light, front);
     float v_back = step(dist_to_light, back);
 
-    float front_light = pow(1.0 - dist_to_light / light_radius, 2.0);
+    float fall_on = (
+        1.0 + sin(
+            PI * (
+                3.0/2.0 + clamp(
+                    dist_to_light / light_start - 1.0, 0.0, 1.0
+                )
+            )
+        )
+    ) / 2.0;
+    float front_light = fall_on * pow(1.0 - dist_to_light / light_radius, 2.0);
 
     float inner_light = front_light;
     float to_front = dist_to_light - front;
     if (to_front < front_glow) {
         inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
     } else {
-        inner_light *= 3.0 * pow(1.0 - clamp((to_front - front_glow) / ( (back - front)), 0.0, 1.0), 4.0);
-    /*
-        inner_light *= 1.0 + sin(
-            PI * (1.0/2.0 + 
-                clamp(
-                    (to_front - front_glow) / back_glow, 0.0, 1.0
-                )
-            )
-        );
-    */
+        inner_light *= 2.0 * pow(
+            1.0 - clamp((to_front - front_glow) / min(60.0, back - front), 0.0, 1.0), 4.0);
     } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
@@ -81,7 +83,7 @@ float visibility(
 "#;
 
 const VERTEX_SOURCE: &str = r#"
-flat out vec3 v_light_params;
+flat out vec4 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
 out vec2 v_delta;
@@ -98,7 +100,7 @@ void main() {
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
-flat in vec3 v_light_params;
+flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
 in vec2 v_delta;

@@ -19,7 +19,6 @@ use crate::{
 
 use super::{
     data::{LightAreaVertex, LightCircleSegment, LightRect},
-    screen_glow_pass::ScreenGlowPass,
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
@@ -42,7 +41,6 @@ pub struct LightPipeline {
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     light_area_batch: TriangleBatch<LightAreaVertex>,
-    screen_glow_pass: ScreenGlowPass,
 
     color_pass: ColorPass,
     global_light_params: UniformBuffer<GlobalLightParamsBlock>,
@@ -75,8 +73,8 @@ impl LightPipeline {
                 Vector2::new(params.shadow_map_resolution, params.max_num_lights),
                 TextureParams {
                     value_type: TextureValueType::RgbaF32,
-                    min_filter: TextureMinFilter::Nearest,
-                    mag_filter: TextureMagFilter::Nearest,
+                    min_filter: TextureMinFilter::Linear,
+                    mag_filter: TextureMagFilter::Linear,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
                 },
@@ -87,7 +85,6 @@ impl LightPipeline {
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
         let light_area_batch = TriangleBatch::new(context.gl())?;
-        let screen_glow_pass = ScreenGlowPass::new(context.gl(), params.clone())?;
 
         let color_pass = ColorPass::new(context.gl())?;
         let global_light_params = UniformBuffer::new(
@@ -106,7 +103,6 @@ impl LightPipeline {
             shadow_map_pass,
             screen_light_pass,
             light_area_batch,
-            screen_glow_pass,
             color_pass,
             global_light_params,
         })
@@ -220,18 +216,6 @@ pub struct DrawShadedPipelineStep<'a> {
 }
 
 impl<'a> DrawShadedPipelineStep<'a> {
-    pub fn draw_occluder_glow(self, occluder_batch: &mut OccluderBatch) -> Self {
-        gl::with_framebuffer(&self.pipeline.screen_light, || {
-            self.pipeline.screen_glow_pass.draw(
-                self.matrices,
-                &self.pipeline.shadow_map.textures()[0],
-                occluder_batch.draw_unit(),
-            )
-        });
-
-        self
-    }
-
     pub fn draw_shaded_colors(
         self,
         draw_unit: DrawUnit<ColorVertex>,
@@ -267,8 +251,8 @@ fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFrame
             screen_light_size(canvas.clone()),
             TextureParams {
                 value_type: TextureValueType::RgbaF32,
-                min_filter: TextureMinFilter::Nearest,
-                mag_filter: TextureMagFilter::Nearest,
+                min_filter: TextureMinFilter::Linear,
+                mag_filter: TextureMagFilter::Linear,
                 wrap_vertical: TextureWrap::ClampToEdge,
                 wrap_horizontal: TextureWrap::ClampToEdge,
             },

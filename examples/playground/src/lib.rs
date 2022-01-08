@@ -319,6 +319,7 @@ impl Game {
                 radius: 640.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 2.5,
+                start: 13.0,
                 color: Color3::new(0.4, 0.3, 0.3).to_linear(),
             });
         }
@@ -345,6 +346,7 @@ impl Game {
             radius: 1024.0,
             angle: self.state.player.angle,
             angle_size: std::f32::consts::PI / 3.0,
+            start: 22.0,
             color: Color3::from_u8(168, 218, 220).to_linear(),
         });
         /*self.lights.push(Light {

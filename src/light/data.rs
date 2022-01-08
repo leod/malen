@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Vector2, Vector3};
+use nalgebra::{Point2, Vector2, Vector3, Vector4};
 
 use bytemuck::Zeroable;
 use bytemuck_derive::{Pod, Zeroable};
@@ -30,12 +30,20 @@ pub struct Light {
     pub radius: f32,
     pub angle: f32,
     pub angle_size: f32,
+    pub start: f32,
     pub color: Color3,
 }
 
 impl Vertex for Light {
     fn attributes() -> Vec<Attribute> {
-        attributes!["i_light_": position, radius, angle, angle_size, color]
+        attributes![
+            "i_light_": position,
+            radius,
+            angle,
+            angle_size,
+            start,
+            color
+        ]
     }
 }
 
@@ -45,7 +53,7 @@ pub struct LightAreaVertex {
     pub position: Point2<f32>,
     pub light_index: f32,
     pub light_position: Point2<f32>,
-    pub light_params: Vector3<f32>,
+    pub light_params: Vector4<f32>,
     pub light_color: Color3,
 }
 
@@ -96,7 +104,7 @@ impl Light {
             position,
             light_index: light_index as f32,
             light_position: self.position,
-            light_params: Vector3::new(self.radius, self.angle, self.angle_size),
+            light_params: Vector4::new(self.radius, self.angle, self.angle_size, self.start),
             light_color: self.color,
         }
     }
