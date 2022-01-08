@@ -111,11 +111,9 @@ void main() {
         v_edge.zw
     );
     f_color = vec4(
-        v_is_front == 0 ? t : 1.0,
-        v_is_front == 1 ? t : 1.0,
-        0.0,
-        1.0
-    );
+        v_is_front == 0 ? vec2(1.0, t)
+                        : vec2(t, 1.0),
+        0.0, 1.0);
 }
 "#;
 

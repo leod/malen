@@ -23,35 +23,42 @@ float visibility(
     float light_angle = light_params.y;
     float light_angle_size = light_params.z;
 
-    float angle = atan(delta.y, delta.x);
     float dist_to_light = length(delta);
+    if (dist_to_light > light_radius)
+        discard;
+
+    float angle = atan(delta.y, delta.x);
 
     vec2 tex_coords = vec2(angle / (2.0 * PI) + 0.5, light_offset);
     vec2 texel = vec2(1.0 / float(textureSize(shadow_map, 0).x), 0.0);
 
-    float dist1 = texture(shadow_map, tex_coords).r * light_radius;
-    float dist2 = texture(shadow_map, tex_coords - 1.0 * texel).r * light_radius;
-    float dist3 = texture(shadow_map, tex_coords + 1.0 * texel).r * light_radius;
+    float front1 = texture(shadow_map, tex_coords).r * light_radius;
+    float front2 = texture(shadow_map, tex_coords - 1.0 * texel).r * light_radius;
+    float front3 = texture(shadow_map, tex_coords + 1.0 * texel).r * light_radius;
 
-    float vis1 = step(dist_to_light, dist1);
-    float vis2 = step(dist_to_light, dist2);
-    float vis3 = step(dist_to_light, dist3);
+    float back1 = texture(shadow_map, tex_coords).g * light_radius;
+    float back2 = texture(shadow_map, tex_coords - 1.0 * texel).g * light_radius;
+    float back3 = texture(shadow_map, tex_coords + 1.0 * texel).g * light_radius;
+
+    float front = min(min(front1, front2), front3);
+    float back = min(min(back1, back2), back3);
+
+    float v_front = step(dist_to_light, front);
+    float v_back = step(dist_to_light, back);
+
+    float front_light = pow(1.0 - dist_to_light / light_radius, 2.0);
+    float inner_light = front_light * pow(1.0 - (dist_to_light - front) / (back - front + 0.001), 2.0);
+
+    return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
 
     //float v = max(vis1, max(vis2, vis3));
-    float v = min(vis1, min(vis2, vis3));
     //float v = 0.5 * vis1 + 0.25 * vis2 + 0.25 * vis3;
 
-    v *= pow(1.0 - dist_to_light / light_radius, 2.0);
-
-    float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
+    /*float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
     float angle_tau = clamp(2.0 * angle_diff / light_angle_size, 0.0, 1.0);
-
-    v *= pow(1.0 - angle_tau, 0.2); 
-    v *= step(angle_tau, light_angle_size);
-
-    return v;
+    v *= pow(1.0 - angle_tau, 0.2); */
 }
 "#;
 
