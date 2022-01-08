@@ -286,15 +286,15 @@ impl Game {
         }
 
         for enemy in &self.state.enemies {
-            let color = Color3::from_u8(230, 57, 70).scale(0.1);
-            self.circle_instances.push(ColorInstance {
+            let color = Color3::from_u8(230, 57, 70).scale(0.5);
+            /*self.circle_instances.push(ColorInstance {
                 position: enemy.pos,
                 angle: enemy.angle,
                 color: color.to_color4(),
                 z: 0.3,
                 ..ColorInstance::default()
-            });
-            /*self.color_batch.push(ColorCircle {
+            });*/
+            self.color_batch.push(ColorCircle {
                 circle: Circle {
                     center: enemy.pos,
                     radius: 20.0,
@@ -303,7 +303,7 @@ impl Game {
                 z: 0.3,
                 num_segments: 16,
                 color: color.to_linear().to_color4(),
-            });*/
+            });
             self.occluder_batch.push(OccluderCircle {
                 circle: Circle {
                     center: enemy.pos,
@@ -384,18 +384,19 @@ impl Game {
             )?
             .draw_occluders(&mut self.occluder_batch)
             .finish_screen_light()
-            .draw_occluder_glow(&mut self.occluder_batch)
+            //.draw_occluder_glow(&mut self.occluder_batch)
             .draw_shaded_colors(self.shaded_color_batch.draw_unit(), &DrawParams::default())
+            .draw_shaded_colors(self.color_batch.draw_unit(), &DrawParams::default())
             .finish();
 
-        context.color_pass().draw(
+        /*context.color_pass().draw(
             &self.camera_matrices,
             self.color_batch.draw_unit(),
             &DrawParams {
                 depth_test: Some(DepthTest::default()),
                 ..DrawParams::default()
             },
-        );
+        );*/
         context.sprite_pass().draw(
             &self.camera_matrices,
             &self.wall_texture,
