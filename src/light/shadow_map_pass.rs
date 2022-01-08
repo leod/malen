@@ -76,20 +76,14 @@ float ray_line_segment_intersection(
             <=> M * [[s], [t]] = p - o
               where M = [[d.x, d.y], [p.x - q.x, p.y - q.y]] 
             <=> [[s], [t]] = M^-1 (p - o)   (if M is invertible)
-              where M^-1 = 1.0 / det(M) * [[p.y - q.y, -d.y], [q.x - p.x, d.x]]
     **/
 
     float det = d.x * (p.y - q.y) + d.y * (q.x - p.x);
     if (abs(det) < 0.0000001)
         return 1.0;
 
-    mat2 m_inv = mat2(
-        p.y - q.y, 
-        -d.y,
-        q.x - p.x, 
-        d.x
-    );
-    vec2 time = 1.0 / det * m_inv * (p - o);
+    mat2 m = mat2(d.x, d.y, p.x - q.x, p.y - q.y);
+    vec2 time = inverse(m) * (p - o);
 
     float s = time.x;
     float t = time.y;
@@ -108,7 +102,6 @@ void main() {
         v_edge.zw
     );
     f_color = vec4(t, t, t, 1.0);
-    //f_color = vec4(0.0, 0, 0, 1.0);
 }
 "#;
 
