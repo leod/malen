@@ -55,13 +55,16 @@ float visibility(
     if (to_front < front_glow) {
         inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
     } else {
-        inner_light *= 2.0 + sin(
+        inner_light *= 3.0 * pow(1.0 - clamp((to_front - front_glow) / ( (back - front)), 0.0, 1.0), 4.0);
+    /*
+        inner_light *= 1.0 + sin(
             PI * (1.0/2.0 + 
                 clamp(
                     (to_front - front_glow) / back_glow, 0.0, 1.0
                 )
             )
         );
+    */
     } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
