@@ -29,8 +29,17 @@ void main() {
     v_light_position = i_light_position;
     v_light_radius = i_light_radius;
 
+    vec3 c = cross(vec3(a_line_0 - i_light_position, 0.0),
+                   vec3(a_line_1 - i_light_position, 0.0));
+    if (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
+        ((a_order == 1 || a_order == 3) && c.z > 0.0)) {
+        gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
+        return;
+    }
+
     float angle_0 = angle_to_light(a_line_0);
     float angle_1 = angle_to_light(a_line_1);
+
     v_edge = vec4(a_line_0, a_line_1);
     v_edge = mix(v_edge, v_edge.zwxy, step(angle_0, angle_1));
     v_angle = angle_0;
