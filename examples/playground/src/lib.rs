@@ -255,7 +255,10 @@ impl Game {
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
             z: 0.8,
-            color: Color3::from_u8(241, 241, 241).scale(0.5).to_linear().to_color4(),
+            color: Color3::from_u8(241, 241, 241)
+                .scale(0.5)
+                .to_linear()
+                .to_color4(),
         });
 
         for wall in &self.state.walls {
@@ -341,7 +344,7 @@ impl Game {
             position: self.state.player.pos,
             radius: 1024.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 5.0,
+            angle_size: std::f32::consts::PI / 3.0,
             color: Color3::from_u8(168, 218, 220).to_linear(),
         });
         /*self.lights.push(Light {
@@ -375,7 +378,7 @@ impl Game {
             .build_screen_light(
                 &self.camera_matrices,
                 GlobalLightParams {
-                    ambient: Color3::new(0.0, 0.0, 0.0),
+                    ambient: Color3::new(0.1, 0.1, 0.1),
                 },
                 &self.lights,
             )?
@@ -415,11 +418,11 @@ impl Game {
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
             &self.light_pipeline.screen_light(),
         )?;
 
