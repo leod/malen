@@ -3,13 +3,13 @@ use std::{collections::VecDeque, time::Duration};
 use coarse_prof::profile;
 use instant::Instant;
 use nalgebra::{Matrix3, Point2, Vector2};
-use rand::Rng;
+use rand::{Rng, prelude::SliceRandom};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
     data::{
         ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, Sprite, SpriteBatch, TriangleTag,
+        Mesh, Sprite, SpriteBatch, TriangleTag, ColorLineBatch,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     light::{
@@ -40,9 +40,15 @@ struct Player {
     angle: f32,
 }
 
+struct Ball {
+    pos: Point2<f32>,
+    radius: f32,
+}
+
 struct State {
     walls: Vec<Wall>,
     enemies: Vec<Enemy>,
+    balls: Vec<Ball>,
     player: Player,
     last_timestamp_secs: Option<f64>,
 }
@@ -53,6 +59,7 @@ impl State {
     pub fn new() -> Self {
         let num_walls = 50;
         let num_enemies = 50;
+        let num_balls = 50;
 
         let mut rng = rand::thread_rng();
         let walls = (0..num_walls)
@@ -88,9 +95,24 @@ impl State {
             })
             .collect();
 
+        let balls = (0..num_balls)
+            .map(|_| {
+                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
+                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
+                let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
+
+                Ball {
+                    pos,
+                    radius,
+                }
+            })
+            .collect();
+
+
         Self {
             walls,
             enemies,
+            balls,
             player: Player {
                 pos: Point2::origin(),
                 angle: 0.0,
@@ -169,6 +191,7 @@ struct Game {
     color_batch: ColorTriangleBatch,
     shaded_color_batch: ColorTriangleBatch,
     wall_sprite_batch: SpriteBatch,
+    outline_batch: ColorLineBatch,
     text_batch: TextBatch,
 
     light_pipeline: LightPipeline,
@@ -209,6 +232,7 @@ impl Game {
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let shaded_color_batch = ColorTriangleBatch::new(context.gl())?;
         let wall_sprite_batch = SpriteBatch::new(context.gl())?;
+        let outline_batch = ColorLineBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
 
         let light_pipeline = LightPipeline::new(
@@ -231,6 +255,7 @@ impl Game {
             color_batch,
             shaded_color_batch,
             wall_sprite_batch,
+            outline_batch,
             text_batch,
             light_pipeline,
             occluder_batch,
@@ -245,6 +270,7 @@ impl Game {
         self.color_batch.clear();
         self.shaded_color_batch.clear();
         self.wall_sprite_batch.clear();
+        self.outline_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.lights.clear();
@@ -278,6 +304,11 @@ impl Game {
                 z: 0.2,
                 color: color.to_color4(),
             });
+            self.outline_batch.push(ColorRect {
+                rect,
+                z: 0.2,
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
+            });
             self.occluder_batch.push(OccluderRect {
                 rect,
                 color: Color3::from_u8(69, 157, 69),
@@ -304,6 +335,17 @@ impl Game {
                 num_segments: 16,
                 color: color.to_color4(),
             });
+            self.outline_batch.push(ColorCircle {
+                circle: Circle {
+                    center: enemy.pos,
+                    radius: 20.0,
+                },
+                angle: 0.0,
+                z: 0.0,
+                num_segments: 64,
+                color: Color4::from_u8(255, 255, 255, 255),
+            });
+
             self.occluder_batch.push(OccluderCircle {
                 circle: Circle {
                     center: enemy.pos,
@@ -325,6 +367,41 @@ impl Game {
             });
         }
 
+        for ball in &self.state.balls {
+            let color = Color3::from_u8(240, 101, 67).to_linear();
+            self.color_batch.push(ColorCircle {
+                circle: Circle {
+                    center: ball.pos,
+                    radius: ball.radius,
+                },
+                angle: 0.0,
+                z: 0.3,
+                num_segments: 64,
+                color: color.to_color4(),
+            });
+            self.outline_batch.push(ColorCircle {
+                circle: Circle {
+                    center: ball.pos,
+                    radius: ball.radius,
+                },
+                angle: 0.0,
+                z: 0.0,
+                num_segments: 64,
+                color: Color4::from_u8(255, 255, 255, 255),
+            });
+
+            self.occluder_batch.push(OccluderCircle {
+                circle: Circle {
+                    center: ball.pos,
+                    radius: ball.radius,
+                },
+                angle: 0.0,
+                num_segments: 16,
+                color: color,
+                ignore_light_index: None,
+            });
+        }
+
         let color = Color3::from_u8(255, 209, 102).to_linear();
         let player_rect = Rect {
             center: self.state.player.pos,
@@ -336,6 +413,11 @@ impl Game {
             rect: player_rect,
             z: 0.4,
             color: color.to_color4(),
+        });
+        self.outline_batch.push(ColorRotatedRect {
+            rect: player_rect,
+            z: 0.4,
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
         });
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player_rect,
@@ -416,6 +498,12 @@ impl Game {
                 depth_test: Some(DepthTest::default()),
                 ..DrawParams::default()
             },
+        );
+
+        context.color_pass().draw(
+            &self.camera_matrices,
+            self.outline_batch.draw_unit(),
+            &DrawParams::default(),
         );
 
         self.font
