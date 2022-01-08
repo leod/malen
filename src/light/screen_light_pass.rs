@@ -41,7 +41,7 @@ float visibility(
     float back2 = texture(shadow_map, tex_coords - 1.0 * texel).g * light_radius;
     float back3 = texture(shadow_map, tex_coords + 1.0 * texel).g * light_radius;
 
-    float front_glow = 5.0;
+    float front_glow = 3.0;
     float back_glow = 40.0;
     float front = min(min(front1, front2), front3) - front_glow;
     float back = min(min(back1, back2), back3);
@@ -76,7 +76,7 @@ float visibility(
         inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
     } else {
         inner_light *= 2.0 * pow(
-            1.0 - clamp((to_front - front_glow) / min(60.0, back - front), 0.0, 1.0), 4.0);
+            1.0 - clamp((to_front - front_glow) / min(40.0, back - front), 0.0, 1.0), 5.0);
     } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;

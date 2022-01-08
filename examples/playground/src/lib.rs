@@ -255,9 +255,9 @@ impl Game {
                 size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
             },
             z: 0.8,
-            color: Color3::from_u8(241, 241, 241)
-                .scale(0.5)
+            color: Color3::from_u8(183, 182, 193)
                 .to_linear()
+                .scale(0.5)
                 .to_color4(),
         });
 
@@ -272,7 +272,7 @@ impl Game {
                 tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
                 z: 0.2,
             });*/
-            let color = Color3::from_u8(27, 67, 50).scale(0.1);
+            let color = Color3::from_u8(88, 80, 74).to_linear();
             self.color_batch.push(ColorRect {
                 rect,
                 z: 0.2,
@@ -280,13 +280,13 @@ impl Game {
             });
             self.occluder_batch.push(OccluderRect {
                 rect,
-                color: Color3::from_u8(69, 157, 69).to_linear(),
+                color: Color3::from_u8(69, 157, 69),
                 ignore_light_index: None,
             });
         }
 
         for enemy in &self.state.enemies {
-            let color = Color3::from_u8(230, 57, 70).scale(0.5);
+            let color = Color3::from_u8(240, 101, 67).to_linear();
             /*self.circle_instances.push(ColorInstance {
                 position: enemy.pos,
                 angle: enemy.angle,
@@ -302,7 +302,7 @@ impl Game {
                 angle: enemy.angle,
                 z: 0.3,
                 num_segments: 16,
-                color: color.to_linear().to_color4(),
+                color: color.to_color4(),
             });
             self.occluder_batch.push(OccluderCircle {
                 circle: Circle {
@@ -311,20 +311,21 @@ impl Game {
                 },
                 angle: 0.0,
                 num_segments: 16,
-                color: color.to_linear(),
+                color: color,
                 ignore_light_index: Some(self.lights.len() as u32),
             });
             self.lights.push(Light {
                 position: enemy.pos,
-                radius: 640.0,
+                radius: 800.0,
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 2.5,
                 start: 13.0,
-                color: Color3::new(0.4, 0.3, 0.3).to_linear(),
+                //color: color.scale(0.5),
+                color: Color3::from_u8(44, 110, 73).to_linear().scale(2.0),
             });
         }
 
-        let color = Color3::from_u8(69, 123, 157).scale(0.1);
+        let color = Color3::from_u8(255, 209, 102).to_linear();
         let player_rect = Rect {
             center: self.state.player.pos,
             size: Vector2::new(50.0, 50.0),
@@ -338,16 +339,16 @@ impl Game {
         });
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player_rect,
-            color: color.to_linear(),
+            color: color,
             ignore_light_index: Some(self.lights.len() as u32),
         });
         self.lights.push(Light {
             position: self.state.player.pos,
             radius: 1024.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 3.0,
+            angle_size: std::f32::consts::PI / 4.0,
             start: 22.0,
-            color: Color3::from_u8(168, 218, 220).to_linear(),
+            color: Color3::from_u8(134, 187, 189).to_linear().scale(4.0),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
@@ -380,7 +381,7 @@ impl Game {
             .build_screen_light(
                 &self.camera_matrices,
                 GlobalLightParams {
-                    ambient: Color3::new(0.1, 0.1, 0.1),
+                    ambient: Color3::new(0.3, 0.3, 0.3),
                 },
                 &self.lights,
             )?
