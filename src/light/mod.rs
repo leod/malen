@@ -3,7 +3,6 @@ mod data;
 mod occluder;
 mod occluder_batch;
 mod pipeline;
-mod screen_glow_pass;
 mod screen_light_pass;
 mod shadow_map_pass;
 
