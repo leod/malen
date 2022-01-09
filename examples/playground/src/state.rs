@@ -7,7 +7,7 @@ use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
 pub const MAP_SIZE: f32 = 2048.0;
-pub const ENEMY_RADIUS: f32 = 50.0;
+pub const ENEMY_RADIUS: f32 = 20.0;
 pub const PLAYER_SIZE: f32 = 50.0;
 
 pub struct Wall {
@@ -89,7 +89,7 @@ impl Ball {
         }
     }
 
-    pub fn ball(&self) -> Shape {
+    pub fn shape(&self) -> Shape {
         Shape::Circle(Circle {
             center: self.pos,
             radius: self.radius,
@@ -99,67 +99,31 @@ impl Ball {
 
 impl State {
     pub fn new() -> Self {
-        let num_walls = 50;
-        let num_enemies = 50;
-        let num_balls = 50;
-
-        let mut rng = rand::thread_rng();
-        let walls = (0..num_walls)
-            .map(|_| {
-                let center = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-
-                let choice = rng.gen_range(0, 3);
-                let size = match choice {
-                    0 => {
-                        let x = rng.gen_range(50.0, 500.0);
-                        Vector2::new(x, x)
-                    }
-                    1 => Vector2::new(50.0, rng.gen_range(100.0, 1000.0)),
-                    2 => Vector2::new(rng.gen_range(100.0, 1000.0), 50.0),
-                    _ => unreachable!(),
-                };
-
-                Wall { center, size }
-            })
-            .collect();
-
-        let enemies = (0..num_enemies)
-            .map(|_| {
-                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-
-                Enemy {
-                    pos,
-                    angle: rng.gen::<f32>() * std::f32::consts::PI,
-                    rot: (0.05 + rng.gen::<f32>() * 0.3) * std::f32::consts::PI,
-                }
-            })
-            .collect();
-
-        let balls = (0..num_balls)
-            .map(|_| {
-                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-                let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
-
-                Ball { pos, radius }
-            })
-            .collect();
-
-        Self {
-            walls,
-            enemies,
-            balls,
+        let mut state = Self {
+            walls: Vec::new(),
+            enemies: Vec::new(),
+            balls: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
                 angle: 0.0,
             },
             last_timestamp_secs: None,
+        };
+
+        for _ in 0..100 {
+            state.add_wall();
         }
+        for _ in 0..100 {
+            state.add_enemy();
+        }
+        for _ in 0..50 {
+            state.add_ball();
+        }
+
+        state
     }
 
-    pub fn shape_overlap(&self, shape: Shape) -> bool {
+    pub fn shape_overlap(&self, shape: &Shape) -> bool {
         self.walls
             .iter()
             .map(|wall| {
@@ -180,7 +144,7 @@ impl State {
                     radius: ENEMY_RADIUS,
                 })
             }))
-            .any(|map_shape| shape_shape_overlap(&shape, &map_shape))
+            .any(|map_shape| shape_shape_overlap(shape, &map_shape))
     }
 
     pub fn add_wall(&mut self) {
@@ -200,7 +164,38 @@ impl State {
 
         let wall = Wall { center, size };
 
-        //if !self.shape_overlap(Shape::Rect(Rect { }))
+        if !self.shape_overlap(&wall.shape()) {
+            self.walls.push(wall);
+        }
+    }
+
+    pub fn add_enemy(&mut self) {
+        let mut rng = rand::thread_rng();
+        let pos =
+            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+
+        let enemy = Enemy {
+            pos,
+            angle: rng.gen::<f32>() * std::f32::consts::PI,
+            rot: (0.05 + rng.gen::<f32>() * 0.3) * std::f32::consts::PI,
+        };
+
+        if !self.shape_overlap(&enemy.shape()) {
+            self.enemies.push(enemy);
+        }
+    }
+
+    pub fn add_ball(&mut self) {
+        let mut rng = rand::thread_rng();
+        let pos =
+            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
+
+        let ball = Ball { pos, radius };
+
+        if !self.shape_overlap(&ball.shape()) {
+            self.balls.push(ball);
+        }
     }
 
     pub fn camera(&self) -> Camera {
