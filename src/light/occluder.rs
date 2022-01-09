@@ -157,8 +157,12 @@ impl Geometry<LineTag> for OccluderCircle {
             .circle
             .points(self.angle, self.num_segments)
             .chain(
-                self.circle
-                    .points(std::f32::consts::PI / 10.0, self.num_segments),
+                Circle {
+                    center: self.circle.center,
+                    radius: self.circle.radius * 0.98,
+                }.points(0.0, self.num_segments)
+                /*self.circle
+                    .points(std::f32::consts::PI / 10.0, self.num_segments),*/
             )
             .collect::<Vec<_>>();
 

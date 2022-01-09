@@ -220,11 +220,10 @@ impl Game {
                 num_segments: 64,
                 color: Color4::from_u8(255, 255, 255, 255),
             });
-
             self.occluder_batch.push(OccluderCircle {
                 circle: ball.circle(),
                 angle: 0.0,
-                num_segments: 16,
+                num_segments: 64,
                 color: color,
                 ignore_light_index: None,
             });
