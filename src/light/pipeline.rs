@@ -35,6 +35,7 @@ pub struct LightPipeline {
     params: LightPipelineParams,
 
     light_instances: Rc<VertexBuffer<Light>>,
+    screen_normals: Framebuffer,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
 
@@ -66,7 +67,7 @@ impl LightPipeline {
         let canvas = context.canvas();
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
-        let shadow_map = Framebuffer::new(
+        let shadow_map = Framebuffer::from_textures(
             context.gl(),
             vec![Texture::new(
                 context.gl(),
@@ -80,7 +81,8 @@ impl LightPipeline {
                 },
             )?],
         )?;
-        let screen_light = new_screen_light(canvas.clone())?;
+        let screen_light = new_screen_framebuffer(canvas.clone())?;
+        let screen_normals = new_screen_framebuffer(canvas.clone())?;
 
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
@@ -100,6 +102,7 @@ impl LightPipeline {
             light_instances,
             shadow_map,
             screen_light,
+            screen_normals,
             shadow_map_pass,
             screen_light_pass,
             light_area_batch,
@@ -127,7 +130,7 @@ impl LightPipeline {
         lights: &'a [Light],
     ) -> Result<BuildScreenLightPipelineStep, FrameError> {
         if self.screen_light.textures()[0].size() != screen_light_size(self.canvas.clone()) {
-            self.screen_light = new_screen_light(self.canvas.clone())?;
+            self.screen_light = new_screen_framebuffer(self.canvas.clone())?;
         }
 
         self.light_instances.set_data(lights);
@@ -243,8 +246,8 @@ fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {
     Vector2::new(physical_size.x.min(max_size), physical_size.y.min(max_size))
 }
 
-fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFramebufferError> {
-    Framebuffer::new(
+fn new_screen_framebuffer(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFramebufferError> {
+    Framebuffer::from_textures(
         canvas.borrow().gl(),
         vec![Texture::new(
             canvas.borrow().gl(),
