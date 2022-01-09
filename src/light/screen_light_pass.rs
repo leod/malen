@@ -68,16 +68,16 @@ float visibility(
     float angle_fall_off_size = PI / 20.0;
     if (angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
         float t = (angle_diff * 2.0 - light_angle_size + angle_fall_off_size) / angle_fall_off_size;
-        //front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
-        front_light *= 0.5;
+        front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
+        //front_light *= 0.5;
     }
 
-    angle_fall_off_size = PI / 40.0;
+    /*angle_fall_off_size = PI / 40.0;
     if (angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
         float t = (angle_diff * 2.0 - light_angle_size + angle_fall_off_size) / angle_fall_off_size;
         //front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
         front_light *= 0.5;
-    }
+    }*/
 
     float inner_light = front_light;
     float to_front = dist_to_light - front;
