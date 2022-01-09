@@ -1,6 +1,6 @@
 use coarse_prof::profile;
 use malen::{
-    geom::{shape_shape_overlap, Circle, Shape, Rect, RotatedRect, Screen, Camera},
+    geom::{shape_shape_overlap, Camera, Circle, Rect, RotatedRect, Screen, Shape},
     InputState, Key,
 };
 use nalgebra::{Point2, Vector2};

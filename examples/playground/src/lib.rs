@@ -245,11 +245,11 @@ impl Game {
         });
         self.lights.push(Light {
             position: self.state.player.pos,
-            radius: 1024.0,
+            radius: 1200.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 4.0,
+            angle_size: std::f32::consts::PI / 8.0,
             start: 22.0,
-            color: Color3::from_u8(134, 187, 189).to_linear().scale(4.0),
+            color: Color3::from_u8(134, 187, 189).to_linear().scale(5.0),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
