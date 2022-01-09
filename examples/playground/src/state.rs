@@ -150,11 +150,11 @@ impl State {
 
         let size = match rng.gen_range(0, 3) {
             0 => {
-                let x = rng.gen_range(50.0, 500.0);
+                let x = 50.0 * rng.gen_range(1, 10) as f32;
                 Vector2::new(x, x)
             }
-            1 => Vector2::new(50.0, rng.gen_range(100.0, 1000.0)),
-            2 => Vector2::new(rng.gen_range(100.0, 1000.0), 50.0),
+            1 => Vector2::new(50.0, 50.0 * rng.gen_range(2, 20) as f32),
+            2 => Vector2::new(50.0 * rng.gen_range(2, 20) as f32, 50.0),
             _ => unreachable!(),
         };
 

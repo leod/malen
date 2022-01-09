@@ -53,3 +53,9 @@ There are many different installation instructions flying around. This one actua
    Author: Cethiel
 
    URL: https://opengameart.org/content/tileable-brick-ground-textures-set-2
+
+- `boxesandcrates`
+
+   Author: Texasfunk101
+
+   URL: https://opengameart.org/content/tileable-crates

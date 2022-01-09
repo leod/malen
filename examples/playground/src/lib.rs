@@ -32,6 +32,8 @@ struct Game {
     font: Font,
     texture: Texture,
     normal_map: Texture,
+    texture2: Texture,
+    normal_map2: Texture,
 
     camera_matrices: UniformBuffer<MatricesBlock>,
     screen_matrices: UniformBuffer<MatricesBlock>,
@@ -40,6 +42,7 @@ struct Game {
     color_batch: ColorTriangleBatch,
     shaded_color_batch: ColorTriangleBatch,
     shaded_sprite_batch: SpriteBatch,
+    shaded_sprite_batch2: SpriteBatch,
     outline_batch: ColorLineBatch,
     text_batch: TextBatch,
 
@@ -67,6 +70,18 @@ impl Game {
             TextureParams::default(),
         )
         .await?;
+        let texture2 = Texture::load(
+            context.gl(),
+            "resources/boxesandcrates/1.png",
+            TextureParams::default(),
+        )
+        .await?;
+        let normal_map2 = Texture::load(
+            context.gl(),
+            "resources/boxesandcrates/1_N.png",
+            TextureParams::default(),
+        )
+        .await?;
 
         let camera_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
@@ -89,6 +104,7 @@ impl Game {
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let shaded_color_batch = ColorTriangleBatch::new(context.gl())?;
         let shaded_sprite_batch = SpriteBatch::new(context.gl())?;
+        let shaded_sprite_batch2 = SpriteBatch::new(context.gl())?;
         let outline_batch = ColorLineBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
 
@@ -107,12 +123,15 @@ impl Game {
             font,
             texture,
             normal_map,
+            texture2,
+            normal_map2,
             camera_matrices,
             screen_matrices,
             circle_instances,
             color_batch,
             shaded_color_batch,
             shaded_sprite_batch,
+            shaded_sprite_batch2,
             outline_batch,
             text_batch,
             light_pipeline,
@@ -129,6 +148,7 @@ impl Game {
         self.color_batch.clear();
         self.shaded_color_batch.clear();
         self.shaded_sprite_batch.clear();
+        self.shaded_sprite_batch2.clear();
         self.outline_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
@@ -163,12 +183,17 @@ impl Game {
                 tex_rect: wall.rect().scale(10.0),
                 z: 0.2,
             });*/
+            self.shaded_sprite_batch2.push(Sprite {
+                rect: wall.rect(),
+                z: 0.2,
+                tex_rect: Rect::from_top_left(Point2::origin(), (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>())),
+            });
             let color = Color3::from_u8(88, 80, 74).to_linear();
-            self.shaded_color_batch.push(ColorRect {
+            /*self.shaded_color_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
                 color: color.to_color4(),
-            });
+            });*/
             self.outline_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
@@ -306,6 +331,11 @@ impl Game {
                 &self.texture,
                 &self.normal_map,
                 self.shaded_sprite_batch.draw_unit(),
+            )?
+            .draw_geometry_sprite_normals(
+                &self.texture2,
+                &self.normal_map2,
+                self.shaded_sprite_batch2.draw_unit(),
             )?
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)

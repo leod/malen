@@ -31,7 +31,7 @@ layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
 
 void main() {
-    f_albedo = texture(sprite, v_uv);
+    f_albedo = pow(texture(sprite, v_uv), vec4(2.2));
     f_normal = texture(normal_map, v_uv);
 }
 "#;
