@@ -19,7 +19,7 @@ pub enum NewFramebufferError {
 
 pub struct Framebuffer {
     gl: Rc<Context>,
-    textures: Vec<Texture>,
+    textures: Vec<Rc<Texture>>,
     id: glow::Framebuffer,
 }
 
@@ -29,7 +29,14 @@ impl Framebuffer {
         max_color_attachments as u32
     }
 
-    pub fn new(gl: Rc<Context>, textures: Vec<Texture>) -> Result<Self, NewFramebufferError> {
+    pub fn from_textures(
+        gl: Rc<Context>,
+        textures: Vec<Texture>,
+    ) -> Result<Self, NewFramebufferError> {
+        Self::new(gl.clone(), textures.into_iter().map(Rc::new).collect())
+    }
+
+    pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
         let num_color = textures
             .iter()
             .filter(|t| !t.params().value_type.is_depth())
@@ -101,7 +108,7 @@ impl Framebuffer {
         self.gl.clone()
     }
 
-    pub fn textures(&self) -> &[Texture] {
+    pub fn textures(&self) -> &[Rc<Texture>] {
         &self.textures
     }
 
