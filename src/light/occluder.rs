@@ -157,16 +157,16 @@ impl Geometry<LineTag> for OccluderCircle {
             .circle
             .points(self.angle, self.num_segments)
             .chain(
-                Circle {
+                /*Circle {
                     center: self.circle.center,
                     radius: self.circle.radius * 0.98,
-                }.points(0.0, self.num_segments)
-                /*self.circle
-                    .points(std::f32::consts::PI / 10.0, self.num_segments),*/
+                }.points(0.0, self.num_segments)*/
+                self.circle
+                    .points(std::f32::consts::PI / 10.0, self.num_segments),
             )
             .collect::<Vec<_>>();
 
-        for i in 0..points.len() {
+        for i in 0..points.len() - 1 {
             OccluderLine {
                 line: Line(points[i], points[(i + 1) % points.len()]),
                 color: self.color,
@@ -174,5 +174,12 @@ impl Geometry<LineTag> for OccluderCircle {
             }
             .write(elements, vertices);
         }
+
+        OccluderLine {
+            line: Line(points[0], points[points.len() - 1]),
+            color: self.color,
+            ignore_light_index: self.ignore_light_index,
+        }
+        .write(elements, vertices);
     }
 }

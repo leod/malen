@@ -109,7 +109,7 @@ impl State {
         for _ in 0..100 {
             state.add_wall();
         }
-        for _ in 0..150 {
+        for _ in 0..100 {
             state.add_enemy();
         }
         for _ in 0..50 {
@@ -173,7 +173,7 @@ impl State {
         let enemy = Enemy {
             pos,
             angle: rng.gen::<f32>() * std::f32::consts::PI,
-            rot: (0.05 + rng.gen::<f32>() * 0.3) * std::f32::consts::PI,
+            rot: (0.05 + rng.gen::<f32>() * 0.15) * std::f32::consts::PI,
         };
 
         if !self.shape_overlap(&enemy.shape()) {

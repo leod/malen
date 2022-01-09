@@ -201,30 +201,30 @@ impl Game {
                 circle: enemy.circle(),
                 angle: 0.0,
                 z: 0.0,
-                num_segments: 64,
+                num_segments: 16,
                 color: Color4::from_u8(255, 255, 255, 255),
             });
 
             self.occluder_batch.push(OccluderCircle {
                 circle: enemy.circle(),
                 angle: 0.0,
-                num_segments: 16,
+                num_segments: 8,
                 color: color,
                 ignore_light_index: Some(self.lights.len() as u32),
             });
             self.lights.push(Light {
                 position: enemy.pos,
-                radius: 800.0,
+                radius: 950.0,
                 angle: enemy.angle,
-                angle_size: std::f32::consts::PI / 2.5,
-                start: 13.0,
+                angle_size: std::f32::consts::PI / 4.0,
+                start: 18.0,
                 //color: color.scale(0.5),
-                color: Color3::from_u8(70, 70, 70).to_linear().scale(2.0),
+                color: Color3::from_u8(70, 70, 70).to_linear().scale(10.0),
             });
         }
 
         for ball in &self.state.balls {
-            let color = Color3::from_u8(240, 101, 67).to_linear();
+            let color = Color3::from_u8(134, 187, 189).to_linear();
             self.shaded_color_batch.push(ColorCircle {
                 circle: ball.circle(),
                 angle: 0.0,
