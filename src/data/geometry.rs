@@ -2,7 +2,7 @@ use nalgebra::Point3;
 
 use crate::{
     gl::{PrimitiveMode, Vertex},
-    math::{Line, Circle},
+    math::{Circle, Line},
     Color4, Rect, RotatedRect,
 };
 
