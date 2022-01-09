@@ -57,13 +57,13 @@ impl Game {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let texture = Texture::load(
             context.gl(),
-            "resources/Brick_03.png",
+            "resources/Ground_03.png",
             TextureParams::default(),
         )
         .await?;
         let normal_map = Texture::load(
             context.gl(),
-            "resources/Brick_03_Nrm.png",
+            "resources/Ground_03_Nrm.png",
             TextureParams::default(),
         )
         .await?;
@@ -208,18 +208,18 @@ impl Game {
             self.occluder_batch.push(OccluderCircle {
                 circle: enemy.circle(),
                 angle: 0.0,
-                num_segments: 8,
+                num_segments: 16,
                 color: color,
                 ignore_light_index: Some(self.lights.len() as u32),
             });
             self.lights.push(Light {
                 position: enemy.pos,
-                radius: 950.0,
+                radius: 700.0,
                 angle: enemy.angle,
-                angle_size: std::f32::consts::PI / 4.0,
+                angle_size: std::f32::consts::PI / 3.0,
                 start: 18.0,
                 //color: color.scale(0.5),
-                color: Color3::from_u8(70, 70, 70).to_linear().scale(10.0),
+                color: Color3::from_u8(70, 70, 70).to_linear().scale(6.0),
             });
         }
 
