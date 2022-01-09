@@ -8,7 +8,7 @@ use crate::{
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use super::{data::LightAreaVertex, LightPipelineParams};
+use super::{light_area::LightAreaVertex, LightPipelineParams};
 
 pub(super) const VISIBILITY_SOURCE: &str = r#"
 float visibility(

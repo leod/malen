@@ -1,5 +1,6 @@
 mod color_pass;
-mod data;
+mod def;
+mod light_area;
 mod occluder;
 mod occluder_batch;
 mod pipeline;
@@ -7,7 +8,7 @@ mod screen_light_pass;
 mod shadow_map_pass;
 
 pub use color_pass::ColorPass;
-pub use data::{GlobalLightParams, GlobalLightParamsBlock, Light};
+pub use def::{GlobalLightParams, GlobalLightParamsBlock, Light};
 pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,
 };
