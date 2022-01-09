@@ -131,7 +131,7 @@ impl RotatedRect {
         RotatedRect {
             center: self.center,
             size: self.size,
-            angle,
+            angle: self.angle + angle,
         }
     }
 
