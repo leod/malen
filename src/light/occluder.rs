@@ -6,9 +6,9 @@ use bytemuck_derive::{Pod, Zeroable};
 use crate::{
     attributes,
     data::{Geometry, LineTag},
+    geom::{Circle, Line, Rect, RotatedRect},
     gl::{Attribute, Vertex},
-    math::{Circle, Line},
-    Color3, Rect, RotatedRect,
+    Color3,
 };
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]

@@ -10,16 +10,16 @@ use malen::{
         ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
         InstanceBatch, Mesh, SpriteBatch, TriangleTag,
     },
+    geom::{Circle, Rect},
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch,
         OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
-    math::Circle,
     pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
     text::{Font, Text, TextBatch},
-    CanvasSizeConfig, Color3, Color4, Config, Context, FrameError, InitError, Key, Rect,
+    CanvasSizeConfig, Color3, Color4, Config, Context, FrameError, InitError, Key,
 };
 
 mod state;

@@ -1,7 +1,7 @@
 use std::{ops::Range, rc::Rc};
 
 use crate::gl::{
-    self, DrawUnit, ElementBuffer, PrimitiveMode, Vertex, VertexArray, VertexBuffer, VertexDecls,
+    self, DrawUnit, ElementBuffer, PrimitiveMode, Vertex, VertexArray, VertexBuffer,
 };
 
 use super::{Geometry, GeometryBatch, PrimitiveTag};

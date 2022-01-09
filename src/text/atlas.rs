@@ -8,11 +8,11 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
+    geom::Rect,
     gl::{
         self, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
         TextureValueType, TextureWrap,
     },
-    Rect,
 };
 
 /// A shelf has a fixed height and grows in width as more glyphs are added.

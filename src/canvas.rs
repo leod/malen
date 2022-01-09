@@ -7,7 +7,7 @@ use glow::HasContext;
 use nalgebra::{Point2, Vector2};
 
 use crate::input::EventHandlers;
-use crate::{error::InitError, gl, util, Color4, Event, Screen};
+use crate::{error::InitError, geom::Screen, gl, util, Color4, Event};
 
 #[derive(Debug, Clone)]
 pub struct CanvasCaps {

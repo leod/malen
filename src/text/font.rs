@@ -10,9 +10,10 @@ use thiserror::Error;
 use super::atlas::Atlas;
 use crate::{
     data::{ColorSprite, ColorSpriteBatch},
+    geom::Rect,
     gl::{self, Blend, DrawParams, NewTextureError, Texture, UniformBuffer},
     pass::{ColorSpritePass, MatricesBlock},
-    util, Color4, Context, Rect,
+    util, Color4, Context,
 };
 
 #[derive(Error, Debug)]
