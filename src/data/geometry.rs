@@ -1,9 +1,9 @@
 use nalgebra::Point3;
 
 use crate::{
+    geom::{Circle, Line, Rect, RotatedRect},
     gl::{PrimitiveMode, Vertex},
-    math::{Circle, Line},
-    Color4, Rect, RotatedRect,
+    Color4,
 };
 
 use super::{ColorSpriteVertex, ColorVertex, SpriteVertex};

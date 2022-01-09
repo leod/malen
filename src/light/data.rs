@@ -7,8 +7,9 @@ use crevice::{glsl::GlslStruct, std140::AsStd140};
 use crate::{
     attributes,
     data::{quad_triangle_indices, Geometry, TriangleTag},
+    geom::Rect,
     gl::{Attribute, UniformBlock, Vertex},
-    Color3, Rect,
+    Color3,
 };
 
 #[derive(Debug, Clone)]

@@ -1,6 +1,5 @@
 mod batch;
 mod buffer;
-mod circle;
 mod geometry;
 mod mesh;
 mod vertex;

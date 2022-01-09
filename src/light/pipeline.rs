@@ -18,7 +18,7 @@ use crate::{
 };
 
 use super::{
-    data::{LightAreaVertex, LightCircleSegment, LightRect},
+    data::{LightAreaVertex, LightCircleSegment},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,

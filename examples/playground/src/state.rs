@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 use malen::{
-    math::{shape_shape_overlap, Circle, Shape},
-    Camera, InputState, Key, Rect, RotatedRect, Screen,
+    geom::{shape_shape_overlap, Circle, Shape, Rect, RotatedRect, Screen, Camera},
+    InputState, Key,
 };
 use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
@@ -74,10 +74,6 @@ impl Player {
             size: Vector2::new(PLAYER_SIZE, PLAYER_SIZE),
             angle: self.angle,
         }
-    }
-
-    pub fn shape(&self) -> Shape {
-        Shape::RotatedRect(self.rotated_rect())
     }
 }
 
