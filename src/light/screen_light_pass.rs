@@ -111,7 +111,7 @@ void main() {
     vec3 normal_value = texture(screen_normals, v_screen_pos * 0.5 + 0.5).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
 
-    float scale = normal_value != vec3(0.0) ? max(dot(-normalize(v_delta), normalize(normal.xy)), 0.0) : 1.0;
+    float scale = normal_value != vec3(0.0) ? max(dot(normalize(v_delta), normalize(normal.xy)), 0.0) : 1.0;
 
     vec3 color = v_light_color *
         scale *
