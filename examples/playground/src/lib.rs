@@ -145,7 +145,7 @@ impl Game {
                 z: 0.2,
             });*/
             let color = Color3::from_u8(88, 80, 74).to_linear();
-            self.color_batch.push(ColorRect {
+            self.shaded_color_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
                 color: color.to_color4(),
@@ -171,7 +171,7 @@ impl Game {
                 z: 0.3,
                 ..ColorInstance::default()
             });*/
-            self.color_batch.push(ColorCircle {
+            self.shaded_color_batch.push(ColorCircle {
                 circle: enemy.circle(),
                 angle: enemy.angle,
                 z: 0.3,
@@ -206,7 +206,7 @@ impl Game {
 
         for ball in &self.state.balls {
             let color = Color3::from_u8(240, 101, 67).to_linear();
-            self.color_batch.push(ColorCircle {
+            self.shaded_color_batch.push(ColorCircle {
                 circle: ball.circle(),
                 angle: 0.0,
                 z: 0.3,
@@ -230,7 +230,7 @@ impl Game {
         }
 
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        self.color_batch.push(ColorRotatedRect {
+        self.shaded_color_batch.push(ColorRotatedRect {
             rect: self.state.player.rotated_rect(),
             z: 0.4,
             color: color.to_color4(),
@@ -281,19 +281,14 @@ impl Game {
         context.clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
 
         self.light_pipeline
-            .build_screen_light(
-                &self.camera_matrices,
-                GlobalLightParams {
-                    ambient: Color3::new(0.3, 0.3, 0.3),
-                },
-                &self.lights,
-            )?
+            .geometry_phase(&self.camera_matrices)?
+            .draw_geometry_colors(self.shaded_color_batch.draw_unit())
+            .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
-            .finish_screen_light()
-            //.draw_occluder_glow(&mut self.occluder_batch)
-            .draw_shaded_colors(self.shaded_color_batch.draw_unit(), &DrawParams::default())
-            .draw_shaded_colors(self.color_batch.draw_unit(), &DrawParams::default())
-            .finish();
+            .build_screen_light()
+            .compose(GlobalLightParams {
+                ambient: Color3::new(0.05, 0.05, 0.05),
+            });
 
         /*context.color_pass().draw(
             &self.camera_matrices,
@@ -332,11 +327,15 @@ impl Game {
 
         if self.show_textures {
             context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
+                Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
                 &self.light_pipeline.shadow_map(),
             )?;
             context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
+                Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
+                &self.light_pipeline.screen_albedo(),
+            )?;
+            context.draw_debug_texture(
+                Rect::from_top_left(Point2::new(10.0, 510.0), Vector2::new(320.0, 240.0)),
                 &self.light_pipeline.screen_light(),
             )?;
         }
