@@ -57,13 +57,13 @@ impl Game {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let texture = Texture::load(
             context.gl(),
-            "resources/concrete1-dif-1024.png",
+            "resources/Brick_03.png",
             TextureParams::default(),
         )
         .await?;
         let normal_map = Texture::load(
             context.gl(),
-            "resources/concrete1-nor-1024.png",
+            "resources/Brick_03_Nrm.png",
             TextureParams::default(),
         )
         .await?;
@@ -152,7 +152,7 @@ impl Game {
             },
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
-                self.texture.size().cast::<f32>() * 5.0,
+                self.texture.size().cast::<f32>() * 20.0,
             ),
             z: 0.8,
         });
