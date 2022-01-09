@@ -57,13 +57,13 @@ impl Game {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let texture = Texture::load(
             context.gl(),
-            "resources/Brickwork_001/Brickwork_001_Diffuse.png",
+            "resources/concrete1-dif-1024.png",
             TextureParams::default(),
         )
         .await?;
         let normal_map = Texture::load(
             context.gl(),
-            "resources/Brickwork_001/Brickwork_001_Normal.png",
+            "resources/concrete1-nor-1024.png",
             TextureParams::default(),
         )
         .await?;
@@ -152,7 +152,7 @@ impl Game {
             },
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
-                self.texture.size().cast::<f32>() * 10.0,
+                self.texture.size().cast::<f32>() * 5.0,
             ),
             z: 0.8,
         });
@@ -219,7 +219,7 @@ impl Game {
                 angle_size: std::f32::consts::PI / 2.5,
                 start: 13.0,
                 //color: color.scale(0.5),
-                color: Color3::from_u8(44, 110, 73).to_linear().scale(2.0),
+                color: Color3::from_u8(70, 70, 70).to_linear().scale(2.0),
             });
         }
 
@@ -268,9 +268,9 @@ impl Game {
             position: self.state.player.pos,
             radius: 1200.0,
             angle: self.state.player.angle,
-            angle_size: std::f32::consts::PI / 8.0,
+            angle_size: std::f32::consts::PI / 6.0,
             start: 22.0,
-            color: Color3::from_u8(134, 187, 189).to_linear().scale(5.0),
+            color: Color3::from_u8(150, 150, 150).to_linear().scale(5.0),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
