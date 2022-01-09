@@ -45,6 +45,8 @@ struct Game {
     light_pipeline: LightPipeline,
     occluder_batch: OccluderBatch,
     lights: Vec<Light>,
+
+    show_textures: bool,
 }
 
 impl Game {
@@ -108,6 +110,7 @@ impl Game {
             light_pipeline,
             occluder_batch,
             lights,
+            show_textures: false,
         })
     }
 
@@ -328,14 +331,16 @@ impl Game {
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        /*context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
-            &self.light_pipeline.shadow_map(),
-        )?;
-        context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
-            &self.light_pipeline.screen_light(),
-        )?;*/
+        if self.show_textures {
+            context.draw_debug_texture(
+                Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(640.0, 480.0)),
+                &self.light_pipeline.shadow_map(),
+            )?;
+            context.draw_debug_texture(
+                Rect::from_top_left(Point2::new(10.0, 500.0), Vector2::new(640.0, 480.0)),
+                &self.light_pipeline.screen_light(),
+            )?;
+        }
 
         Ok(())
     }
@@ -384,6 +389,9 @@ pub async fn main() {
                     log::info!("Profiling:\n{}", coarse_prof::to_string());
                     log::info!("Frame timer: {:?}", draw_timer.timing_info());
                     show_profiling = !show_profiling;
+                }
+                KeyPressed(Key::U) => {
+                    game.show_textures = !game.show_textures;
                 }
                 KeyPressed(Key::R) => {
                     coarse_prof::reset();
