@@ -41,8 +41,8 @@ float visibility(
     float back2 = texture(shadow_map, tex_coords - 1.0 * texel).g * light_radius;
     float back3 = texture(shadow_map, tex_coords + 1.0 * texel).g * light_radius;
 
-    float front_glow = 4.0;
-    float back_glow = 40.0;
+    float front_glow = 5.0;
+    float back_glow = 20.0;
     float front = min(min(front1, front2), front3) - front_glow;
     float back = min(min(back1, back2), back3);
 
@@ -113,7 +113,7 @@ void main() {
 
     float scale = normal_value == vec3(0.0) ?
         1.0 :
-        max(dot(normalize(vec3(v_delta, 0.0) + vec3(0, 0, 1)), normalize(normal)), 0.0);
+        max(dot(normalize(vec3(-v_delta, 0.0) + vec3(0, 0, 100)), normalize(normal)), 0.0);
 
     vec3 color = v_light_color *
         scale *
