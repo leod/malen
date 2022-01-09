@@ -49,43 +49,31 @@ float visibility(
     float v_front = step(dist_to_light, front);
     float v_back = step(dist_to_light, back);
 
-    float fall_on = (
-        1.0 + sin(
-            PI * (
-                3.0/2.0 + clamp(
-                    dist_to_light / light_start - 1.0, 0.0, 1.0
-                )
-            )
-        )
-    ) / 2.0;
+    float fall_on = (1.0 + sin(PI * (3.0/2.0 +
+        clamp(dist_to_light / light_start - 1.0, 0.0, 1.0)))) / 2.0;
+
     float front_light = fall_on * pow(1.0 - dist_to_light / light_radius, 2.0);
 
     float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
 
-    //float angle_fall_off_size = 200.0 / dist_to_light; //PI / 8.0;
     float angle_fall_off_size = PI / 20.0;
     if (angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
         float t = (angle_diff * 2.0 - light_angle_size + angle_fall_off_size) / angle_fall_off_size;
         front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
-        //front_light *= 0.5;
     }
-
-    /*angle_fall_off_size = PI / 40.0;
-    if (angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
-        float t = (angle_diff * 2.0 - light_angle_size + angle_fall_off_size) / angle_fall_off_size;
-        //front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
-        front_light *= 0.5;
-    }*/
 
     float inner_light = front_light;
     float to_front = dist_to_light - front;
     if (to_front < front_glow) {
         inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
     } else {
+        float glow_size = 40.0; //min(40.0, back - front);
         inner_light *= 2.0 * pow(
-            1.0 - clamp((to_front - front_glow) / min(40.0, back - front), 0.0, 1.0), 5.0);
+            1.0 - clamp((to_front - front_glow) / glow_size, 0.0, 1.0),
+            5.0);
+        //inner_light *= 2.0 * max(0.0, 1.0 - (to_front - front_glow) / glow_size);
     } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
