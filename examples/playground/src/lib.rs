@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use malen::{
     data::{
         ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
-        InstanceBatch, Mesh, SpriteBatch, TriangleTag,
+        InstanceBatch, Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     geom::{Circle, Rect},
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
@@ -30,7 +30,8 @@ struct Game {
     state: State,
 
     font: Font,
-    wall_texture: Texture,
+    texture: Texture,
+    normal_map: Texture,
 
     camera_matrices: UniformBuffer<MatricesBlock>,
     screen_matrices: UniformBuffer<MatricesBlock>,
@@ -38,7 +39,7 @@ struct Game {
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
     shaded_color_batch: ColorTriangleBatch,
-    wall_sprite_batch: SpriteBatch,
+    shaded_sprite_batch: SpriteBatch,
     outline_batch: ColorLineBatch,
     text_batch: TextBatch,
 
@@ -54,9 +55,15 @@ impl Game {
         let state = State::new();
 
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
-        let wall_texture = Texture::load(
+        let texture = Texture::load(
             context.gl(),
-            "resources/04muroch256.png",
+            "resources/Brickwork_001/Brickwork_001_Diffuse.png",
+            TextureParams::default(),
+        )
+        .await?;
+        let normal_map = Texture::load(
+            context.gl(),
+            "resources/Brickwork_001/Brickwork_001_Normal.png",
             TextureParams::default(),
         )
         .await?;
@@ -81,7 +88,7 @@ impl Game {
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let shaded_color_batch = ColorTriangleBatch::new(context.gl())?;
-        let wall_sprite_batch = SpriteBatch::new(context.gl())?;
+        let shaded_sprite_batch = SpriteBatch::new(context.gl())?;
         let outline_batch = ColorLineBatch::new(context.gl())?;
         let text_batch = TextBatch::new(context.gl())?;
 
@@ -98,13 +105,14 @@ impl Game {
         Ok(Game {
             state,
             font,
-            wall_texture,
+            texture,
+            normal_map,
             camera_matrices,
             screen_matrices,
             circle_instances,
             color_batch,
             shaded_color_batch,
-            wall_sprite_batch,
+            shaded_sprite_batch,
             outline_batch,
             text_batch,
             light_pipeline,
@@ -120,13 +128,13 @@ impl Game {
         self.circle_instances.clear();
         self.color_batch.clear();
         self.shaded_color_batch.clear();
-        self.wall_sprite_batch.clear();
+        self.shaded_sprite_batch.clear();
         self.outline_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.lights.clear();
 
-        self.shaded_color_batch.push(ColorRect {
+        /*self.shaded_color_batch.push(ColorRect {
             rect: Rect {
                 center: Point2::origin(),
                 size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
@@ -136,12 +144,23 @@ impl Game {
                 .to_linear()
                 .scale(0.5)
                 .to_color4(),
+        });*/
+        self.shaded_sprite_batch.push(Sprite {
+            rect: Rect {
+                center: Point2::origin(),
+                size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
+            },
+            tex_rect: Rect::from_top_left(
+                Point2::origin(),
+                self.texture.size().cast::<f32>() * 10.0,
+            ),
+            z: 0.8,
         });
 
         for wall in &self.state.walls {
-            /*self.wall_sprite_batch.push(Sprite {
-                rect,
-                tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
+            /*self.shaded_sprite_batch.push(Sprite {
+                rect: wall.rect(),
+                tex_rect: wall.rect().scale(10.0),
                 z: 0.2,
             });*/
             let color = Color3::from_u8(88, 80, 74).to_linear();
@@ -283,6 +302,11 @@ impl Game {
         self.light_pipeline
             .geometry_phase(&self.camera_matrices)?
             .draw_geometry_colors(self.shaded_color_batch.draw_unit())
+            .draw_geometry_sprite_normals(
+                &self.texture,
+                &self.normal_map,
+                self.shaded_sprite_batch.draw_unit(),
+            )?
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
@@ -298,15 +322,6 @@ impl Game {
                 ..DrawParams::default()
             },
         );*/
-        context.sprite_pass().draw(
-            &self.camera_matrices,
-            &self.wall_texture,
-            self.wall_sprite_batch.draw_unit(),
-            &DrawParams {
-                depth_test: Some(DepthTest::default()),
-                ..DrawParams::default()
-            },
-        )?;
         context.instanced_color_pass().draw(
             &self.camera_matrices,
             self.circle_instances.draw_unit(),
@@ -336,6 +351,10 @@ impl Game {
             )?;
             context.draw_debug_texture(
                 Rect::from_top_left(Point2::new(10.0, 510.0), Vector2::new(320.0, 240.0)),
+                &self.light_pipeline.screen_normals(),
+            )?;
+            context.draw_debug_texture(
+                Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
                 &self.light_pipeline.screen_light(),
             )?;
         }

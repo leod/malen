@@ -24,7 +24,7 @@ impl SpritePass {
             ],
             samplers: ["sprite"],
             vertex_source: r#"
-                out vec2 v_tex_coords;
+                out vec2 v_uv;
 
                 void main() {
                     vec3 position = matrices.projection
@@ -33,16 +33,15 @@ impl SpritePass {
 
                     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-                    v_tex_coords = a_tex_coords;
+                    v_uv = a_tex_coords / sprite_info.size;
                 }
             "#,
             fragment_source: r#"
-                in vec2 v_tex_coords;
+                in vec2 v_uv;
                 out vec4 f_color;
 
                 void main() {
-                    vec2 uv = v_tex_coords / sprite_info.size;
-                    f_color = texture(sprite, uv);
+                    f_color = texture(sprite, v_uv);
                 }
             "#,
         };

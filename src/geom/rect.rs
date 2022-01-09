@@ -109,6 +109,11 @@ impl Rect {
         self.size += add;
         self
     }
+
+    pub fn scale(mut self, scale: f32) -> Rect {
+        self.size *= scale;
+        self
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

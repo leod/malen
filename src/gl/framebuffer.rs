@@ -65,12 +65,14 @@ impl Framebuffer {
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(id));
         }
 
+        let mut draw_buffers = Vec::new();
         for (i, texture) in textures
             .iter()
             .filter(|t| !t.params().value_type.is_depth())
             .enumerate()
         {
             let attachment = glow::COLOR_ATTACHMENT0 + i as u32;
+            draw_buffers.push(attachment);
 
             unsafe {
                 gl.framebuffer_texture_2d(
@@ -98,6 +100,7 @@ impl Framebuffer {
         }
 
         unsafe {
+            gl.draw_buffers(&draw_buffers);
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 

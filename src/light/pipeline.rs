@@ -7,7 +7,7 @@ use nalgebra::{Vector2, Vector3};
 use thiserror::Error;
 
 use crate::{
-    data::{ColorVertex, TriangleBatch},
+    data::{ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
         self, DrawParams, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError,
         Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
@@ -20,6 +20,7 @@ use crate::{
 use super::{
     compose_pass::ComposePass,
     geometry_color_pass::GeometryColorPass,
+    geometry_sprite_normal_pass::GeometrySpriteNormalPass,
     light_area::{LightAreaVertex, LightCircleSegment},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
@@ -45,6 +46,7 @@ pub struct LightPipeline {
     screen_light: Framebuffer,
 
     geometry_color_pass: GeometryColorPass,
+    geometry_sprite_normal_pass: GeometrySpriteNormalPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     compose_pass: ComposePass,
@@ -96,6 +98,7 @@ impl LightPipeline {
         let screen_light = new_screen_framebuffer(canvas.clone(), 1, false)?;
 
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
+        let geometry_sprite_normal_pass = GeometrySpriteNormalPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
         let compose_pass = ComposePass::new(context.gl())?;
@@ -110,6 +113,7 @@ impl LightPipeline {
             shadow_map,
             screen_light,
             geometry_color_pass,
+            geometry_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
             compose_pass,
@@ -126,6 +130,10 @@ impl LightPipeline {
 
     pub fn screen_albedo(&self) -> &Texture {
         &self.screen_geometry.textures()[0]
+    }
+
+    pub fn screen_normals(&self) -> &Texture {
+        &self.screen_geometry.textures()[1]
     }
 
     pub fn screen_light(&self) -> &Texture {
@@ -191,6 +199,27 @@ impl<'a> GeometryPhase<'a> {
         });
 
         self
+    }
+
+    pub fn draw_geometry_sprite_normals<E>(
+        self,
+        texture: &Texture,
+        normal_map: &Texture,
+        draw_unit: DrawUnit<SpriteVertex, E>,
+    ) -> Result<Self, FrameError>
+    where
+        E: Element,
+    {
+        gl::with_framebuffer(&self.pipeline.screen_geometry, || {
+            self.pipeline.geometry_sprite_normal_pass.draw(
+                self.input.matrices,
+                texture,
+                normal_map,
+                draw_unit,
+            )
+        })?;
+
+        Ok(self)
     }
 
     pub fn shadow_map_phase(self, lights: &'a [Light]) -> ShadowMapPhase<'a> {
@@ -259,6 +288,7 @@ impl<'a> ShadowMapPhase<'a> {
             self.pipeline.screen_light_pass.draw(
                 self.input.matrices,
                 &self.pipeline.shadow_map.textures()[0],
+                &self.pipeline.screen_geometry.textures()[1],
                 self.pipeline.light_area_batch.draw_unit(),
             );
         });

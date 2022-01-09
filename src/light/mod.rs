@@ -2,6 +2,7 @@ mod color_pass;
 mod compose_pass;
 mod def;
 mod geometry_color_pass;
+mod geometry_sprite_normal_pass;
 mod light_area;
 mod occluder;
 mod occluder_batch;

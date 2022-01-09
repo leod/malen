@@ -84,6 +84,7 @@ const VERTEX_SOURCE: &str = r#"
 flat out vec4 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
+out vec2 v_screen_pos;
 out vec2 v_delta;
 
 void main() {
@@ -93,6 +94,7 @@ void main() {
 
     vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
     gl_Position = vec4(p.xy, 0.0, 1.0);
+    v_screen_pos = p.xy;
     v_delta = a_position.xy - a_light_position;
 }
 "#;
@@ -101,11 +103,18 @@ const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
+in vec2 v_screen_pos;
 in vec2 v_delta;
 out vec4 f_color;
 
 void main() {
+    vec3 normal_value = texture(screen_normals, v_screen_pos * 0.5 + 0.5).xyz;
+    vec3 normal = normal_value * 2.0 - 1.0;
+
+    float scale = normal_value != vec3(0.0) ? max(dot(-normalize(v_delta), normalize(normal.xy)), 0.0) : 1.0;
+
     vec3 color = v_light_color *
+        scale *
         visibility(
             shadow_map,
             v_light_offset,
@@ -117,14 +126,14 @@ void main() {
 "#;
 
 pub struct ScreenLightPass {
-    program: Program<MatricesBlock, LightAreaVertex, 1>,
+    program: Program<MatricesBlock, LightAreaVertex, 2>,
 }
 
 impl ScreenLightPass {
     pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
             uniform_blocks: [("matrices", MATRICES_BLOCK_BINDING)],
-            samplers: ["shadow_map"],
+            samplers: ["shadow_map", "screen_normals"],
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),
             fragment_source: &format!(
@@ -145,12 +154,16 @@ impl ScreenLightPass {
         &self,
         matrices: &UniformBuffer<MatricesBlock>,
         shadow_map: &Texture,
+        screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,
     ) {
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("light::ScreenLightPass::draw");
+
         gl::draw(
             &self.program,
             matrices,
-            [shadow_map],
+            [shadow_map, screen_normals],
             draw_unit,
             &DrawParams {
                 blend: Some(Blend {
