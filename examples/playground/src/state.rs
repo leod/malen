@@ -109,7 +109,7 @@ impl State {
         for _ in 0..100 {
             state.add_wall();
         }
-        for _ in 0..100 {
+        for _ in 0..150 {
             state.add_enemy();
         }
         for _ in 0..50 {
