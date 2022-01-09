@@ -42,6 +42,12 @@ There are many different installation instructions flying around. This one actua
 
 ## Resource Credits
 
+- `Ground_*.png`
+
+   Author: Cethiel
+
+   URL: https://opengameart.org/content/tileable-bricks-ground-textures-set-1
+
 - `Brick_*.png`
 
    Author: Cethiel
