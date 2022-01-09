@@ -3,8 +3,9 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
-    data::{ColorVertex, Mesh, SpriteVertex, Sprite, SpriteBatch},
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer}, geom::Rect,
+    data::{ColorVertex, Mesh, Sprite, SpriteBatch, SpriteVertex},
+    geom::Rect,
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer},
 };
 
 use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
@@ -40,26 +41,31 @@ pub struct ComposePass {
 
 impl ComposePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let screen_rect = SpriteBatch::from_geometry(gl.clone(), Sprite {
-            rect: Rect {
-                center: Point2::origin(),
-                size: Vector2::new(2.0, 2.0),
+        let screen_rect = SpriteBatch::from_geometry(
+            gl.clone(),
+            Sprite {
+                rect: Rect {
+                    center: Point2::origin(),
+                    size: Vector2::new(2.0, 2.0),
+                },
+                z: 0.0,
+                tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
             },
-            z: 0.0,
-            tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
-        })?.into_mesh();
-         
+        )?
+        .into_mesh();
+
         let program_def = ProgramDef {
-            uniform_blocks: [
-                ("global_light_params", 1),
-            ],
+            uniform_blocks: [("global_light_params", 1)],
             samplers: ["screen_albedo", "screen_light"],
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self { screen_rect, program })
+        Ok(Self {
+            screen_rect,
+            program,
+        })
     }
 
     pub fn draw(

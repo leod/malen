@@ -26,19 +26,19 @@ void main() {
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
-    in vec4 v_color;
-    in vec2 v_tex_coords;
-    out vec4 f_color;
+in vec4 v_color;
+in vec2 v_tex_coords;
+out vec4 f_color;
 
-    void main() {
-        vec3 light = texture(screen_light, v_tex_coords).rgb;
-        vec3 diffuse = (global_light_params.ambient + light) * v_color.rgb;
+void main() {
+    vec3 light = texture(screen_light, v_tex_coords).rgb;
+    vec3 diffuse = (global_light_params.ambient + light) * v_color.rgb;
 
-        f_color = vec4(
-            pow(diffuse, vec3(1.0 / 2.2)),
-            v_color.a
-        );
-    }
+    f_color = vec4(
+        pow(diffuse, vec3(1.0 / 2.2)),
+        v_color.a
+    );
+}
 "#;
 
 pub struct ColorPass {
