@@ -130,7 +130,7 @@ impl LightPipeline {
             self.screen_light = new_screen_light(self.canvas.clone())?;
         }
 
-        self.light_instances.set_data(&lights);
+        self.light_instances.set_data(lights);
 
         self.global_light_params
             .set_data(global_light_params.into());
@@ -184,7 +184,7 @@ impl<'a> BuildScreenLightPipelineStep<'a> {
                     .enumerate()
                     .map(|(light_index, light)| LightCircleSegment {
                         light_index: light_index as i32,
-                        light: light.clone(),
+                        light: *light,
                         num_segments: 16,
                     }),
             );

@@ -126,7 +126,7 @@ where
                 log::info!(
                     "{}",
                     shader_source
-                        .split("\n")
+                        .split('\n')
                         .enumerate()
                         .map(|(i, line)| format!("{}: {}", i + 1, line))
                         .collect::<Vec<String>>()
