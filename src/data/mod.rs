@@ -11,8 +11,8 @@ pub use batch::{
 };
 pub use buffer::GeometryBuffer;
 pub use geometry::{
-    quad_line_indices, quad_triangle_indices, ColorLine, ColorRect, ColorRotatedRect, ColorSprite,
-    Geometry, LineTag, PrimitiveTag, Sprite, TriangleTag, ColorCircle
+    quad_line_indices, quad_triangle_indices, ColorCircle, ColorLine, ColorRect, ColorRotatedRect,
+    ColorSprite, Geometry, LineTag, PrimitiveTag, Sprite, TriangleTag,
 };
 pub use mesh::Mesh;
 pub use vertex::{ColorSpriteVertex, ColorVertex, SpriteVertex};

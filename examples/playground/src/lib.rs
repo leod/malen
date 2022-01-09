@@ -3,13 +3,12 @@ use std::{collections::VecDeque, time::Duration};
 use coarse_prof::profile;
 use instant::Instant;
 use nalgebra::{Matrix3, Point2, Vector2};
-use rand::{Rng, prelude::SliceRandom};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, Sprite, SpriteBatch, TriangleTag, ColorLineBatch,
+        ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
+        InstanceBatch, Mesh, SpriteBatch, TriangleTag,
     },
     gl::{DepthTest, DrawParams, DrawTimer, Texture, TextureParams, UniformBuffer},
     light::{
@@ -20,163 +19,12 @@ use malen::{
     pass::{ColorInstance, MatricesBlock},
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotStyle},
     text::{Font, Text, TextBatch},
-    Camera, CanvasSizeConfig, Color3, Color4, Config, Context, FrameError, InitError, InputState,
-    Key, Rect, Screen,
+    CanvasSizeConfig, Color3, Color4, Config, Context, FrameError, InitError, Key, Rect,
 };
 
-struct Wall {
-    center: Point2<f32>,
-    size: Vector2<f32>,
-}
+mod state;
 
-struct Enemy {
-    pos: Point2<f32>,
-    angle: f32,
-    rot: f32,
-}
-
-struct Player {
-    pos: Point2<f32>,
-    angle: f32,
-}
-
-struct Ball {
-    pos: Point2<f32>,
-    radius: f32,
-}
-
-struct State {
-    walls: Vec<Wall>,
-    enemies: Vec<Enemy>,
-    balls: Vec<Ball>,
-    player: Player,
-    last_timestamp_secs: Option<f64>,
-}
-
-pub const MAP_SIZE: f32 = 2048.0;
-
-impl State {
-    pub fn new() -> Self {
-        let num_walls = 50;
-        let num_enemies = 50;
-        let num_balls = 50;
-
-        let mut rng = rand::thread_rng();
-        let walls = (0..num_walls)
-            .map(|_| {
-                let center = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-
-                let choice = rng.gen_range(0, 3);
-                let size = match choice {
-                    0 => {
-                        let x = rng.gen_range(50.0, 500.0);
-                        Vector2::new(x, x)
-                    }
-                    1 => Vector2::new(50.0, rng.gen_range(100.0, 1000.0)),
-                    2 => Vector2::new(rng.gen_range(100.0, 1000.0), 50.0),
-                    _ => unreachable!(),
-                };
-
-                Wall { center, size }
-            })
-            .collect();
-
-        let enemies = (0..num_enemies)
-            .map(|_| {
-                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-
-                Enemy {
-                    pos,
-                    angle: rng.gen::<f32>() * std::f32::consts::PI,
-                    rot: (0.05 + rng.gen::<f32>() * 0.3) * std::f32::consts::PI,
-                }
-            })
-            .collect();
-
-        let balls = (0..num_balls)
-            .map(|_| {
-                let pos = Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE
-                    - Vector2::new(1.0, 1.0) * MAP_SIZE;
-                let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
-
-                Ball {
-                    pos,
-                    radius,
-                }
-            })
-            .collect();
-
-
-        Self {
-            walls,
-            enemies,
-            balls,
-            player: Player {
-                pos: Point2::origin(),
-                angle: 0.0,
-            },
-            last_timestamp_secs: None,
-        }
-    }
-
-    pub fn camera(&self) -> Camera {
-        Camera {
-            center: self.player.pos,
-            zoom: 1.0,
-            angle: 0.0,
-        }
-    }
-
-    pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
-        profile!("update");
-
-        let dt_secs = self
-            .last_timestamp_secs
-            .map_or(0.0, |last_timestamp_secs| {
-                timestamp_secs - last_timestamp_secs
-            })
-            .max(0.0) as f32;
-        self.last_timestamp_secs = Some(timestamp_secs);
-
-        let mut player_dir = Vector2::zeros();
-        if input_state.key(Key::W) {
-            player_dir.y -= 1.0;
-        }
-        if input_state.key(Key::S) {
-            player_dir.y += 1.0;
-        }
-        if input_state.key(Key::A) {
-            player_dir.x -= 1.0;
-        }
-        if input_state.key(Key::D) {
-            player_dir.x += 1.0;
-        }
-        if player_dir.norm_squared() > 0.0 {
-            let player_dir = player_dir.normalize();
-            self.player.pos += dt_secs * 500.0 * player_dir;
-        }
-
-        self.player.angle = {
-            let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
-            let mouse_world_pos = self
-                .camera()
-                .inverse_matrix(screen)
-                .transform_point(&mouse_logical_pos);
-            let offset = mouse_world_pos - self.player.pos;
-            offset.y.atan2(offset.x)
-        };
-
-        for (i, enemy) in self.enemies.iter_mut().enumerate() {
-            let mut delta = enemy.rot * dt_secs;
-            if i % 2 == 0 {
-                delta *= -1.0;
-            }
-            enemy.angle += delta;
-        }
-    }
-}
+use state::State;
 
 struct Game {
     state: State,
@@ -278,7 +126,7 @@ impl Game {
         self.shaded_color_batch.push(ColorRect {
             rect: Rect {
                 center: Point2::origin(),
-                size: 2.0 * Vector2::new(MAP_SIZE, MAP_SIZE),
+                size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
             },
             z: 0.8,
             color: Color3::from_u8(183, 182, 193)
@@ -288,11 +136,6 @@ impl Game {
         });
 
         for wall in &self.state.walls {
-            let rect = Rect {
-                center: wall.center,
-                size: wall.size,
-            };
-
             /*self.wall_sprite_batch.push(Sprite {
                 rect,
                 tex_rect: Rect::from_top_left(Point2::origin(), wall.size),
@@ -300,17 +143,17 @@ impl Game {
             });*/
             let color = Color3::from_u8(88, 80, 74).to_linear();
             self.color_batch.push(ColorRect {
-                rect,
+                rect: wall.rect(),
                 z: 0.2,
                 color: color.to_color4(),
             });
             self.outline_batch.push(ColorRect {
-                rect,
+                rect: wall.rect(),
                 z: 0.2,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
             });
             self.occluder_batch.push(OccluderRect {
-                rect,
+                rect: wall.rect(),
                 color: Color3::from_u8(69, 157, 69),
                 ignore_light_index: None,
             });
@@ -326,20 +169,14 @@ impl Game {
                 ..ColorInstance::default()
             });*/
             self.color_batch.push(ColorCircle {
-                circle: Circle {
-                    center: enemy.pos,
-                    radius: 20.0,
-                },
+                circle: enemy.circle(),
                 angle: enemy.angle,
                 z: 0.3,
                 num_segments: 16,
                 color: color.to_color4(),
             });
             self.outline_batch.push(ColorCircle {
-                circle: Circle {
-                    center: enemy.pos,
-                    radius: 20.0,
-                },
+                circle: enemy.circle(),
                 angle: 0.0,
                 z: 0.0,
                 num_segments: 64,
@@ -347,10 +184,7 @@ impl Game {
             });
 
             self.occluder_batch.push(OccluderCircle {
-                circle: Circle {
-                    center: enemy.pos,
-                    radius: 20.0,
-                },
+                circle: enemy.circle(),
                 angle: 0.0,
                 num_segments: 16,
                 color: color,
@@ -370,20 +204,14 @@ impl Game {
         for ball in &self.state.balls {
             let color = Color3::from_u8(240, 101, 67).to_linear();
             self.color_batch.push(ColorCircle {
-                circle: Circle {
-                    center: ball.pos,
-                    radius: ball.radius,
-                },
+                circle: ball.circle(),
                 angle: 0.0,
                 z: 0.3,
                 num_segments: 64,
                 color: color.to_color4(),
             });
             self.outline_batch.push(ColorCircle {
-                circle: Circle {
-                    center: ball.pos,
-                    radius: ball.radius,
-                },
+                circle: ball.circle(),
                 angle: 0.0,
                 z: 0.0,
                 num_segments: 64,
@@ -391,10 +219,7 @@ impl Game {
             });
 
             self.occluder_batch.push(OccluderCircle {
-                circle: Circle {
-                    center: ball.pos,
-                    radius: ball.radius,
-                },
+                circle: ball.circle(),
                 angle: 0.0,
                 num_segments: 16,
                 color: color,
@@ -403,24 +228,18 @@ impl Game {
         }
 
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        let player_rect = Rect {
-            center: self.state.player.pos,
-            size: Vector2::new(50.0, 50.0),
-        }
-        .rotate(self.state.player.angle);
-
         self.color_batch.push(ColorRotatedRect {
-            rect: player_rect,
+            rect: self.state.player.rotated_rect(),
             z: 0.4,
             color: color.to_color4(),
         });
         self.outline_batch.push(ColorRotatedRect {
-            rect: player_rect,
+            rect: self.state.player.rotated_rect(),
             z: 0.4,
             color: Color4::new(1.0, 1.0, 1.0, 1.0),
         });
         self.occluder_batch.push(OccluderRotatedRect {
-            rect: player_rect,
+            rect: self.state.player.rotated_rect(),
             color: color,
             ignore_light_index: Some(self.lights.len() as u32),
         });
