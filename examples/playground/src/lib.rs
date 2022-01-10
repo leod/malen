@@ -186,7 +186,10 @@ impl Game {
             self.shaded_sprite_batch2.push(Sprite {
                 rect: wall.rect(),
                 z: 0.2,
-                tex_rect: Rect::from_top_left(Point2::origin(), (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>())),
+                tex_rect: Rect::from_top_left(
+                    Point2::origin(),
+                    (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>()),
+                ),
             });
             let color = Color3::from_u8(88, 80, 74).to_linear();
             /*self.shaded_color_batch.push(ColorRect {
@@ -194,11 +197,11 @@ impl Game {
                 z: 0.2,
                 color: color.to_color4(),
             });*/
-            self.outline_batch.push(ColorRect {
+            /*self.outline_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
-            });
+            });*/
             self.occluder_batch.push(OccluderRect {
                 rect: wall.rect(),
                 color: Color3::from_u8(69, 157, 69),
@@ -244,7 +247,7 @@ impl Game {
                 angle_size: std::f32::consts::PI / 3.0,
                 start: 18.0,
                 //color: color.scale(0.5),
-                color: Color3::from_u8(70, 70, 70).to_linear().scale(6.0),
+                color: Color3::from_u8(70, 70, 70).to_linear().scale(40.0),
             });
         }
 
@@ -295,7 +298,7 @@ impl Game {
             angle: self.state.player.angle,
             angle_size: std::f32::consts::PI / 6.0,
             start: 22.0,
-            color: Color3::from_u8(150, 150, 150).to_linear().scale(5.0),
+            color: Color3::from_u8(150, 150, 150).to_linear().scale(30.0),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
@@ -341,7 +344,7 @@ impl Game {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.05, 0.05, 0.05),
+                ambient: Color3::new(0.2, 0.2, 0.2),
             });
 
         /*context.color_pass().draw(

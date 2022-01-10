@@ -113,7 +113,7 @@ void main() {
 
     float scale = normal_value == vec3(0.0) ?
         1.0 :
-        max(dot(normalize(vec3(-v_delta, 0.0) + vec3(0, 0, 100)), normalize(normal)), 0.0);
+        max(dot(normalize(vec3(-v_delta, 0.0) + vec3(0, 0, 10)), normalize(normal)), 0.0);
 
     vec3 color = v_light_color *
         scale *
