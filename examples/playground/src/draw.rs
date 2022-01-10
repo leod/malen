@@ -17,7 +17,7 @@ use malen::{
     Color3, Color4, Context, FrameError, InitError,
 };
 
-use crate::state::{self, Ball, Enemy, Player, State, Wall};
+use crate::state::{self, Ball, Enemy, Lamp, Player, State, Wall};
 
 pub struct Draw {
     font: Font,
@@ -149,6 +149,9 @@ impl Draw {
         self.lights.clear();
 
         self.render_floor();
+        for lamp in &state.lamps {
+            self.render_lamp(lamp);
+        }
         for wall in &state.walls {
             self.render_wall(wall);
         }
@@ -216,7 +219,7 @@ impl Draw {
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
             color: Color3::from_u8(69, 157, 69),
-            ignore_light_index: None,
+            ignore_light_index: wall.lamp_index.map(|index| index as u32),
         });
     }
 
@@ -284,6 +287,32 @@ impl Draw {
             num_segments: 64,
             color: color,
             ignore_light_index: None,
+        });
+    }
+
+    fn render_lamp(&mut self, lamp: &Lamp) {
+        let color = Color3::from_u8(254, 196, 127).to_linear();
+        self.shaded_color_batch.push(ColorCircle {
+            circle: lamp.circle(),
+            angle: 0.0,
+            z: 0.1,
+            num_segments: 64,
+            color: color.to_color4(),
+        });
+        self.outline_batch.push(ColorCircle {
+            circle: lamp.circle(),
+            angle: 0.0,
+            z: 0.0,
+            num_segments: 64,
+            color: Color4::from_u8(255, 255, 255, 255),
+        });
+        self.lights.push(Light {
+            position: lamp.pos,
+            radius: 700.0,
+            angle: lamp.light_angle,
+            angle_size: std::f32::consts::PI * 0.8,
+            start: 12.0,
+            color: color.scale(5.0),
         });
     }
 
