@@ -28,7 +28,7 @@ layout (location = 1) out vec4 f_normal;
 
 void main() {
     f_albedo = v_color;
-    f_normal = vec4(0.0, 0.0, 0.0, 1.0);
+    f_normal = (vec4(0.0, 0.0, 1.0, 1.0) + 1.0) / 2.0;
 }
 "#;
 
