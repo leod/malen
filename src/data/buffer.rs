@@ -50,12 +50,12 @@ where
     V: Vertex,
 {
     pub fn upload(&mut self, element_buffer: &ElementBuffer<u32>, vertex_buffer: &VertexBuffer<V>) {
-        #[cfg(feature = "coarse-prof")]
+        /*#[cfg(feature = "coarse-prof")]
         coarse_prof::profile_string_name!(format!(
             "<{}, {}>::upload",
             std::any::type_name::<P>().split("::").last().unwrap(),
             std::any::type_name::<V>().split("::").last().unwrap(),
-        ));
+        ));*/
 
         element_buffer.set_data(&self.elements);
         vertex_buffer.set_data(&self.vertices);
