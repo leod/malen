@@ -218,7 +218,7 @@ impl State {
             let line = lines.choose(&mut rng).unwrap();
             let normal = Vector2::new(line.1.y - line.0.y, line.0.x - line.1.x).normalize();
             let lamp = Lamp {
-                pos: line.0 + 0.5 * (line.1 - line.0) - normal * 20.0,
+                pos: line.0 + 0.5 * (line.1 - line.0) - normal * 25.0,
                 light_angle: normal.y.atan2(normal.x),
             };
             self.lamps.push(lamp);

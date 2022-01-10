@@ -167,17 +167,6 @@ impl Draw {
     }
 
     fn render_floor(&mut self) {
-        /*self.shaded_color_batch.push(ColorRect {
-            rect: Rect {
-                center: Point2::origin(),
-                size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
-            },
-            z: 0.8,
-            color: Color3::from_u8(183, 182, 193)
-                .to_linear()
-                .scale(0.5)
-                .to_color4(),
-        });*/
         self.shaded_sprite_batch.push(Sprite {
             rect: Rect {
                 center: Point2::origin(),
@@ -192,11 +181,6 @@ impl Draw {
     }
 
     fn render_wall(&mut self, wall: &Wall) {
-        /*self.shaded_sprite_batch.push(Sprite {
-            rect: wall.rect(),
-            tex_rect: wall.rect().scale(10.0),
-            z: 0.2,
-        });*/
         self.shaded_sprite_batch2.push(Sprite {
             rect: wall.rect(),
             z: 0.2,
@@ -205,12 +189,6 @@ impl Draw {
                 (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>()),
             ),
         });
-        //let color = Color3::from_u8(88, 80, 74).to_linear();
-        /*self.shaded_color_batch.push(ColorRect {
-            rect: wall.rect(),
-            z: 0.2,
-            color: color.to_color4(),
-        });*/
         /*self.outline_batch.push(ColorRect {
             rect: wall.rect(),
             z: 0.2,
@@ -239,14 +217,13 @@ impl Draw {
             num_segments: 16,
             color: color.to_color4(),
         });
-        self.outline_batch.push(ColorCircle {
+        /*self.outline_batch.push(ColorCircle {
             circle: enemy.circle(),
             angle: 0.0,
             z: 0.0,
             num_segments: 16,
             color: Color4::from_u8(255, 255, 255, 255),
-        });
-
+        });*/
         self.occluder_batch.push(OccluderCircle {
             circle: enemy.circle(),
             angle: 0.0,
@@ -256,11 +233,10 @@ impl Draw {
         });
         self.lights.push(Light {
             position: enemy.pos,
-            radius: 700.0,
+            radius: 500.0,
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
             start: 18.0,
-            //color: color.scale(0.5),
             color: color.scale(4.0),
         });
     }
@@ -274,13 +250,13 @@ impl Draw {
             num_segments: 64,
             color: color.to_color4(),
         });
-        self.outline_batch.push(ColorCircle {
+        /*self.outline_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
             z: 0.0,
             num_segments: 64,
             color: Color4::from_u8(255, 255, 255, 255),
-        });
+        });*/
         self.occluder_batch.push(OccluderCircle {
             circle: ball.circle(),
             angle: 0.0,
@@ -299,19 +275,19 @@ impl Draw {
             num_segments: 64,
             color: color.to_color4(),
         });
-        self.outline_batch.push(ColorCircle {
+        /*self.outline_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
             z: 0.0,
             num_segments: 64,
             color: Color4::from_u8(255, 255, 255, 255),
-        });
+        });*/
         self.lights.push(Light {
             position: lamp.pos,
-            radius: 500.0,
+            radius: 300.0,
             angle: lamp.light_angle,
-            angle_size: std::f32::consts::PI * 0.7,
-            start: 12.0,
+            angle_size: std::f32::consts::PI * 2.0,
+            start: 0.0,
             color: color.scale(7.0),
         });
     }
@@ -370,7 +346,7 @@ impl Draw {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.1, 0.1, 0.1),
+                ambient: Color3::new(0.004, 0.004, 0.004),
             });
 
         /*context.color_pass().draw(

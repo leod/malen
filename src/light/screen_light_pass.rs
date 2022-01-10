@@ -59,7 +59,8 @@ float visibility(
         angle_diff = 2.0 * PI - angle_diff;
 
     float angle_fall_off_size = PI / 20.0;
-    if (angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
+    if (abs(light_angle_size - 2.0 * PI) > 0.001
+            && angle_diff * 2.0 > light_angle_size - angle_fall_off_size) {
         float t = (angle_diff * 2.0 - light_angle_size + angle_fall_off_size) / angle_fall_off_size;
         front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
     }
@@ -110,6 +111,7 @@ out vec4 f_color;
 void main() {
     vec3 normal_value = texture(screen_normals, v_screen_pos * 0.5 + 0.5).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
+    normal.y = -normal.y;
 
     float scale = normal_value == vec3(0.0) ?
         1.0 :

@@ -87,5 +87,14 @@ impl Geometry<TriangleTag> for LightCircleSegment {
                 ]);
             }
         }
+
+        // TODO: Improve LightCircleSegment geometry
+        if (self.light.angle_size - std::f32::consts::PI * 2.0).abs() < 0.001 {
+            elements.extend_from_slice(&[
+                start_index,
+                start_index + 1 + self.num_segments as u32,
+                start_index + 1,
+            ]);
+        }
     }
 }
