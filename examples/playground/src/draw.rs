@@ -261,7 +261,7 @@ impl Draw {
             angle_size: std::f32::consts::PI / 3.0,
             start: 18.0,
             //color: color.scale(0.5),
-            color: Color3::from_u8(70, 70, 70).to_linear().scale(40.0),
+            color: color.scale(4.0),
         });
     }
 
@@ -308,11 +308,11 @@ impl Draw {
         });
         self.lights.push(Light {
             position: lamp.pos,
-            radius: 700.0,
+            radius: 500.0,
             angle: lamp.light_angle,
-            angle_size: std::f32::consts::PI * 0.8,
+            angle_size: std::f32::consts::PI * 0.7,
             start: 12.0,
-            color: color.scale(5.0),
+            color: color.scale(7.0),
         });
     }
 
@@ -370,7 +370,7 @@ impl Draw {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.2, 0.2, 0.2),
+                ambient: Color3::new(0.1, 0.1, 0.1),
             });
 
         /*context.color_pass().draw(
