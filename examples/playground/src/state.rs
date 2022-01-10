@@ -121,24 +121,9 @@ impl State {
     pub fn shape_overlap(&self, shape: &Shape) -> bool {
         self.walls
             .iter()
-            .map(|wall| {
-                Shape::Rect(Rect {
-                    center: wall.center,
-                    size: wall.size,
-                })
-            })
-            .chain(self.balls.iter().map(|ball| {
-                Shape::Circle(Circle {
-                    center: ball.pos,
-                    radius: ball.radius,
-                })
-            }))
-            .chain(self.enemies.iter().map(|enemy| {
-                Shape::Circle(Circle {
-                    center: enemy.pos,
-                    radius: ENEMY_RADIUS,
-                })
-            }))
+            .map(Wall::shape)
+            .chain(self.balls.iter().map(Ball::shape))
+            .chain(self.enemies.iter().map(Enemy::shape))
             .any(|map_shape| shape_shape_overlap(shape, &map_shape))
     }
 
