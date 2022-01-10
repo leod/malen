@@ -18,12 +18,20 @@ pub struct OccluderLineVertex {
     pub line_1: Point2<f32>,
     pub order: i32,
     pub color: Color3,
-    pub ignore_light_index: i32,
+    pub ignore_light_index1: i32,
+    pub ignore_light_index2: i32,
 }
 
 impl Vertex for OccluderLineVertex {
     fn attributes() -> Vec<Attribute> {
-        attributes!["a_": line_0, line_1, order, color, ignore_light_index]
+        attributes![
+            "a_": line_0,
+            line_1,
+            order,
+            color,
+            ignore_light_index1,
+            ignore_light_index2
+        ]
     }
 }
 
@@ -31,21 +39,24 @@ impl Vertex for OccluderLineVertex {
 pub struct OccluderLine {
     pub line: Line,
     pub color: Color3,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct OccluderRect {
     pub rect: Rect,
     pub color: Color3,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct OccluderRotatedRect {
     pub rect: RotatedRect,
     pub color: Color3,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -54,15 +65,19 @@ pub struct OccluderCircle {
     pub angle: f32,
     pub num_segments: usize,
     pub color: Color3,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 impl Geometry<LineTag> for OccluderLine {
     type Vertex = OccluderLineVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        let ignore_light_index = self
-            .ignore_light_index
+        let ignore_light_index1 = self
+            .ignore_light_index1
+            .map_or(-1, |i| i32::try_from(i).unwrap());
+        let ignore_light_index2 = self
+            .ignore_light_index2
             .map_or(-1, |i| i32::try_from(i).unwrap());
 
         let start_index = elements.len() as u32;
@@ -79,28 +94,32 @@ impl Geometry<LineTag> for OccluderLine {
                 line_1: self.line.1,
                 order: 0,
                 color: self.color,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.1,
                 line_1: self.line.0,
                 order: 1,
                 color: self.color,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.0,
                 line_1: self.line.1,
                 order: 2,
                 color: self.color,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.1,
                 line_1: self.line.0,
                 order: 3,
                 color: self.color,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
         ]);
     }
@@ -120,7 +139,8 @@ impl Geometry<LineTag> for OccluderRect {
             OccluderLine {
                 line,
                 color: self.color,
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
@@ -141,7 +161,8 @@ impl Geometry<LineTag> for OccluderRotatedRect {
             OccluderLine {
                 line,
                 color: self.color,
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
@@ -170,7 +191,8 @@ impl Geometry<LineTag> for OccluderCircle {
             OccluderLine {
                 line: Line(points[i], points[(i + 1) % points.len()]),
                 color: self.color,
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
@@ -178,7 +200,8 @@ impl Geometry<LineTag> for OccluderCircle {
         OccluderLine {
             line: Line(points[points.len() - 1], points[0]),
             color: self.color,
-            ignore_light_index: self.ignore_light_index,
+            ignore_light_index1: self.ignore_light_index1,
+            ignore_light_index2: self.ignore_light_index2,
         }
         .write(elements, vertices);
     }

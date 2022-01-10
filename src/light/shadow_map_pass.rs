@@ -22,7 +22,7 @@ float angle_to_light(vec2 position) {
 const float PI = 3.141592;
 
 void main() {
-    if (gl_InstanceID == a_ignore_light_index) {
+    if (gl_InstanceID == a_ignore_light_index1 || gl_InstanceID == a_ignore_light_index2) {
         gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
         return;
     }
