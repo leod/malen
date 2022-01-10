@@ -260,7 +260,7 @@ impl Draw {
         self.occluder_batch.push(OccluderCircle {
             circle: ball.circle(),
             angle: 0.0,
-            num_segments: 64,
+            num_segments: 16,
             color: color,
             ignore_light_index: None,
         });

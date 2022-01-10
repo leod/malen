@@ -46,6 +46,9 @@ float visibility(
     float front = min(min(front1, front2), front3) - front_glow;
     float back = min(min(back1, back2), back3);
 
+    //float front = 0.5 * front1 + 0.25 * front2 + 0.25 * front3 - front_glow;
+    //float back = 0.5 * back1 + 0.25 * back2 + 0.25 * back3;
+
     float v_front = step(dist_to_light, front);
     float v_back = step(dist_to_light, back);
 
