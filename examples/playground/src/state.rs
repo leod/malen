@@ -7,11 +7,13 @@ use rand::{prelude::SliceRandom, Rng};
 
 pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
+pub const LAMP_RADIUS: f32 = 15.0;
 pub const PLAYER_SIZE: f32 = 50.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
+    pub lamp_index: Option<usize>,
 }
 
 impl Wall {}
@@ -32,10 +34,16 @@ pub struct Ball {
     pub radius: f32,
 }
 
+pub struct Lamp {
+    pub pos: Point2<f32>,
+    pub light_angle: f32,
+}
+
 pub struct State {
     pub walls: Vec<Wall>,
     pub enemies: Vec<Enemy>,
     pub balls: Vec<Ball>,
+    pub lamps: Vec<Lamp>,
     pub player: Player,
     pub last_timestamp_secs: Option<f64>,
 }
@@ -66,16 +74,6 @@ impl Enemy {
     }
 }
 
-impl Player {
-    pub fn rotated_rect(&self) -> RotatedRect {
-        RotatedRect {
-            center: self.pos,
-            size: Vector2::new(PLAYER_SIZE, PLAYER_SIZE),
-            angle: self.angle,
-        }
-    }
-}
-
 impl Ball {
     pub fn circle(&self) -> Circle {
         Circle {
@@ -92,12 +90,32 @@ impl Ball {
     }
 }
 
+impl Lamp {
+    pub fn circle(&self) -> Circle {
+        Circle {
+            center: self.pos,
+            radius: LAMP_RADIUS,
+        }
+    }
+}
+
+impl Player {
+    pub fn rotated_rect(&self) -> RotatedRect {
+        RotatedRect {
+            center: self.pos,
+            size: Vector2::new(PLAYER_SIZE, PLAYER_SIZE),
+            angle: self.angle,
+        }
+    }
+}
+
 impl State {
     pub fn new() -> Self {
         let mut state = Self {
             walls: Vec::new(),
             enemies: Vec::new(),
             balls: Vec::new(),
+            lamps: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
                 angle: 0.0,
@@ -113,6 +131,9 @@ impl State {
         }
         for _ in 0..50 {
             state.add_ball();
+        }
+        for _ in 0..25 {
+            state.add_lamp();
         }
 
         state
@@ -142,7 +163,11 @@ impl State {
             _ => unreachable!(),
         };
 
-        let wall = Wall { center, size };
+        let wall = Wall {
+            center,
+            size,
+            lamp_index: None,
+        };
 
         if !self.shape_overlap(&wall.shape()) {
             self.walls.push(wall);
@@ -175,6 +200,28 @@ impl State {
 
         if !self.shape_overlap(&ball.shape()) {
             self.balls.push(ball);
+        }
+    }
+
+    pub fn add_lamp(&mut self) {
+        let mut rng = rand::thread_rng();
+        let mut empty_walls: Vec<_> = self
+            .walls
+            .iter_mut()
+            .filter(|wall| wall.lamp_index.is_none())
+            .collect();
+
+        if let Some(empty_wall) = empty_walls.choose_mut(&mut rng) {
+            (*empty_wall).lamp_index = Some(self.lamps.len());
+
+            let lines = empty_wall.rect().lines();
+            let line = lines.choose(&mut rng).unwrap();
+            let normal = Vector2::new(line.1.y - line.0.y, line.0.x - line.1.x).normalize();
+            let lamp = Lamp {
+                pos: line.0 + 0.5 * (line.1 - line.0) - normal * 20.0,
+                light_angle: normal.y.atan2(normal.x),
+            };
+            self.lamps.push(lamp);
         }
     }
 
