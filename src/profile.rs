@@ -53,7 +53,7 @@ pub struct Profile {
 
 pub struct FrameGuard {
     start_time: Instant,
-    profile_guard: coarse_prof::Guard,
+    _profile_guard: coarse_prof::Guard,
     frame_times: FrameTimes,
     draw_times: DrawTimes,
 }
@@ -98,9 +98,11 @@ impl Profile {
             }
         }
 
+        self.draw_times.borrow_mut().start_draw();
+
         FrameGuard {
             start_time: Instant::now(),
-            profile_guard: coarse_prof::enter("frame"),
+            _profile_guard: coarse_prof::enter("frame"),
             frame_times: self.frame_times.clone(),
             draw_times: self.draw_times.clone(),
         }

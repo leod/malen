@@ -9,8 +9,8 @@ use thiserror::Error;
 use crate::{
     data::{ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
-        self, DrawParams, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError,
-        Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
+        self, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError, Texture,
+        TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
         UniformBuffer, VertexBuffer,
     },
     pass::MatricesBlock,
@@ -24,7 +24,7 @@ use super::{
     light_area::{LightAreaVertex, LightCircleSegment},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
-    ColorPass, GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
+    GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
 };
 
 #[derive(Debug, Clone)]
@@ -35,7 +35,6 @@ pub struct LightPipelineParams {
 
 pub struct LightPipeline {
     canvas: Rc<RefCell<Canvas>>,
-    params: LightPipelineParams,
 
     light_instances: Rc<VertexBuffer<Light>>,
     light_area_batch: TriangleBatch<LightAreaVertex>,
@@ -105,7 +104,6 @@ impl LightPipeline {
 
         Ok(Self {
             canvas,
-            params,
             light_instances,
             light_area_batch,
             global_light_params,
@@ -176,7 +174,6 @@ pub struct ShadowMapPhase<'a> {
 
 pub struct ComposePhase<'a> {
     pipeline: &'a mut LightPipeline,
-    input: Input<'a>,
 }
 
 impl<'a> GeometryPhase<'a> {
@@ -301,7 +298,6 @@ impl<'a> ComposePhase<'a> {
     fn new(phase: ShadowMapPhase<'a>) -> Self {
         Self {
             pipeline: phase.pipeline,
-            input: phase.input,
         }
     }
 
