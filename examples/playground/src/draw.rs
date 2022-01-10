@@ -197,7 +197,8 @@ impl Draw {
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
             color: Color3::from_u8(69, 157, 69),
-            ignore_light_index: wall.lamp_index.map(|index| index as u32),
+            ignore_light_index1: wall.lamp_index.map(|index| index as u32),
+            ignore_light_index2: None,
         });
     }
 
@@ -229,7 +230,8 @@ impl Draw {
             angle: 0.0,
             num_segments: 16,
             color: color,
-            ignore_light_index: Some(self.lights.len() as u32),
+            ignore_light_index1: Some(self.lights.len() as u32),
+            ignore_light_index2: None,
         });
         self.lights.push(Light {
             position: enemy.pos,
@@ -237,7 +239,8 @@ impl Draw {
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
             start: 18.0,
-            color: color.scale(4.0),
+            //color: color.scale(4.0),
+            color: Color3::from_u8(212, 230, 135).to_linear().scale(1.5),
         });
     }
 
@@ -262,7 +265,16 @@ impl Draw {
             angle: 0.0,
             num_segments: 16,
             color: color,
-            ignore_light_index: None,
+            ignore_light_index1: Some(self.lights.len() as u32),
+            ignore_light_index2: None,
+        });
+        self.lights.push(Light {
+            position: ball.pos,
+            radius: ball.radius * 2.0,
+            angle: 0.0,
+            angle_size: std::f32::consts::PI * 2.0,
+            start: 0.0,
+            color: color.scale(2.0),
         });
     }
 
@@ -299,15 +311,16 @@ impl Draw {
             z: 0.4,
             color: color.to_color4(),
         });
-        self.outline_batch.push(ColorRotatedRect {
+        /*self.outline_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             z: 0.4,
             color: Color4::new(1.0, 1.0, 1.0, 1.0),
-        });
+        });*/
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player.rotated_rect(),
             color: color,
-            ignore_light_index: Some(self.lights.len() as u32),
+            ignore_light_index1: Some(self.lights.len() as u32),
+            ignore_light_index2: Some(self.lights.len() as u32 + 1),
         });
         self.lights.push(Light {
             position: player.pos,
@@ -316,6 +329,14 @@ impl Draw {
             angle_size: std::f32::consts::PI / 6.0,
             start: 22.0,
             color: Color3::from_u8(150, 150, 150).to_linear().scale(30.0),
+        });
+        self.lights.push(Light {
+            position: player.pos,
+            radius: 120.0,
+            angle: player.angle,
+            angle_size: std::f32::consts::PI * 2.0,
+            start: 0.0,
+            color: Color3::from_u8(150, 150, 150).to_linear().scale(7.0),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
