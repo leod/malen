@@ -203,8 +203,6 @@ impl State {
     }
 
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
-        profile!("update");
-
         let dt_secs = self
             .last_timestamp_secs
             .map_or(0.0, |last_timestamp_secs| {

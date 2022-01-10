@@ -8,6 +8,8 @@ mod context;
 mod error;
 mod input;
 mod main_loop;
+#[cfg(feature = "coarse-prof")]
+mod profile;
 
 pub(crate) mod util;
 
@@ -32,3 +34,5 @@ pub use context::Context;
 pub use error::{FrameError, InitError};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
+#[cfg(feature = "coarse-prof")]
+pub use profile::{Profile, ProfileParams};

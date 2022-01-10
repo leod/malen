@@ -74,8 +74,8 @@ impl ComposePass {
         screen_albedo: &Texture,
         screen_light: &Texture,
     ) {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("light::ComposePass::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("light::ComposePass::draw");
 
         gl::draw(
             &self.program,

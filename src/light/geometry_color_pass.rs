@@ -56,8 +56,8 @@ impl GeometryColorPass {
     ) where
         E: Element,
     {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("light::GeometryColorPass::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("light::GeometryColorPass::draw");
 
         gl::draw(
             &self.program,

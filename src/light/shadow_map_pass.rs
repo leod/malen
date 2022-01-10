@@ -135,8 +135,8 @@ impl ShadowMapPass {
     }
 
     pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, Light)>) {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("light::ShadowMapPass::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("light::ShadowMapPass::draw");
 
         gl::draw_instanced(
             &self.program,

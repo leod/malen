@@ -159,8 +159,8 @@ impl ScreenLightPass {
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,
     ) {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("light::ScreenLightPass::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("light::ScreenLightPass::draw");
 
         gl::draw(
             &self.program,
