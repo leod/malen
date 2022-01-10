@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
     sprite_info::{SpriteInfoBlock, SpriteInfos},
-    MatricesBlock, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING, SPRITE_SAMPLER_BINDING,
+    MatricesBlock, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING,
 };
 
 pub struct SpritePass {

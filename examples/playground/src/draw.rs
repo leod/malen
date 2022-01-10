@@ -40,14 +40,10 @@ pub struct Draw {
     light_pipeline: LightPipeline,
     occluder_batch: OccluderBatch,
     lights: Vec<Light>,
-
-    show_textures: bool,
 }
 
 impl Draw {
     pub async fn new(context: &Context) -> Result<Draw, InitError> {
-        let state = State::new();
-
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let texture = Texture::load(
             context.gl(),
@@ -127,7 +123,6 @@ impl Draw {
             light_pipeline,
             occluder_batch,
             lights,
-            show_textures: false,
         })
     }
 
@@ -207,7 +202,7 @@ impl Draw {
                 (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>()),
             ),
         });
-        let color = Color3::from_u8(88, 80, 74).to_linear();
+        //let color = Color3::from_u8(88, 80, 74).to_linear();
         /*self.shaded_color_batch.push(ColorRect {
             rect: wall.rect(),
             z: 0.2,
@@ -326,7 +321,7 @@ impl Draw {
         });*/
     }
 
-    pub fn draw(&mut self, context: &mut Context) -> Result<(), FrameError> {
+    pub fn draw(&mut self, context: &mut Context, show_textures: bool) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
         self.light_pipeline
@@ -375,7 +370,7 @@ impl Draw {
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        if self.show_textures {
+        if show_textures {
             context.draw_debug_texture(
                 Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
                 &self.light_pipeline.shadow_map(),

@@ -1,6 +1,5 @@
 use coarse_prof::profile;
 
-use malen::geom::Screen;
 use malen::text::Font;
 use malen::{Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams};
 
@@ -100,7 +99,7 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&mut self.context)?;
+        self.draw.draw(&mut self.context, self.show_textures)?;
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;

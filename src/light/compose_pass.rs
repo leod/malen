@@ -3,12 +3,10 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
-    data::{ColorVertex, Mesh, Sprite, SpriteBatch, SpriteVertex},
+    data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
     geom::Rect,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer},
+    gl::{self, DrawParams, Program, ProgramDef, Texture, UniformBuffer},
 };
-
-use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 use super::def::GlobalLightParamsBlock;
 
