@@ -82,26 +82,26 @@ float visibility(
     float back2r = texture(shadow_map, tex_coords + 4.0 * texel).g * light_radius;
     float back3r = texture(shadow_map, tex_coords + 6.0 * texel).g * light_radius;
 
-    float front0m = min(min(front1l, front1r), front0);
-    float back0m = min(min(back1l, back1r), back0);
-
-    float front_glow = 15.0;
+    float front_glow = 10.0;
     float back_glow = 40.0;
 
+    float front0m = min(min(front1l, front1r), front0) - front_glow;
+    float back0m = min(min(back1l, back1r), back0);
+
     float inner_light = front_light;
-    float to_front = dist_to_light - front0m + front_glow;
+    float to_front = dist_to_light - front0m;
     if (to_front < front_glow) {
         inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
     } else {
         inner_light *= 2.0 * pow(
             1.0 - clamp((to_front - front_glow) / back_glow, 0.0, 1.0),
-            5.0);
+            4.0);
     } 
 
-    float front2lm = min(min(front3l, front1l), front2l);
-    float front1lm = min(min(front2l, front0), front1l);
-    float front1rm = min(min(front2r, front0), front1r);
-    float front2rm = min(min(front3r, front1r), front2r);
+    float front2lm = min(min(front3l, front1l), front2l) - front_glow;
+    float front1lm = min(min(front2l, front0), front1l) - front_glow;
+    float front1rm = min(min(front2r, front0), front1r) - front_glow;
+    float front2rm = min(min(front3r, front1r), front2r) - front_glow;
     float back2lm = min(min(back3l, back1l), back2l);
     float back1lm = min(min(back2l, back0), back1l);
     float back1rm = min(min(back2r, back0), back1r);
@@ -119,8 +119,8 @@ float visibility(
     float vis_back1rm = step(dist_to_light, back1rm);
     float vis_back2rm = step(dist_to_light, back2rm);
 
-    //float vis_front = min(vis_front0m, 0.5 * vis_front0m + 0.25 * (vis_front1lm + vis_front1rm));
-    //float vis_back = min(vis_back0m, 0.5 * vis_back0m + 0.25 * (vis_back1lm + vis_back1rm));
+    //float vis_front = vis_front0m;
+    //float vis_back = vis_back0m;
     float vis_front = (vis_front0m + vis_front1lm + vis_front2lm + vis_front1rm + vis_front2rm) / 5.0;
     float vis_back = (vis_back0m + vis_back1lm + vis_back2lm + vis_back1rm + vis_back2rm) / 5.0;
 
