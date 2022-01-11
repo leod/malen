@@ -40,15 +40,17 @@ pub struct LightPipeline {
     light_area_batch: TriangleBatch<LightAreaVertex>,
     global_light_params: UniformBuffer<GlobalLightParamsBlock>,
 
-    screen_geometry: Framebuffer,
-    shadow_map: Framebuffer,
-    screen_light: Framebuffer,
+    screen_geometry: [Framebuffer; 2],
+    shadow_map: [Framebuffer; 2],
+    screen_light: [Framebuffer; 2],
 
     geometry_color_pass: GeometryColorPass,
     geometry_sprite_normal_pass: GeometrySpriteNormalPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     compose_pass: ComposePass,
+
+    frame: usize,
 }
 
 #[derive(Debug, Error)]
@@ -75,22 +77,18 @@ impl LightPipeline {
         let global_light_params =
             UniformBuffer::new(context.gl(), GlobalLightParams::default().into())?;
 
-        let screen_geometry = new_screen_framebuffer(canvas.clone(), 2, true)?;
-        let shadow_map = Framebuffer::from_textures(
-            context.gl(),
-            vec![Texture::new(
-                context.gl(),
-                Vector2::new(params.shadow_map_resolution, params.max_num_lights),
-                TextureParams {
-                    value_type: TextureValueType::RgbaF32,
-                    min_filter: TextureMinFilter::Linear,
-                    mag_filter: TextureMagFilter::Linear,
-                    wrap_vertical: TextureWrap::ClampToEdge,
-                    wrap_horizontal: TextureWrap::ClampToEdge,
-                },
-            )?],
-        )?;
-        let screen_light = new_screen_framebuffer(canvas.clone(), 1, false)?;
+        let screen_geometry = [
+            new_screen_framebuffer(canvas.clone(), 2, true)?,
+            new_screen_framebuffer(canvas.clone(), 2, true)?,
+        ];
+        let shadow_map = [
+            new_shadow_map(context.gl(), &params)?,
+            new_shadow_map(context.gl(), &params)?,
+        ];
+        let screen_light = [
+            new_screen_framebuffer(canvas.clone(), 1, false)?,
+            new_screen_framebuffer(canvas.clone(), 1, false)?,
+        ];
 
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
         let geometry_sprite_normal_pass = GeometrySpriteNormalPass::new(context.gl())?;
@@ -111,27 +109,28 @@ impl LightPipeline {
             shadow_map_pass,
             screen_light_pass,
             compose_pass,
+            frame: 0,
         })
     }
 
     pub fn gl(&self) -> Rc<gl::Context> {
-        self.shadow_map.gl()
+        self.shadow_map[0].gl()
     }
 
     pub fn shadow_map(&self) -> &Texture {
-        &self.shadow_map.textures()[0]
+        &self.shadow_map[self.frame % 2].textures()[0]
     }
 
     pub fn screen_albedo(&self) -> &Texture {
-        &self.screen_geometry.textures()[0]
+        &self.screen_geometry[self.frame % 2].textures()[0]
     }
 
     pub fn screen_normals(&self) -> &Texture {
-        &self.screen_geometry.textures()[1]
+        &self.screen_geometry[self.frame % 2].textures()[1]
     }
 
     pub fn screen_light(&self) -> &Texture {
-        &self.screen_light.textures()[0]
+        &self.screen_light[self.frame % 2].textures()[0]
     }
 
     pub fn new_occluder_batch(&self) -> Result<OccluderBatch, gl::Error> {
@@ -142,9 +141,11 @@ impl LightPipeline {
         &'a mut self,
         matrices: &'a UniformBuffer<MatricesBlock>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
-        if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
-            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 2, true)?;
-            self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
+        self.frame += 1;
+
+        if self.screen_geometry[self.frame % 2].textures()[0].size() != screen_light_size(self.canvas.clone()) {
+            self.screen_geometry[self.frame % 2] = new_screen_framebuffer(self.canvas.clone(), 2, true)?;
+            self.screen_light[self.frame % 2] = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
         }
 
         Ok(GeometryPhase::new(self, Input { matrices }))
@@ -174,7 +175,8 @@ pub struct ComposePhase<'a> {
 
 impl<'a> GeometryPhase<'a> {
     fn new(pipeline: &'a mut LightPipeline, input: Input<'a>) -> Self {
-        gl::with_framebuffer(&pipeline.screen_geometry, || {
+        coarse_prof::profile!("GeometryPhase::draw");
+        gl::with_framebuffer(&pipeline.screen_geometry[pipeline.frame % 2], || {
             gl::clear_color_and_depth(&pipeline.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
         });
 
@@ -185,7 +187,7 @@ impl<'a> GeometryPhase<'a> {
     where
         E: Element,
     {
-        gl::with_framebuffer(&self.pipeline.screen_geometry, || {
+        gl::with_framebuffer(&self.pipeline.screen_geometry[self.pipeline.frame % 2], || {
             self.pipeline
                 .geometry_color_pass
                 .draw(self.input.matrices, draw_unit);
@@ -203,7 +205,7 @@ impl<'a> GeometryPhase<'a> {
     where
         E: Element,
     {
-        gl::with_framebuffer(&self.pipeline.screen_geometry, || {
+        gl::with_framebuffer(&self.pipeline.screen_geometry[self.pipeline.frame % 2], || {
             self.pipeline.geometry_sprite_normal_pass.draw(
                 self.input.matrices,
                 texture,
@@ -224,9 +226,9 @@ impl<'a> ShadowMapPhase<'a> {
     fn new(phase: GeometryPhase<'a>, lights: &'a [Light]) -> Self {
         phase.pipeline.light_instances.set_data(lights);
 
-        gl::with_framebuffer(&phase.pipeline.shadow_map, || {
+        gl::with_framebuffer(&phase.pipeline.shadow_map[phase.pipeline.frame % 2], || {
             gl::clear_color(
-                &*phase.pipeline.shadow_map.gl(),
+                &*phase.pipeline.shadow_map[0].gl(),
                 Color4::new(1.0, 1.0, 1.0, 1.0),
             );
         });
@@ -239,7 +241,7 @@ impl<'a> ShadowMapPhase<'a> {
     }
 
     pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
-        gl::with_framebuffer(&self.pipeline.shadow_map, || {
+        gl::with_framebuffer(&self.pipeline.shadow_map[self.pipeline.frame % 2], || {
             self.pipeline.shadow_map_pass.draw(batch.draw_unit())
         });
 
@@ -276,17 +278,17 @@ impl<'a> ShadowMapPhase<'a> {
                     }),
             );
 
-        gl::with_framebuffer(&self.pipeline.screen_light, || {
+        gl::with_framebuffer(&self.pipeline.screen_light[self.pipeline.frame % 2], || {
             gl::clear_color(
-                &*self.pipeline.screen_light.gl(),
+                &*self.pipeline.screen_light[0].gl(),
                 Color4::new(0.0, 0.0, 0.0, 1.0),
             );
 
             self.pipeline.screen_light_pass.draw(
                 self.input.matrices,
                 &self.pipeline.global_light_params,
-                &self.pipeline.shadow_map.textures()[0],
-                &self.pipeline.screen_geometry.textures()[1],
+                &self.pipeline.shadow_map[self.pipeline.frame % 2].textures()[0],
+                &self.pipeline.screen_geometry[self.pipeline.frame % 2].textures()[1],
                 self.pipeline.light_area_batch.draw_unit(),
             );
         });
@@ -305,8 +307,8 @@ impl<'a> ComposePhase<'a> {
     pub fn compose(self) {
         self.pipeline.compose_pass.draw(
             &self.pipeline.global_light_params,
-            &self.pipeline.screen_geometry.textures()[0],
-            &self.pipeline.screen_light.textures()[0],
+            &self.pipeline.screen_geometry[self.pipeline.frame % 2].textures()[0],
+            &self.pipeline.screen_light[self.pipeline.frame % 2].textures()[0],
         );
     }
 }
@@ -318,6 +320,23 @@ fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {
     let max_size = Texture::max_size(&*canvas.gl());
 
     Vector2::new(physical_size.x.min(max_size), physical_size.y.min(max_size))
+}
+
+fn new_shadow_map(gl: Rc<gl::Context>, params: &LightPipelineParams) -> Result<Framebuffer, NewFramebufferError> {
+    Framebuffer::from_textures(
+        gl.clone(),
+        vec![Texture::new(
+            gl,
+            Vector2::new(params.shadow_map_resolution, params.max_num_lights),
+            TextureParams {
+                value_type: TextureValueType::RgbaF32,
+                min_filter: TextureMinFilter::Linear,
+                mag_filter: TextureMagFilter::Linear,
+                wrap_vertical: TextureWrap::ClampToEdge,
+                wrap_horizontal: TextureWrap::ClampToEdge,
+            },
+        )?],
+    )
 }
 
 fn new_screen_framebuffer(
