@@ -1,9 +1,9 @@
 use nalgebra::Point3;
 
 use crate::{
+    geom::{Circle, Line, Rect, RotatedRect},
     gl::{PrimitiveMode, Vertex},
-    math::Line,
-    Color4, Rect, RotatedRect,
+    Color4,
 };
 
 use super::{ColorSpriteVertex, ColorVertex, SpriteVertex};
@@ -146,6 +146,21 @@ impl Geometry<TriangleTag> for ColorRotatedRect {
     }
 }
 
+impl Geometry<LineTag> for ColorRotatedRect {
+    type Vertex = ColorVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        elements.extend_from_slice(&quad_line_indices(vertices.len() as u32));
+
+        for p in self.rect.corners() {
+            vertices.push(ColorVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                color: self.color,
+            });
+        }
+    }
+}
+
 impl Geometry<LineTag> for ColorLine {
     type Vertex = ColorVertex;
 
@@ -161,6 +176,65 @@ impl Geometry<LineTag> for ColorLine {
             position: Point3::new(self.line.1.x, self.line.1.y, self.z),
             color: self.color,
         });
+    }
+}
+
+pub struct ColorCircle {
+    pub circle: Circle,
+    pub z: f32,
+    pub angle: f32,
+    pub num_segments: usize,
+    pub color: Color4,
+}
+
+impl Geometry<TriangleTag> for ColorCircle {
+    type Vertex = ColorVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        let start_index = vertices.len() as u32;
+
+        vertices.push(ColorVertex {
+            position: Point3::new(self.circle.center.x, self.circle.center.y, self.z),
+            color: self.color,
+        });
+
+        for (i, p) in self
+            .circle
+            .points(self.angle, self.num_segments)
+            .enumerate()
+        {
+            vertices.push(ColorVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                color: self.color,
+            });
+
+            elements.extend_from_slice(&[
+                start_index,
+                start_index + 1 + ((i + 1) % self.num_segments) as u32,
+                start_index + 1 + i as u32,
+            ]);
+        }
+    }
+}
+
+impl Geometry<LineTag> for ColorCircle {
+    type Vertex = ColorVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        // TODO: Alloc in ColorCircle::write
+        let points = self
+            .circle
+            .points(self.angle, self.num_segments)
+            .collect::<Vec<_>>();
+
+        for i in 0..points.len() {
+            ColorLine {
+                line: Line(points[i], points[(i + 1) % points.len()]),
+                z: self.z,
+                color: self.color,
+            }
+            .write(elements, vertices);
+        }
     }
 }
 

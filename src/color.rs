@@ -30,8 +30,16 @@ impl Color3 {
         Self { r, g, b }
     }
 
-    pub fn write(&self, out: &mut Vec<f32>) {
-        out.extend_from_slice(&[self.r, self.g, self.b])
+    pub fn to_color4(self) -> Color4 {
+        Color4::new(self.r, self.g, self.b, 1.0)
+    }
+
+    pub fn to_linear(self) -> Color3 {
+        Color3::new(self.r.powf(2.2), self.g.powf(2.2), self.b.powf(2.2))
+    }
+
+    pub fn scale(self, t: f32) -> Color3 {
+        Color3::new(self.r * t, self.g * t, self.b * t)
     }
 }
 
@@ -49,8 +57,8 @@ impl Color4 {
         Self { r, g, b, a }
     }
 
-    pub fn write(&self, out: &mut Vec<f32>) {
-        out.extend_from_slice(&[self.r, self.g, self.b, self.a])
+    pub fn to_linear(self) -> Color4 {
+        Color4::new(self.r.powf(2.2), self.g.powf(2.2), self.b.powf(2.2), self.a)
     }
 }
 

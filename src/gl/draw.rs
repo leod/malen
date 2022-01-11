@@ -106,9 +106,9 @@ pub fn draw_instanced<U, V, E, const S: usize>(
     }
 }
 
-pub fn with_framebuffer<F, R>(framebuffer: &Framebuffer, mut f: F) -> R
+pub fn with_framebuffer<F, R>(framebuffer: &Framebuffer, f: F) -> R
 where
-    F: FnMut() -> R,
+    F: FnOnce() -> R,
 {
     let gl = framebuffer.gl();
 

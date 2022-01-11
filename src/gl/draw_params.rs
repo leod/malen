@@ -2,10 +2,21 @@ use glow::HasContext;
 
 use super::{Blend, Context, DepthTest};
 
-#[derive(Clone, Default, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DrawParams {
     pub blend: Option<Blend>,
     pub depth_test: Option<DepthTest>,
+    pub line_width: f32,
+}
+
+impl Default for DrawParams {
+    fn default() -> Self {
+        Self {
+            blend: None,
+            depth_test: None,
+            line_width: 1.0,
+        }
+    }
 }
 
 pub fn set_draw_params(gl: &Context, draw_params: &DrawParams) {
@@ -13,6 +24,9 @@ pub fn set_draw_params(gl: &Context, draw_params: &DrawParams) {
 
     set_blend(gl, draw_params.blend);
     set_depth_test(gl, draw_params.depth_test);
+    unsafe {
+        gl.line_width(draw_params.line_width);
+    }
 }
 
 fn set_blend(gl: &Context, blend: Option<Blend>) {

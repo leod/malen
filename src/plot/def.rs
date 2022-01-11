@@ -1,4 +1,4 @@
-use crate::{Color4, Rect};
+use crate::{geom::Rect, Color4};
 
 #[derive(Debug, Clone)]
 pub struct LineGraph {

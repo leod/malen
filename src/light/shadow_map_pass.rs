@@ -5,32 +5,40 @@ use crate::gl::{
     Program, ProgramDef,
 };
 
-use super::{data::LightInstance, OccluderLineVertex};
+use super::{Light, OccluderLineVertex};
 
 const VERTEX_SOURCE: &str = r#"
 flat out vec2 v_light_position;
 flat out float v_light_radius;
+flat out int v_is_front;
 out vec4 v_edge;
 out float v_angle;
 
 float angle_to_light(vec2 position) {
-    vec2 delta = position - i_light_position;
+    vec2 delta = position - i_light_position.xy;
     return atan(delta.y, delta.x);
 }
 
 const float PI = 3.141592;
 
 void main() {
-    if (gl_InstanceID == a_ignore_light_index) {
+    if (gl_InstanceID == a_ignore_light_index1 || gl_InstanceID == a_ignore_light_index2) {
         gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
         return;
     }
 
-    v_light_position = i_light_position;
+    v_light_position = i_light_position.xy;
     v_light_radius = i_light_radius;
+
+    vec3 c = cross(vec3(a_line_0 - i_light_position.xy, 0.0),
+                   vec3(a_line_1 - i_light_position.xy, 0.0));
+    v_is_front = (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
+                  ((a_order == 1 || a_order == 3) && c.z > 0.0))
+                 ? 1 : 0;
 
     float angle_0 = angle_to_light(a_line_0);
     float angle_1 = angle_to_light(a_line_1);
+
     v_edge = vec4(a_line_0, a_line_1);
     v_edge = mix(v_edge, v_edge.zwxy, step(angle_0, angle_1));
     v_angle = angle_0;
@@ -56,6 +64,7 @@ void main() {
 const FRAGMENT_SOURCE: &str = r#"
 flat in vec2 v_light_position;
 flat in float v_light_radius;
+flat in int v_is_front;
 in vec4 v_edge;
 in float v_angle;
 out vec4 f_color;
@@ -76,20 +85,14 @@ float ray_line_segment_intersection(
             <=> M * [[s], [t]] = p - o
               where M = [[d.x, d.y], [p.x - q.x, p.y - q.y]] 
             <=> [[s], [t]] = M^-1 (p - o)   (if M is invertible)
-              where M^-1 = 1.0 / det(M) * [[p.y - q.y, -d.y], [q.x - p.x, d.x]]
     **/
 
     float det = d.x * (p.y - q.y) + d.y * (q.x - p.x);
     if (abs(det) < 0.0000001)
         return 1.0;
 
-    mat2 m_inv = mat2(
-        p.y - q.y, 
-        -d.y,
-        q.x - p.x, 
-        d.x
-    );
-    vec2 time = 1.0 / det * m_inv * (p - o);
+    mat2 m = mat2(d.x, d.y, p.x - q.x, p.y - q.y);
+    vec2 time = inverse(m) * (p - o);
 
     float s = time.x;
     float t = time.y;
@@ -107,13 +110,15 @@ void main() {
         v_edge.xy,
         v_edge.zw
     );
-    f_color = vec4(t, t, t, 1.0);
-    //f_color = vec4(0.0, 0, 0, 1.0);
+    f_color = vec4(
+        v_is_front == 0 ? vec2(1.0, t)
+                        : vec2(t, 1.0),
+        0.0, 1.0);
 }
 "#;
 
 pub struct ShadowMapPass {
-    program: Program<(), (OccluderLineVertex, LightInstance), 0>,
+    program: Program<(), (OccluderLineVertex, Light), 0>,
 }
 
 impl ShadowMapPass {
@@ -129,7 +134,10 @@ impl ShadowMapPass {
         Ok(Self { program })
     }
 
-    pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, LightInstance)>) {
+    pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, Light)>) {
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("light::ShadowMapPass::draw");
+
         gl::draw_instanced(
             &self.program,
             (),

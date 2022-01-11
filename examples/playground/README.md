@@ -42,8 +42,20 @@ There are many different installation instructions flying around. This one actua
 
 ## Resource Credits
 
-- [`04muroch256.png`](resources/04muroch256.png)
+- `Ground_*.png`
 
-   Author: Tiziana
+   Author: Cethiel
 
-   URL: https://opengameart.org/content/grey-stone-wall-256px
+   URL: https://opengameart.org/content/tileable-bricks-ground-textures-set-1
+
+- `Brick_*.png`
+
+   Author: Cethiel
+
+   URL: https://opengameart.org/content/tileable-brick-ground-textures-set-2
+
+- `boxesandcrates`
+
+   Author: Texasfunk101
+
+   URL: https://opengameart.org/content/tileable-crates

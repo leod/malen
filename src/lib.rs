@@ -8,13 +8,15 @@ mod context;
 mod error;
 mod input;
 mod main_loop;
+#[cfg(feature = "coarse-prof")]
+mod profile;
 
 pub(crate) mod util;
 
 pub mod data;
+pub mod geom;
 pub mod gl;
 pub mod light;
-pub mod math;
 pub mod pass;
 pub mod plot;
 pub mod text;
@@ -32,4 +34,5 @@ pub use context::Context;
 pub use error::{FrameError, InitError};
 pub use input::{Event, InputState, Key};
 pub use main_loop::main_loop;
-pub use math::{Camera, Rect, RotatedRect, Screen};
+#[cfg(feature = "coarse-prof")]
+pub use profile::{Profile, ProfileParams};

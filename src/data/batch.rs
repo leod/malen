@@ -48,7 +48,19 @@ where
     P: PrimitiveTag,
     V: Vertex,
 {
-    pub fn push<G: Geometry<P, Vertex = V>>(&mut self, geometry: G) {
+    pub fn from_geometry<G>(gl: Rc<gl::Context>, geometry: G) -> Result<Self, gl::Error>
+    where
+        G: Geometry<P, Vertex = V>,
+    {
+        let mut result = Self::new(gl)?;
+        result.push(geometry);
+        Ok(result)
+    }
+
+    pub fn push<G>(&mut self, geometry: G)
+    where
+        G: Geometry<P, Vertex = V>,
+    {
         self.buffer.push(geometry);
         self.dirty = true;
     }
