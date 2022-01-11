@@ -21,7 +21,7 @@ use super::{
     compose_pass::ComposePass,
     geometry_color_pass::GeometryColorPass,
     geometry_sprite_normal_pass::GeometrySpriteNormalPass,
-    light_area::{LightAreaVertex, LightCircleSegment},
+    light_area::{LightAreaVertex, LightCircleSegment, LightRect},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
@@ -251,30 +251,30 @@ impl<'a> ShadowMapPhase<'a> {
     }
 
     pub fn build_screen_light(self) -> ComposePhase<'a> {
-        /*self.pipeline
-        .light_area_batch
-        .reset(
-            self.lights
-                .iter()
-                .enumerate()
-                .map(|(light_index, light)| LightRect {
-                    light_index: light_index as i32,
-                    light: light.clone(),
-                    rect: light.rect(),
-                }),
-        );*/
         self.pipeline
             .light_area_batch
             .reset(
                 self.lights
                     .iter()
                     .enumerate()
-                    .map(|(light_index, light)| LightCircleSegment {
+                    .map(|(light_index, light)| LightRect {
                         light_index: light_index as i32,
-                        light: *light,
-                        num_segments: 16,
+                        light: light.clone(),
+                        rect: light.rect(),
                     }),
             );
+        /*self.pipeline
+        .light_area_batch
+        .reset(
+            self.lights
+                .iter()
+                .enumerate()
+                .map(|(light_index, light)| LightCircleSegment {
+                    light_index: light_index as i32,
+                    light: *light,
+                    num_segments: 16,
+                }),
+        );*/
 
         gl::with_framebuffer(&self.pipeline.screen_light, || {
             gl::clear_color(

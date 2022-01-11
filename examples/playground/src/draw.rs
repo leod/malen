@@ -326,14 +326,14 @@ impl Draw {
             start: 22.0,
             color: Color3::from_u8(255, 255, 255).to_linear(),
         });
-        self.lights.push(Light {
+        /*self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 120.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
             color: Color3::from_u8(150, 150, 150).to_linear(),
-        });
+        });*/
         /*self.lights.push(Light {
             position: self.state.player.pos,
             radius: 100.0,
@@ -363,7 +363,7 @@ impl Draw {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.05, 0.05, 0.05).to_linear(),
+                ambient: Color3::new(0.2, 0.2, 0.2).to_linear(),
             });
 
         /*context.color_pass().draw(

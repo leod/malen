@@ -129,12 +129,12 @@ impl State {
         for _ in 0..50 {
             state.add_enemy();
         }
-        for _ in 0..50 {
+        /*for _ in 0..50 {
             state.add_ball();
         }
         for _ in 0..30 {
             state.add_lamp();
-        }
+        }*/
 
         state
     }

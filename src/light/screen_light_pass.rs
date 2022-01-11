@@ -82,36 +82,61 @@ float visibility(
     float back2r = texture(shadow_map, tex_coords + 4.0 * texel).g * light_radius;
     float back3r = texture(shadow_map, tex_coords + 6.0 * texel).g * light_radius;
 
-    float front_glow = 10.0;
+    float front_glow = 200.0;
     float back_glow = 40.0;
 
-    float front0m = min(min(front1l, front1r), front0) - front_glow;
+    float front0m = min(min(front1l, front1r), front0);
     float back0m = min(min(back1l, back1r), back0);
 
     float inner_light = front_light;
-    float to_front = dist_to_light - front0m;
-    if (to_front < front_glow) {
-        inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / front_glow));
+    float to_front = dist_to_light - front0m + front_glow;
+    if (to_front < front_glow && back0m - front0m > 0.001) {
+        float front1l_angle = 2.0 * PI * (tex_coords.x - 2.0 * texel.x - 0.5);
+        float front1r_angle = 2.0 * PI * (tex_coords.x + 2.0 * texel.x - 0.5);
+
+        vec2 front0_p = vec2(cos(angle), sin(angle)) * front0;
+        vec2 front1l_p = vec2(cos(front1l_angle), sin(front1l_angle)) * front1l;
+        vec2 front1r_p = vec2(cos(front1r_angle), sin(front1r_angle)) * front1r;
+        vec2 occluder_normal = normalize(vec2(front1l_p.y - front1r_p.y, front1r_p.x - front1l_p.x));
+
+        vec2 dir = delta - front0_p;
+
+        bool corner = abs(max(max(front1l, front1r), front0) - min(min(front1l, front1r), front0)) > 30.0;
+
+        if (!corner && max(dot(occluder_normal, dir), 0.0) <= 20.0) {
+            //inner_light *= 100.0;
+            inner_light *= 2.0 + sin(PI * (3.0/2.0 + max(dot(occluder_normal, dir), 0.0) / 20.0));
+        } else {
+            inner_light = 0.0;
+        }
+
+        //inner_light *= occluder_normal.y;
+
+        //inner_light *= (1.0 + 100.0 * max(dot(occluder_normal, normalize(-delta)), 0.0));
+        //inner_light *= 1.0 + max(dot(occluder_normal, delta), 0.0) * 2.0 * sin(PI * (3.0/2.0 + to_front / front_glow));
+        //inner_light *= 2.0 + sin(PI * (3.0/2.0 + max(dot(occluder_normal, dir), 0.0) / 10.0));
     } else {
-        inner_light *= 2.0 * pow(
+        /*inner_light *= 10.0 * pow(
             1.0 - clamp((to_front - front_glow) / back_glow, 0.0, 1.0),
-            4.0);
+            2.0);*/
+
+        inner_light = 0.0;
     } 
 
-    float front2lm = min(min(front3l, front1l), front2l) - front_glow;
-    float front1lm = min(min(front2l, front0), front1l) - front_glow;
-    float front1rm = min(min(front2r, front0), front1r) - front_glow;
-    float front2rm = min(min(front3r, front1r), front2r) - front_glow;
+    float front2lm = min(min(front3l, front1l), front2l);
+    float front1lm = min(min(front2l, front0), front1l);
+    float front1rm = min(min(front2r, front0), front1r);
+    float front2rm = min(min(front3r, front1r), front2r);
     float back2lm = min(min(back3l, back1l), back2l);
     float back1lm = min(min(back2l, back0), back1l);
     float back1rm = min(min(back2r, back0), back1r);
     float back2rm = min(min(back3r, back1r), back2r);
 
-    float vis_front2lm = step(dist_to_light, front2lm);
-    float vis_front1lm = step(dist_to_light, front1lm);
-    float vis_front0m = step(dist_to_light, front0m);
-    float vis_front1rm = step(dist_to_light, front1rm);
-    float vis_front2rm = step(dist_to_light, front2rm);
+    float vis_front2lm = step(dist_to_light, front2lm - front_glow);
+    float vis_front1lm = step(dist_to_light, front1lm - front_glow);
+    float vis_front0m = step(dist_to_light, front0m - front_glow);
+    float vis_front1rm = step(dist_to_light, front1rm - front_glow);
+    float vis_front2rm = step(dist_to_light, front2rm - front_glow);
 
     float vis_back2lm = step(dist_to_light, back2lm);
     float vis_back1lm = step(dist_to_light, back1lm);
@@ -124,7 +149,8 @@ float visibility(
     float vis_front = (vis_front0m + vis_front1lm + vis_front2lm + vis_front1rm + vis_front2rm) / 5.0;
     float vis_back = (vis_back0m + vis_back1lm + vis_back2lm + vis_back1rm + vis_back2rm) / 5.0;
 
-    return front_light * vis_front + inner_light * (1.0 - vis_front) * vis_back;
+    //return front_light * vis_front + inner_light * (1.0 - vis_front) * vis_back;
+    return inner_light * (1.0 - vis_front) * vis_back;
 }
 
 flat in vec4 v_light_params;
