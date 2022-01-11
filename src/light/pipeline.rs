@@ -174,6 +174,9 @@ pub struct ComposePhase<'a> {
 
 impl<'a> GeometryPhase<'a> {
     fn new(pipeline: &'a mut LightPipeline, input: Input<'a>) -> Self {
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("clear_geometry");
+
         gl::with_framebuffer(&pipeline.screen_geometry, || {
             gl::clear_color_and_depth(&pipeline.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
         });

@@ -126,13 +126,13 @@ impl State {
         for _ in 0..100 {
             state.add_wall();
         }
-        for _ in 0..50 {
+        for _ in 0..80 {
             state.add_enemy();
         }
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..30 {
+        for _ in 0..40 {
             state.add_lamp();
         }
 
@@ -228,7 +228,7 @@ impl State {
     pub fn camera(&self) -> Camera {
         Camera {
             center: self.player.pos,
-            zoom: 1.0,
+            zoom: 1.75,
             angle: 0.0,
         }
     }

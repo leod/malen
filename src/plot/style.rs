@@ -30,7 +30,7 @@ impl Default for PlotStyle {
             normal_font_size: 17.0,
             small_font_size: 13.0,
             tic_precision: 1,
-            background_color: Some(Color4::new(0.2, 0.2, 0.4, 0.5)),
+            background_color: Some(Color4::new(0.4, 0.4, 0.7, 0.8)),
             axis_color: Color4::new(0.0, 0.0, 0.0, 1.0),
             text_color: Color4::new(0.0, 0.0, 0.0, 1.0),
         }
