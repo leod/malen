@@ -57,8 +57,8 @@ impl InstancedColorPass {
     ) where
         E: Element,
     {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("InstancedColorPass::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("InstancedColorPass::draw");
 
         gl::draw_instanced(&self.program, matrices, [], draw_unit, params);
     }

@@ -6,9 +6,8 @@ use bytemuck_derive::{Pod, Zeroable};
 use crate::{
     attributes,
     data::{Geometry, LineTag},
+    geom::{Circle, Line, Rect, RotatedRect},
     gl::{Attribute, Vertex},
-    math::{Circle, Line},
-    Rect, RotatedRect,
 };
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
@@ -17,31 +16,41 @@ pub struct OccluderLineVertex {
     pub line_0: Point2<f32>,
     pub line_1: Point2<f32>,
     pub order: i32,
-    pub ignore_light_index: i32,
+    pub ignore_light_index1: i32,
+    pub ignore_light_index2: i32,
 }
 
 impl Vertex for OccluderLineVertex {
     fn attributes() -> Vec<Attribute> {
-        attributes!["a_": line_0, line_1, order, ignore_light_index]
+        attributes![
+            "a_": line_0,
+            line_1,
+            order,
+            ignore_light_index1,
+            ignore_light_index2
+        ]
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct OccluderLine {
     pub line: Line,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct OccluderRect {
     pub rect: Rect,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct OccluderRotatedRect {
     pub rect: RotatedRect,
-    pub ignore_light_index: Option<u32>,
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,33 +58,19 @@ pub struct OccluderCircle {
     pub circle: Circle,
     pub angle: f32,
     pub num_segments: usize,
-    pub ignore_light_index: Option<u32>,
-}
-
-impl From<Line> for OccluderLine {
-    fn from(line: Line) -> Self {
-        OccluderLine {
-            line,
-            ignore_light_index: None,
-        }
-    }
-}
-
-impl From<Rect> for OccluderRect {
-    fn from(rect: Rect) -> Self {
-        OccluderRect {
-            rect,
-            ignore_light_index: None,
-        }
-    }
+    pub ignore_light_index1: Option<u32>,
+    pub ignore_light_index2: Option<u32>,
 }
 
 impl Geometry<LineTag> for OccluderLine {
     type Vertex = OccluderLineVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        let ignore_light_index = self
-            .ignore_light_index
+        let ignore_light_index1 = self
+            .ignore_light_index1
+            .map_or(-1, |i| i32::try_from(i).unwrap());
+        let ignore_light_index2 = self
+            .ignore_light_index2
             .map_or(-1, |i| i32::try_from(i).unwrap());
 
         let start_index = elements.len() as u32;
@@ -91,25 +86,29 @@ impl Geometry<LineTag> for OccluderLine {
                 line_0: self.line.0,
                 line_1: self.line.1,
                 order: 0,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.1,
                 line_1: self.line.0,
                 order: 1,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.0,
                 line_1: self.line.1,
                 order: 2,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
             OccluderLineVertex {
                 line_0: self.line.1,
                 line_1: self.line.0,
                 order: 3,
-                ignore_light_index,
+                ignore_light_index1,
+                ignore_light_index2,
             },
         ]);
     }
@@ -123,12 +122,13 @@ impl Geometry<LineTag> for OccluderRect {
             .rect
             .lines()
             .iter()
-            .chain(self.rect.caps().iter())
+            //.chain(self.rect.caps().iter())
             .copied()
         {
             OccluderLine {
                 line,
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
@@ -143,12 +143,13 @@ impl Geometry<LineTag> for OccluderRotatedRect {
             .rect
             .lines()
             .iter()
-            .chain(self.rect.caps().iter())
+            //.chain(self.rect.caps().iter())
             .copied()
         {
             OccluderLine {
                 line,
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
@@ -163,18 +164,30 @@ impl Geometry<LineTag> for OccluderCircle {
         let points = self
             .circle
             .points(self.angle, self.num_segments)
-            .chain(
+            /*.chain(
+                /*Circle {
+                    center: self.circle.center,
+                    radius: self.circle.radius * 0.98,
+                }.points(0.0, self.num_segments)*/
                 self.circle
-                    .points(std::f32::consts::PI / 10.0, self.num_segments),
-            )
+                    .points(std::f32::consts::PI / 2.0, self.num_segments),
+            )*/
             .collect::<Vec<_>>();
 
-        for i in 0..points.len() {
+        for i in 0..points.len() - 1 {
             OccluderLine {
                 line: Line(points[i], points[(i + 1) % points.len()]),
-                ignore_light_index: self.ignore_light_index,
+                ignore_light_index1: self.ignore_light_index1,
+                ignore_light_index2: self.ignore_light_index2,
             }
             .write(elements, vertices);
         }
+
+        OccluderLine {
+            line: Line(points[points.len() - 1], points[0]),
+            ignore_light_index1: self.ignore_light_index1,
+            ignore_light_index2: self.ignore_light_index2,
+        }
+        .write(elements, vertices);
     }
 }

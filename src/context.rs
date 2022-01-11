@@ -6,11 +6,12 @@ use web_sys::HtmlCanvasElement;
 use crate::{
     data::{Sprite, SpriteBatch},
     error::InitError,
+    geom::{Rect, Screen},
     gl::{self, DrawParams, Texture, UniformBuffer},
     input::InputState,
     pass::{ColorPass, ColorSpritePass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
-    Canvas, Color4, Config, Event, FrameError, Rect, Screen,
+    Canvas, Color4, Config, Event, FrameError,
 };
 
 pub struct Context {

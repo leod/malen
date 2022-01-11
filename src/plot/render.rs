@@ -4,10 +4,9 @@ use nalgebra::{Point2, Vector2};
 
 use crate::{
     data::{ColorLine, ColorLineBatch, ColorRect, ColorTriangleBatch},
+    geom::{Line, Rect},
     gl,
-    math::Line,
     text::{Font, Text, TextBatch, WriteTextError},
-    Rect,
 };
 
 use super::{Plot, PlotStyle};

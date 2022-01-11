@@ -10,9 +10,10 @@ use thiserror::Error;
 use super::atlas::Atlas;
 use crate::{
     data::{ColorSprite, ColorSpriteBatch},
+    geom::Rect,
     gl::{self, Blend, DrawParams, NewTextureError, Texture, UniformBuffer},
     pass::{ColorSpritePass, MatricesBlock},
-    util, Color4, Context, Rect,
+    util, Color4, Context,
 };
 
 #[derive(Error, Debug)]
@@ -222,8 +223,8 @@ impl Font {
         matrices_buffer: &UniformBuffer<MatricesBlock>,
         batch: &mut TextBatch,
     ) -> Result<(), gl::Error> {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("Font::draw");
+        //#[cfg(feature = "coarse-prof")]
+        //coarse_prof::profile!("Font::draw");
 
         for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
             self.color_sprite_pass.draw(
