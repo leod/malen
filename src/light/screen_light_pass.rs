@@ -10,7 +10,26 @@ use crate::{
 
 use super::{light_area::LightAreaVertex, LightPipelineParams};
 
-pub(super) const VISIBILITY_SOURCE: &str = r#"
+const VERTEX_SOURCE: &str = r#"
+flat out vec4 v_light_params;
+flat out vec3 v_light_color;
+flat out float v_light_offset;
+out vec2 v_screen_pos;
+out vec3 v_delta;
+
+void main() {
+    v_light_params = a_light_params;
+    v_light_color = a_light_color;
+    v_light_offset = (float(a_light_index) + 0.5) / float({max_num_lights});
+
+    vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
+    gl_Position = vec4(p.xy, 0.0, 1.0);
+    v_screen_pos = p.xy;
+    v_delta = vec3(a_position.xy, 0.0) - a_light_position;
+}
+"#;
+
+const FRAGMENT_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
@@ -78,33 +97,12 @@ float visibility(
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;
 }
-"#;
 
-const VERTEX_SOURCE: &str = r#"
-flat out vec4 v_light_params;
-flat out vec3 v_light_color;
-flat out float v_light_offset;
-out vec2 v_screen_pos;
-out vec2 v_delta;
-
-void main() {
-    v_light_params = a_light_params;
-    v_light_color = a_light_color;
-    v_light_offset = (float(a_light_index) + 0.5) / float({max_num_lights});
-
-    vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
-    gl_Position = vec4(p.xy, 0.0, 1.0);
-    v_screen_pos = p.xy;
-    v_delta = a_position.xy - a_light_position;
-}
-"#;
-
-const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
 in vec2 v_screen_pos;
-in vec2 v_delta;
+in vec3 v_delta;
 out vec4 f_color;
 
 void main() {
@@ -114,7 +112,7 @@ void main() {
 
     float scale = normal_value == vec3(0.0) ?
         1.0 :
-        max(dot(normalize(vec3(-v_delta, 0.0) + vec3(0, 0, 50)), normalize(normal)), 0.0);
+        max(dot(normalize(-v_delta), normalize(normal)), 0.0);
 
     vec3 color = v_light_color *
         scale *
@@ -122,7 +120,7 @@ void main() {
             shadow_map,
             v_light_offset,
             v_light_params,
-            v_delta
+            v_delta.xy
         );
     f_color = vec4(color, 1.0);
 }
@@ -139,13 +137,9 @@ impl ScreenLightPass {
             samplers: ["shadow_map", "screen_normals"],
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),
-            fragment_source: &format!(
-                "{}\n{}",
-                VISIBILITY_SOURCE,
-                FRAGMENT_SOURCE.replace(
-                    "{shadow_map_resolution}",
-                    &params.shadow_map_resolution.to_string(),
-                ),
+            fragment_source: &FRAGMENT_SOURCE.replace(
+                "{shadow_map_resolution}",
+                &params.shadow_map_resolution.to_string(),
             ),
         };
         let program = Program::new(gl, program_def)?;

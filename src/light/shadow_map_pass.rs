@@ -15,7 +15,7 @@ out vec4 v_edge;
 out float v_angle;
 
 float angle_to_light(vec2 position) {
-    vec2 delta = position - i_light_position;
+    vec2 delta = position - i_light_position.xy;
     return atan(delta.y, delta.x);
 }
 
@@ -27,11 +27,11 @@ void main() {
         return;
     }
 
-    v_light_position = i_light_position;
+    v_light_position = i_light_position.xy;
     v_light_radius = i_light_radius;
 
-    vec3 c = cross(vec3(a_line_0 - i_light_position, 0.0),
-                   vec3(a_line_1 - i_light_position, 0.0));
+    vec3 c = cross(vec3(a_line_0 - i_light_position.xy, 0.0),
+                   vec3(a_line_1 - i_light_position.xy, 0.0));
     v_is_front = (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
                   ((a_order == 1 || a_order == 3) && c.z > 0.0))
                  ? 1 : 0;
