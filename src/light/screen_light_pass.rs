@@ -56,6 +56,7 @@ float visibility(
         clamp(dist_to_light / light_start - 1.0, 0.0, 1.0)))) / 2.0;
 
     float front_light = fall_on * pow(1.0 - dist_to_light / light_radius, 2.0);
+    //float front_light = fall_on * pow(1.0 / (dist_to_light/50.0), 2.0);
 
     float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
     if (angle_diff > PI)

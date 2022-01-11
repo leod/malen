@@ -240,7 +240,7 @@ impl Draw {
             angle_size: std::f32::consts::PI / 3.0,
             start: 18.0,
             //color: color.scale(4.0),
-            color: Color3::from_u8(212, 230, 135).to_linear().scale(1.5),
+            color: Color3::from_u8(212, 230, 135).to_linear(),
         });
     }
 
@@ -300,7 +300,7 @@ impl Draw {
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
-            color: color.scale(7.0),
+            color: color.scale(2.0),
         });
     }
 
@@ -328,7 +328,7 @@ impl Draw {
             angle: player.angle,
             angle_size: std::f32::consts::PI / 6.0,
             start: 22.0,
-            color: Color3::from_u8(150, 150, 150).to_linear().scale(30.0),
+            color: Color3::from_u8(255, 255, 255).to_linear(),
         });
         self.lights.push(Light {
             position: player.pos,
@@ -336,7 +336,7 @@ impl Draw {
             angle: player.angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
-            color: Color3::from_u8(150, 150, 150).to_linear().scale(7.0),
+            color: Color3::from_u8(150, 150, 150).to_linear(),
         });
         /*self.lights.push(Light {
             position: self.state.player.pos,
@@ -367,7 +367,7 @@ impl Draw {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.004, 0.004, 0.004),
+                ambient: Color3::new(0.1, 0.1, 0.1).to_linear(),
             });
 
         /*context.color_pass().draw(
