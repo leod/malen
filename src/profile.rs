@@ -204,7 +204,8 @@ impl Profile {
             },
             y_axis: Axis {
                 label: "dur[ms]".to_owned(),
-                range: Some((0.0, 30.0)),
+                //range: Some((0.0, 30.0)),
+                range: None,
                 tics: 15.0,
             },
             line_graphs: line_graphs,
