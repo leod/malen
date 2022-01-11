@@ -46,9 +46,6 @@ float visibility(
     float front = min(min(front1, front2), front3) - front_glow;
     float back = min(min(back1, back2), back3);
 
-    //float front = 0.5 * front1 + 0.25 * front2 + 0.25 * front3 - front_glow;
-    //float back = 0.5 * back1 + 0.25 * back2 + 0.25 * back3;
-
     float v_front = step(dist_to_light, front);
     float v_back = step(dist_to_light, back);
 
@@ -56,7 +53,6 @@ float visibility(
         clamp(dist_to_light / light_start - 1.0, 0.0, 1.0)))) / 2.0;
 
     float front_light = fall_on * pow(1.0 - dist_to_light / light_radius, 2.0);
-    //float front_light = fall_on * pow(1.0 / (dist_to_light/50.0), 2.0);
 
     float angle_diff = mod(abs(angle - light_angle), 2.0 * PI);
     if (angle_diff > PI)
@@ -78,7 +74,6 @@ float visibility(
         inner_light *= 2.0 * pow(
             1.0 - clamp((to_front - front_glow) / glow_size, 0.0, 1.0),
             5.0);
-        //inner_light *= 2.0 * max(0.0, 1.0 - (to_front - front_glow) / glow_size);
     } 
 
     return front_light * v_front + inner_light * (1.0 - v_front) * v_back;

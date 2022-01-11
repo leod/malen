@@ -196,7 +196,6 @@ impl Draw {
         });*/
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
-            color: Color3::from_u8(69, 157, 69),
             ignore_light_index1: wall.lamp_index.map(|index| index as u32),
             ignore_light_index2: None,
         });
@@ -229,7 +228,6 @@ impl Draw {
             circle: enemy.circle(),
             angle: 0.0,
             num_segments: 16,
-            color: color,
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
@@ -264,7 +262,6 @@ impl Draw {
             circle: ball.circle(),
             angle: 0.0,
             num_segments: 16,
-            color: color,
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
@@ -318,7 +315,6 @@ impl Draw {
         });*/
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player.rotated_rect(),
-            color: color,
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: Some(self.lights.len() as u32 + 1),
         });
@@ -367,7 +363,7 @@ impl Draw {
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light()
             .compose(GlobalLightParams {
-                ambient: Color3::new(0.1, 0.1, 0.1).to_linear(),
+                ambient: Color3::new(0.05, 0.05, 0.05).to_linear(),
             });
 
         /*context.color_pass().draw(
