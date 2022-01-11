@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use nalgebra::{Vector2, Vector3};
+use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::{
@@ -72,12 +72,8 @@ impl LightPipeline {
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
         let light_area_batch = TriangleBatch::new(context.gl())?;
-        let global_light_params = UniformBuffer::new(
-            context.gl(),
-            GlobalLightParamsBlock {
-                ambient: Vector3::zeros(),
-            },
-        )?;
+        let global_light_params =
+            UniformBuffer::new(context.gl(), GlobalLightParams::default().into())?;
 
         let screen_geometry = new_screen_framebuffer(canvas.clone(), 2, true)?;
         let shadow_map = Framebuffer::from_textures(
@@ -250,7 +246,11 @@ impl<'a> ShadowMapPhase<'a> {
         self
     }
 
-    pub fn build_screen_light(self) -> ComposePhase<'a> {
+    pub fn build_screen_light(self, global_light_params: GlobalLightParams) -> ComposePhase<'a> {
+        self.pipeline
+            .global_light_params
+            .set_data(global_light_params.into());
+
         /*self.pipeline
         .light_area_batch
         .reset(
@@ -284,6 +284,7 @@ impl<'a> ShadowMapPhase<'a> {
 
             self.pipeline.screen_light_pass.draw(
                 self.input.matrices,
+                &self.pipeline.global_light_params,
                 &self.pipeline.shadow_map.textures()[0],
                 &self.pipeline.screen_geometry.textures()[1],
                 self.pipeline.light_area_batch.draw_unit(),
@@ -301,11 +302,7 @@ impl<'a> ComposePhase<'a> {
         }
     }
 
-    pub fn compose(self, global_light_params: GlobalLightParams) {
-        self.pipeline
-            .global_light_params
-            .set_data(global_light_params.into());
-
+    pub fn compose(self) {
         self.pipeline.compose_pass.draw(
             &self.pipeline.global_light_params,
             &self.pipeline.screen_geometry.textures()[0],

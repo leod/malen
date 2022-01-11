@@ -8,7 +8,7 @@ use crate::{
     gl::{self, DrawParams, Program, ProgramDef, Texture, UniformBuffer},
 };
 
-use super::def::GlobalLightParamsBlock;
+use super::{def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
@@ -27,12 +27,11 @@ void main() {
     vec3 albedo = texture(screen_albedo, v_tex_coords).rgb;
     vec3 light = texture(screen_light, v_tex_coords).rgb;
     vec3 diffuse = albedo * (light + global_light_params.ambient);
-    //vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    vec3 mapped = vec3(1.0) - exp(-diffuse);
+    vec3 mapped = diffuse / (diffuse + vec3(1.0));
 
     const float gamma = 2.2;
 
-    f_color = vec4(pow(mapped, vec3(1.0 / gamma)), 1.0);
+    f_color = vec4(pow(mapped, vec3(1.0 / global_light_params.gamma)), 1.0);
     //f_color = vec4(diffuse, 1.0);
 }
 "#;
@@ -58,7 +57,7 @@ impl ComposePass {
         .into_mesh();
 
         let program_def = ProgramDef {
-            uniform_blocks: [("global_light_params", 1)],
+            uniform_blocks: [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)],
             samplers: ["screen_albedo", "screen_light"],
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,

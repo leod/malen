@@ -361,10 +361,11 @@ impl Draw {
             )?
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
-            .build_screen_light()
-            .compose(GlobalLightParams {
+            .build_screen_light(GlobalLightParams {
                 ambient: Color3::new(0.05, 0.05, 0.05).to_linear(),
-            });
+                ..GlobalLightParams::default()
+            })
+            .compose();
 
         /*context.color_pass().draw(
             &self.camera_matrices,
