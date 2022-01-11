@@ -14,11 +14,34 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct GlobalLightParams {
     pub ambient: Color3,
+    pub gamma: f32,
+    pub front_glow: f32,
+    pub back_glow: f32,
+    pub angle_fall_off_size: f32,
+    pub angle_fall_off_factor: f32,
+}
+
+impl Default for GlobalLightParams {
+    fn default() -> Self {
+        Self {
+            ambient: Color3::from_u8(0, 0, 0),
+            gamma: 2.2,
+            front_glow: 10.0,
+            back_glow: 40.0,
+            angle_fall_off_size: std::f32::consts::PI / 20.0,
+            angle_fall_off_factor: 10.0,
+        }
+    }
 }
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightParamsBlock {
     pub ambient: Vector3<f32>,
+    pub gamma: f32,
+    pub front_glow: f32,
+    pub back_glow: f32,
+    pub angle_fall_off_size: f32,
+    pub angle_fall_off_factor: f32,
 }
 
 impl UniformBlock for GlobalLightParamsBlock {}
@@ -27,6 +50,11 @@ impl From<GlobalLightParams> for GlobalLightParamsBlock {
     fn from(params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
+            gamma: params.gamma,
+            front_glow: params.front_glow,
+            back_glow: params.back_glow,
+            angle_fall_off_size: params.angle_fall_off_size,
+            angle_fall_off_factor: params.angle_fall_off_factor,
         }
     }
 }
