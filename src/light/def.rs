@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Vector2, Vector3, Vector4};
+use nalgebra::{Point3, Vector2, Vector3};
 
 use bytemuck::Zeroable;
 use bytemuck_derive::{Pod, Zeroable};
@@ -10,8 +10,6 @@ use crate::{
     gl::{Attribute, UniformBlock, Vertex},
     Color3,
 };
-
-use super::light_area::LightAreaVertex;
 
 #[derive(Debug, Clone)]
 pub struct GlobalLightParams {
@@ -36,7 +34,7 @@ impl From<GlobalLightParams> for GlobalLightParamsBlock {
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
 pub struct Light {
-    pub position: Point2<f32>,
+    pub position: Point3<f32>,
     pub radius: f32,
     pub angle: f32,
     pub angle_size: f32,
@@ -60,18 +58,8 @@ impl Vertex for Light {
 impl Light {
     pub fn rect(&self) -> Rect {
         Rect {
-            center: self.position,
+            center: self.position.xy(),
             size: 2.0 * self.radius * Vector2::new(1.0, 1.0),
-        }
-    }
-
-    pub fn to_light_vertex(&self, position: Point2<f32>, light_index: i32) -> LightAreaVertex {
-        LightAreaVertex {
-            position,
-            light_index: light_index as f32,
-            light_position: self.position,
-            light_params: Vector4::new(self.radius, self.angle, self.angle_size, self.start),
-            light_color: self.color,
         }
     }
 }

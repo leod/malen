@@ -1,5 +1,5 @@
 use coarse_prof::profile;
-use nalgebra::{Matrix3, Point2, Vector2};
+use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
@@ -232,7 +232,7 @@ impl Draw {
             ignore_light_index2: None,
         });
         self.lights.push(Light {
-            position: enemy.pos,
+            position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
             radius: 500.0,
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
@@ -266,7 +266,7 @@ impl Draw {
             ignore_light_index2: None,
         });
         self.lights.push(Light {
-            position: ball.pos,
+            position: Point3::new(ball.pos.x, ball.pos.y, 50.0),
             radius: ball.radius * 2.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
@@ -292,7 +292,7 @@ impl Draw {
             color: Color4::from_u8(255, 255, 255, 255),
         });*/
         self.lights.push(Light {
-            position: lamp.pos,
+            position: Point3::new(lamp.pos.x, lamp.pos.y, 100.0),
             radius: 300.0,
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
@@ -319,7 +319,7 @@ impl Draw {
             ignore_light_index2: Some(self.lights.len() as u32 + 1),
         });
         self.lights.push(Light {
-            position: player.pos,
+            position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 1200.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI / 6.0,
@@ -327,7 +327,7 @@ impl Draw {
             color: Color3::from_u8(255, 255, 255).to_linear(),
         });
         self.lights.push(Light {
-            position: player.pos,
+            position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 120.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI * 2.0,
