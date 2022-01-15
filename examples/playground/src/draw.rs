@@ -311,7 +311,7 @@ impl Draw {
             angle: player.angle,
             angle_size: std::f32::consts::PI / 6.0,
             start: 22.0,
-            color: Color3::from_u8(255, 255, 255).to_linear(),
+            color: Color3::from_u8(255, 255, 255).to_linear().scale(10.0),
         });
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),

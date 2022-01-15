@@ -407,7 +407,9 @@ fn compose(pipeline: &mut LightPipeline) {
     pipeline.compose_pass.draw(
         &pipeline.global_light_params,
         &pipeline.screen_geometry.textures()[0],
+        &pipeline.screen_geometry.textures()[2],
         &pipeline.screen_light.textures()[0],
+        &pipeline.screen_reflectors.textures()[0],
     );
 }
 
