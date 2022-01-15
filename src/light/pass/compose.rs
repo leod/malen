@@ -8,7 +8,7 @@ use crate::{
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
 };
 
-use super::{def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
+use super::super::{def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
