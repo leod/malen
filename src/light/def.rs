@@ -27,7 +27,7 @@ impl Default for GlobalLightParams {
             ambient: Color3::from_u8(0, 0, 0),
             gamma: 2.2,
             front_glow: 10.0,
-            back_glow: 40.0,
+            back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
         }
@@ -36,6 +36,7 @@ impl Default for GlobalLightParams {
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightParamsBlock {
+    pub screen_size: Vector2<f32>,
     pub ambient: Vector3<f32>,
     pub gamma: f32,
     pub front_glow: f32,
@@ -46,9 +47,10 @@ pub struct GlobalLightParamsBlock {
 
 impl UniformBlock for GlobalLightParamsBlock {}
 
-impl From<GlobalLightParams> for GlobalLightParamsBlock {
-    fn from(params: GlobalLightParams) -> Self {
+impl GlobalLightParamsBlock {
+    pub fn new(screen_size: Vector2<f32>, params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
+            screen_size,
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
             front_glow: params.front_glow,

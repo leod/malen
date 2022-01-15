@@ -15,8 +15,7 @@ pub async fn main() {
     log::info!("Starting malen playground example");
 
     let config = Config {
-        //canvas_size: CanvasSizeConfig::Fill,
-        canvas_size: CanvasSizeConfig::LogicalSize(Vector2::new(1000, 1000)),
+        canvas_size: CanvasSizeConfig::Fill,
     };
 
     let context = Context::from_canvas_element_id("canvas", config).unwrap();
