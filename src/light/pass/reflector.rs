@@ -5,7 +5,7 @@ use crate::{
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use super::{GlobalLightParamsBlock, OccluderLineVertex};
+use super::super::OccluderLineVertex;
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;

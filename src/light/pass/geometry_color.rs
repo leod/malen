@@ -7,7 +7,7 @@ use crate::{
 
 use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
-use super::{ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+use super::super::{ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
 const VERTEX_SOURCE: &str = r#"
 out vec4 v_color;

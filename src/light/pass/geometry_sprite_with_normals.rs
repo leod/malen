@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-use super::{ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+use super::super::{ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;

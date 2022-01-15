@@ -18,15 +18,13 @@ use crate::{
 };
 
 use super::{
-    compose_pass::ComposePass,
-    geometry_color_pass::GeometryColorPass,
-    geometry_sprite_with_normals_pass::GeometrySpriteWithNormalsPass,
     light_area::{LightAreaVertex, LightCircleSegment},
-    reflector_pass::ReflectorPass,
-    screen_light_pass::ScreenLightPass,
-    shaded_color_pass::ShadedColorPass,
-    shaded_sprite_pass::ShadedSpritePass,
-    shadow_map_pass::ShadowMapPass,
+    pass::{
+        compose::ComposePass, geometry_color::GeometryColorPass,
+        geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, reflector::ReflectorPass,
+        screen_light::ScreenLightPass, shaded_color::ShadedColorPass,
+        shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
+    },
     GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
 };
 
