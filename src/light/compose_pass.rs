@@ -5,7 +5,7 @@ use nalgebra::{Point2, Vector2};
 use crate::{
     data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
     geom::Rect,
-    gl::{self, DrawParams, Program, ProgramDef, Texture, UniformBuffer},
+    gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
 };
 
 use super::{def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
@@ -72,7 +72,7 @@ impl ComposePass {
 
     pub fn draw(
         &self,
-        global_light_params: &UniformBuffer<GlobalLightParamsBlock>,
+        global_light_params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
         screen_light: &Texture,
     ) {

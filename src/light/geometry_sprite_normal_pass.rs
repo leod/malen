@@ -2,9 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     data::SpriteVertex,
-    gl::{
-        self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer,
-    },
+    gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
     pass::{
         MatricesBlock, SpriteInfoBlock, SpriteInfos, MATRICES_BLOCK_BINDING,
         SPRITE_INFO_BLOCK_BINDING,
@@ -62,7 +60,7 @@ impl GeometrySpriteNormalPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,

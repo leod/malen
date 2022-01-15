@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
+    gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Uniform},
 };
 
 use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
@@ -49,11 +49,8 @@ impl GeometryColorPass {
         Ok(Self { program })
     }
 
-    pub fn draw<E>(
-        &self,
-        matrices: &UniformBuffer<MatricesBlock>,
-        draw_unit: DrawUnit<ColorVertex, E>,
-    ) where
+    pub fn draw<E>(&self, matrices: &Uniform<MatricesBlock>, draw_unit: DrawUnit<ColorVertex, E>)
+    where
         E: Element,
     {
         //#[cfg(feature = "coarse-prof")]

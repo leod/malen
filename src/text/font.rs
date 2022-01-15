@@ -11,7 +11,7 @@ use super::atlas::Atlas;
 use crate::{
     data::{ColorSprite, ColorSpriteBatch},
     geom::Rect,
-    gl::{self, Blend, DrawParams, NewTextureError, Texture, UniformBuffer},
+    gl::{self, Blend, DrawParams, NewTextureError, Texture, Uniform},
     pass::{ColorSpritePass, MatricesBlock},
     util, Color4, Context,
 };
@@ -220,7 +220,7 @@ impl Font {
 
     pub fn draw(
         &self,
-        matrices_buffer: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         batch: &mut TextBatch,
     ) -> Result<(), gl::Error> {
         //#[cfg(feature = "coarse-prof")]
@@ -228,7 +228,7 @@ impl Font {
 
         for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
             self.color_sprite_pass.draw(
-                matrices_buffer,
+                matrices,
                 atlas.texture(),
                 atlas_batch.draw_unit(),
                 &DrawParams {

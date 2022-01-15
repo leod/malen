@@ -7,7 +7,7 @@ use malen::{
         Sprite, SpriteBatch, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
-    gl::{Texture, TextureParams, UniformBuffer},
+    gl::{Texture, TextureParams, Uniform},
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch,
         OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -26,8 +26,8 @@ pub struct Draw {
     texture2: Texture,
     normal_map2: Texture,
 
-    camera_matrices: UniformBuffer<MatricesBlock>,
-    screen_matrices: UniformBuffer<MatricesBlock>,
+    camera_matrices: Uniform<MatricesBlock>,
+    screen_matrices: Uniform<MatricesBlock>,
 
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
@@ -69,8 +69,8 @@ impl Draw {
         )
         .await?;
 
-        let camera_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
-        let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
+        let camera_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
 
         let circle_mesh = Mesh::from_geometry::<TriangleTag, _>(
             context.gl(),
