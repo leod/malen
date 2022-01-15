@@ -5,7 +5,7 @@ use crate::{
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use super::OccluderLineVertex;
+use super::{GlobalLightParamsBlock, OccluderLineVertex};
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
@@ -30,7 +30,7 @@ void main() {
     vec3 albedo = texture(screen_albedo, v_tex_coords).rgb;
     vec3 light = texture(screen_light, v_tex_coords).rgb;
 
-    f_color = vec4(albedo * light, 1.0);
+    f_color = vec4(light, 1.0);
 }
 "#;
 
@@ -63,7 +63,10 @@ impl ReflectorPass {
             matrices,
             [screen_albedo, screen_light],
             draw_unit,
-            &DrawParams::default(),
+            &DrawParams {
+                line_width: 3.0,
+                ..DrawParams::default()
+            },
         );
     }
 }
