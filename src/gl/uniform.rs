@@ -23,12 +23,12 @@ where
             _phantom: PhantomData,
         };
 
-        uniform_buffer.set_data(uniform);
+        uniform_buffer.set(uniform);
 
         Ok(uniform_buffer)
     }
 
-    pub fn set_data(&self, data: U) {
+    pub fn set(&self, data: U) {
         let data_std140 = data.as_std140();
         let data_u8 = bytemuck::bytes_of(&data_std140);
 

@@ -44,7 +44,7 @@ pub struct Draw {
 }
 
 impl Draw {
-    pub async fn new(context: &Context, state: &State) -> Result<Draw, InitError> {
+    pub async fn new(context: &Context, _: &State) -> Result<Draw, InitError> {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let floor_texture = Texture::load(
             context.gl(),
@@ -135,11 +135,11 @@ impl Draw {
     pub fn render(&mut self, screen: Screen, state: &State) -> Result<(), FrameError> {
         profile!("Draw::render");
 
-        self.camera_matrices.set_data(MatricesBlock {
+        self.camera_matrices.set(MatricesBlock {
             view: state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
-        self.screen_matrices.set_data(MatricesBlock {
+        self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
         });
