@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crevice::{glsl::GlslStruct, std140::AsStd140};
 use glow::HasContext;
 
-use super::{Context, UniformBuffer};
+use super::{Context, Uniform};
 
 pub trait UniformBlock: AsStd140 + GlslStruct {}
 
@@ -133,7 +133,7 @@ impl UniformBuffers for () {
     }
 }
 
-impl<'a, U> UniformBuffers for &'a UniformBuffer<U>
+impl<'a, U> UniformBuffers for &'a Uniform<U>
 where
     U: UniformBlock,
 {
@@ -149,7 +149,7 @@ where
     }
 }
 
-impl<'a, U0, U1> UniformBuffers for (&'a UniformBuffer<U0>, &'a UniformBuffer<U1>)
+impl<'a, U0, U1> UniformBuffers for (&'a Uniform<U0>, &'a Uniform<U1>)
 where
     U0: UniformBlock,
     U1: UniformBlock,
@@ -171,12 +171,7 @@ where
     }
 }
 
-impl<'a, U0, U1, U2> UniformBuffers
-    for (
-        &'a UniformBuffer<U0>,
-        &'a UniformBuffer<U1>,
-        &'a UniformBuffer<U2>,
-    )
+impl<'a, U0, U1, U2> UniformBuffers for (&'a Uniform<U0>, &'a Uniform<U1>, &'a Uniform<U2>)
 where
     U0: UniformBlock,
     U1: UniformBlock,

@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::{
     gl::{
         self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, DrawUnit, Program,
-        ProgramDef, Texture, UniformBuffer,
+        ProgramDef, Texture, Uniform,
     },
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
@@ -32,7 +32,7 @@ void main() {
 }
 "#;
 
-const FRAGMENT_SOURCE: &str = r#"
+const VISIBILITY_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
@@ -123,6 +123,9 @@ float visibility(
     return front_light * vis_front + inner_light * (1.0 - vis_front) * vis_back;
 }
 
+"#;
+
+const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
@@ -165,9 +168,13 @@ impl ScreenLightPass {
             samplers: ["shadow_map", "screen_normals"],
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),
-            fragment_source: &FRAGMENT_SOURCE.replace(
-                "{shadow_map_resolution}",
-                &params.shadow_map_resolution.to_string(),
+            fragment_source: &format!(
+                "{}\n{}",
+                VISIBILITY_SOURCE,
+                FRAGMENT_SOURCE.replace(
+                    "{shadow_map_resolution}",
+                    &params.shadow_map_resolution.to_string(),
+                )
             ),
         };
         let program = Program::new(gl, program_def)?;
@@ -177,8 +184,8 @@ impl ScreenLightPass {
 
     pub fn draw(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
-        global_light_params: &UniformBuffer<GlobalLightParamsBlock>,
+        matrices: &Uniform<MatricesBlock>,
+        global_light_params: &Uniform<GlobalLightParamsBlock>,
         shadow_map: &Texture,
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,

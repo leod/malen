@@ -13,8 +13,8 @@ mod error;
 mod framebuffer;
 mod program;
 mod texture;
+mod uniform;
 mod uniform_block;
-mod uniform_buffer;
 mod vertex_array;
 mod vertex_buffer;
 
@@ -35,8 +35,8 @@ pub use texture::{
     LoadTextureError, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
     TextureValueType, TextureWrap,
 };
+pub use uniform::Uniform;
 pub use uniform_block::{UniformBlock, UniformBlockDecls};
-pub use uniform_buffer::UniformBuffer;
 pub use vertex::{Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
 pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;

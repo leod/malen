@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DrawParams, Element, InstancedDrawUnit, Program, ProgramDef, UniformBuffer},
+    gl::{self, DrawParams, Element, InstancedDrawUnit, Program, ProgramDef, Uniform},
 };
 
 use super::{ColorInstance, MatricesBlock, MATRICES_BLOCK_BINDING};
@@ -51,7 +51,7 @@ impl InstancedColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         draw_unit: InstancedDrawUnit<(ColorVertex, ColorInstance), E>,
         params: &DrawParams,
     ) where

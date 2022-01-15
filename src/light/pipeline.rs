@@ -10,8 +10,8 @@ use crate::{
     data::{ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
         self, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError, Texture,
-        TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
-        UniformBuffer, VertexBuffer,
+        TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap, Uniform,
+        VertexBuffer,
     },
     pass::MatricesBlock,
     Canvas, Color4, Context, FrameError,
@@ -38,7 +38,7 @@ pub struct LightPipeline {
 
     light_instances: Rc<VertexBuffer<Light>>,
     light_area_batch: TriangleBatch<LightAreaVertex>,
-    global_light_params: UniformBuffer<GlobalLightParamsBlock>,
+    global_light_params: Uniform<GlobalLightParamsBlock>,
 
     screen_geometry: Framebuffer,
     shadow_map: Framebuffer,
@@ -72,8 +72,7 @@ impl LightPipeline {
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
         let light_area_batch = TriangleBatch::new(context.gl())?;
-        let global_light_params =
-            UniformBuffer::new(context.gl(), GlobalLightParams::default().into())?;
+        let global_light_params = Uniform::new(context.gl(), GlobalLightParams::default().into())?;
 
         let screen_geometry = new_screen_framebuffer(canvas.clone(), 2, true)?;
         let shadow_map = Framebuffer::from_textures(
@@ -140,7 +139,7 @@ impl LightPipeline {
 
     pub fn geometry_phase<'a>(
         &'a mut self,
-        matrices: &'a UniformBuffer<MatricesBlock>,
+        matrices: &'a Uniform<MatricesBlock>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
         if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
             self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 2, true)?;
@@ -152,7 +151,7 @@ impl LightPipeline {
 }
 
 struct Input<'a> {
-    matrices: &'a UniformBuffer<MatricesBlock>,
+    matrices: &'a Uniform<MatricesBlock>,
 }
 
 #[must_use]

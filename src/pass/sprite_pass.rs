@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     data::SpriteVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, UniformBuffer},
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
 };
 
 use super::{
@@ -55,7 +55,7 @@ impl SpritePass {
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
