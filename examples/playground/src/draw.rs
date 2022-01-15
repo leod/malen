@@ -360,6 +360,14 @@ impl Draw {
             Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
             &self.light_pipeline.screen_light(),
         )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(340.0, 10.0), Vector2::new(320.0, 240.0)),
+            &self.light_pipeline.screen_reflectors(),
+        )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(0.0, 0.0), context.canvas().borrow().screen().logical_size),
+            &self.light_pipeline.screen_reflectors(),
+        )?;
 
         Ok(())
     }
