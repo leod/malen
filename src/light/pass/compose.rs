@@ -32,7 +32,7 @@ vec3 trace_cone(
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = 5.0;
+    float t = 6.0;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
 
@@ -43,15 +43,15 @@ vec3 trace_cone(
 
         float mip_level = log2(cone_diameter);
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
-        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb;
+        vec3 sample_color = 10.0 * textureLod(screen_reflectors, p, mip_level).rgb;
 
-        //if (sample_occlusion > 0.0) {
-            //sample_color /= sample_occlusion;
+        if (sample_occlusion > 0.0) {
+            sample_color /= sample_occlusion;
 
-            //color += (1.0 - occlusion) * sample_occlusion * sample_color;
-            color += sample_color;
-            //occlusion += (1.0 - occlusion) * sample_occlusion;
-        //}
+            color += (1.0 - occlusion) * sample_occlusion * sample_color;
+            //color += sample_color;
+            occlusion += (1.0 - occlusion) * sample_occlusion;
+        }
 
         t += 1.0 * cone_diameter;
         //t += 10.0;
@@ -67,11 +67,20 @@ vec3 calc_indirect_diffuse_lighting(
     const int n = 16;
     const float dangle = 2.0 * PI / float(n);
 
+    vec3 normal_value = texture(screen_normals, origin).xyz;
+    vec3 normal = normal_value * 2.0 - 1.0;
+    normal.y = -normal.y;
+
     vec3 color = vec3(0.0, 0.0, 0.0);
     float angle = 0.0;
 
     for (int i = 0; i < n; i++) {
-        color += trace_cone(origin, vec2(cos(angle), sin(angle)));
+        vec2 dir = vec2(cos(angle), sin(angle));
+        float scale = normal_value == vec3(0.0) ?
+            1.0 :
+            max(dot(normalize(vec3(-dir, 0.5)), normalize(normal)), 0.0);
+
+        color += scale * trace_cone(origin, dir);
         angle += dangle;
     }
 
@@ -88,7 +97,7 @@ void main() {
 
     vec3 direct_light = texture(screen_light, v_tex_coords).rgb;
     vec3 indirect_light = calc_indirect_diffuse_lighting(v_tex_coords);
-    vec3 light = indirect_light;
+    vec3 light = direct_light + indirect_light;
 
     vec3 diffuse = vec3(albedo) * (light + albedo.a * global_light_params.ambient);
 
@@ -100,7 +109,7 @@ void main() {
 
 pub struct ComposePass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 4>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
 }
 
 impl ComposePass {
@@ -122,6 +131,7 @@ impl ComposePass {
             uniform_blocks: [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)],
             samplers: [
                 "screen_albedo",
+                "screen_normals",
                 "screen_occlusion",
                 "screen_light",
                 "screen_reflectors",
@@ -141,6 +151,7 @@ impl ComposePass {
         &self,
         global_light_params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
+        screen_normal: &Texture,
         screen_occlusion: &Texture,
         screen_light: &Texture,
         screen_reflectors: &Texture,
@@ -150,6 +161,7 @@ impl ComposePass {
             global_light_params,
             [
                 screen_albedo,
+                screen_normal,
                 screen_occlusion,
                 screen_light,
                 screen_reflectors,
