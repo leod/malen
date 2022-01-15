@@ -79,7 +79,7 @@ impl LightPipeline {
         let light_area_batch = TriangleBatch::new(context.gl())?;
         let global_light_params = Uniform::new(context.gl(), GlobalLightParams::default().into())?;
 
-        let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true)?;
+        let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true, true)?;
         let shadow_map = Framebuffer::from_textures(
             context.gl(),
             vec![Texture::new(
@@ -94,8 +94,8 @@ impl LightPipeline {
                 },
             )?],
         )?;
-        let screen_light = new_screen_framebuffer(canvas.clone(), 1, false)?;
-        let screen_reflectors = new_screen_framebuffer(canvas.clone(), 1, false)?;
+        let screen_light = new_screen_framebuffer(canvas.clone(), 1, false, false)?;
+        let screen_reflectors = new_screen_framebuffer(canvas.clone(), 1, false, true)?;
 
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
         let geometry_sprite_normal_pass = GeometrySpriteWithNormalsPass::new(context.gl())?;
@@ -163,9 +163,9 @@ impl LightPipeline {
         matrices: &'a Uniform<MatricesBlock>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
         if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
-            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 3, true)?;
-            self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
-            self.screen_reflectors = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
+            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 3, true, true)?;
+            self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false, false)?;
+            self.screen_reflectors = new_screen_framebuffer(self.canvas.clone(), 1, false, true)?;
         }
 
         #[cfg(feature = "coarse-prof")]
@@ -388,6 +388,9 @@ impl<'a> IndirectLightPhase<'a> {
     }
 
     pub fn prepare_cone_tracing(self) -> ComposePhase<'a> {
+        self.pipeline.screen_occlusion().generate_mipmap();
+        self.pipeline.screen_reflectors().generate_mipmap();
+
         ComposePhase {
             pipeline: self.pipeline,
         }
@@ -421,15 +424,20 @@ fn new_screen_framebuffer(
     canvas: Rc<RefCell<Canvas>>,
     num_textures: usize,
     depth: bool,
+    mip_map: bool,
 ) -> Result<Framebuffer, NewFramebufferError> {
     let mut textures = (0..num_textures)
-        .map(|_| {
+        .map(|i| {
             Texture::new(
                 canvas.borrow().gl(),
                 screen_light_size(canvas.clone()),
                 TextureParams {
                     value_type: TextureValueType::RgbaF32,
-                    min_filter: TextureMinFilter::Nearest,
+                    min_filter: if mip_map && i + 1 == num_textures {
+                        TextureMinFilter::LinearMipmapLinear
+                    } else {
+                        TextureMinFilter::Nearest
+                    },
                     mag_filter: TextureMagFilter::Nearest,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
