@@ -77,7 +77,10 @@ impl LightPipeline {
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
         let light_area_batch = TriangleBatch::new(context.gl())?;
-        let global_light_params = Uniform::new(context.gl(), GlobalLightParams::default().into())?;
+        let global_light_params = Uniform::new(
+            context.gl(),
+            GlobalLightParamsBlock::new(Vector2::zeros(), GlobalLightParams::default()),
+        )?;
 
         let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true, true)?;
         let shadow_map = Framebuffer::from_textures(
@@ -291,7 +294,10 @@ impl<'a> ShadowMapPhase<'a> {
     ) -> BuiltScreenLightPhase<'a> {
         self.pipeline
             .global_light_params
-            .set(global_light_params.into());
+            .set(GlobalLightParamsBlock::new(
+                self.pipeline.screen_albedo().size().cast::<f32>(),
+                global_light_params,
+            ));
 
         /*self.pipeline
         .light_area_batch

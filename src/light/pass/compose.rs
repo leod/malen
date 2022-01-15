@@ -38,7 +38,7 @@ vec3 trace_cone(
 
     for (int i = 0; i < max_steps && occlusion <= 0.9; i++) {
         float cone_diameter = diameter_scale * t;
-        vec2 p = origin + dir * 1.0 / 1000.0 * t;
+        vec2 p = origin + dir / global_light_params.screen_size * t;
         p = clamp(p, 0.0, 1.0);
 
         float mip_level = log2(cone_diameter);
