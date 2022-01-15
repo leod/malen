@@ -79,7 +79,7 @@ impl LightPipeline {
         let light_area_batch = TriangleBatch::new(context.gl())?;
         let global_light_params = Uniform::new(context.gl(), GlobalLightParams::default().into())?;
 
-        let screen_geometry = new_screen_framebuffer(canvas.clone(), 2, true)?;
+        let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true)?;
         let shadow_map = Framebuffer::from_textures(
             context.gl(),
             vec![Texture::new(
@@ -142,6 +142,10 @@ impl LightPipeline {
         &self.screen_geometry.textures()[1]
     }
 
+    pub fn screen_occlusion(&self) -> &Texture {
+        &self.screen_geometry.textures()[2]
+    }
+
     pub fn screen_light(&self) -> &Texture {
         &self.screen_light.textures()[0]
     }
@@ -159,8 +163,9 @@ impl LightPipeline {
         matrices: &'a Uniform<MatricesBlock>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
         if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
-            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 2, true)?;
+            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 3, true)?;
             self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
+            self.screen_reflectors = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
         }
 
         #[cfg(feature = "coarse-prof")]
