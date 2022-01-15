@@ -110,7 +110,7 @@ impl Draw {
         let lights = Vec::new();
         let text_batch = TextBatch::new(context.gl())?;
 
-        let mut draw = Draw {
+        Ok(Draw {
             font,
             floor_texture,
             floor_normal_map,
@@ -129,14 +129,7 @@ impl Draw {
             occluder_batch,
             lights,
             text_batch,
-        };
-
-        draw.render_floor();
-        for wall in &state.walls {
-            draw.render_wall(wall);
-        }
-
-        Ok(draw)
+        })
     }
 
     pub fn render(&mut self, screen: Screen, state: &State) -> Result<(), FrameError> {
@@ -151,6 +144,8 @@ impl Draw {
             projection: screen.orthographic_projection(),
         });
 
+        self.floor_batch.clear();
+        self.wall_batch.clear();
         self.circle_instances.clear();
         self.color_batch.clear();
         self.text_batch.clear();
@@ -158,6 +153,9 @@ impl Draw {
         self.lights.clear();
 
         self.render_floor();
+        for wall in &state.walls {
+            self.render_wall(wall);
+        }
         for lamp in &state.lamps {
             self.render_lamp(lamp);
         }
