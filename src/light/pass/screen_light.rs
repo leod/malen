@@ -8,8 +8,8 @@ use crate::{
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use super::super::{
-    light_area::LightAreaVertex, GlobalLightParamsBlock, LightPipelineParams,
+use super::{
+    super::{light_area::LightAreaVertex, GlobalLightParamsBlock, LightPipelineParams},
     GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
 };
 
