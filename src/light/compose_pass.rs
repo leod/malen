@@ -24,9 +24,9 @@ in vec2 v_tex_coords;
 out vec4 f_color;
 
 void main() {
-    vec3 albedo = texture(screen_albedo, v_tex_coords).rgb;
+    vec4 albedo = texture(screen_albedo, v_tex_coords);
     vec3 light = texture(screen_light, v_tex_coords).rgb;
-    vec3 diffuse = albedo * (light + global_light_params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + albedo.a * global_light_params.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
 
     const float gamma = 2.2;

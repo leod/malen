@@ -9,8 +9,8 @@ use malen::{
     geom::{Circle, Rect, Screen},
     gl::{Texture, TextureParams, Uniform},
     light::{
-        GlobalLightParams, Light, LightPipeline, LightPipelineParams, OccluderBatch,
-        OccluderCircle, OccluderRect, OccluderRotatedRect,
+        GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
+        OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
     pass::{ColorInstance, MatricesBlock},
     text::{Font, TextBatch},
@@ -21,54 +21,70 @@ use crate::state::{self, Ball, Enemy, Lamp, Player, State, Wall};
 
 pub struct Draw {
     font: Font,
-    texture: Texture,
-    normal_map: Texture,
-    texture2: Texture,
-    normal_map2: Texture,
+    floor_texture: Texture,
+    floor_normal_map: Texture,
+    wall_texture: Texture,
+    wall_normal_map: Texture,
 
+    light_pipeline: LightPipeline,
+
+    floor_light_params: Uniform<ObjectLightParams>,
+    color_light_params: Uniform<ObjectLightParams>,
+    wall_light_params: Uniform<ObjectLightParams>,
     camera_matrices: Uniform<MatricesBlock>,
     screen_matrices: Uniform<MatricesBlock>,
 
+    floor_batch: SpriteBatch,
+    wall_batch: SpriteBatch,
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
-    shaded_color_batch: ColorTriangleBatch,
-    shaded_sprite_batch: SpriteBatch,
-    shaded_sprite_batch2: SpriteBatch,
-    text_batch: TextBatch,
-
-    light_pipeline: LightPipeline,
     occluder_batch: OccluderBatch,
     lights: Vec<Light>,
+    text_batch: TextBatch,
 }
 
 impl Draw {
-    pub async fn new(context: &Context) -> Result<Draw, InitError> {
+    pub async fn new(context: &Context, state: &State) -> Result<Draw, InitError> {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
-        let texture = Texture::load(
+        let floor_texture = Texture::load(
             context.gl(),
             "resources/Ground_03.png",
             TextureParams::default(),
         )
         .await?;
-        let normal_map = Texture::load(
+        let floor_normal_map = Texture::load(
             context.gl(),
             "resources/Ground_03_Nrm.png",
             TextureParams::default(),
         )
         .await?;
-        let texture2 = Texture::load(
+        let wall_texture = Texture::load(
             context.gl(),
             "resources/boxesandcrates/1.png",
             TextureParams::default(),
         )
         .await?;
-        let normal_map2 = Texture::load(
+        let wall_normal_map = Texture::load(
             context.gl(),
             "resources/boxesandcrates/1_N.png",
             TextureParams::default(),
         )
         .await?;
 
+        let light_pipeline = LightPipeline::new(
+            context,
+            LightPipelineParams {
+                shadow_map_resolution: 2048,
+                max_num_lights: 300,
+            },
+        )?;
+
+        let floor_light_params =
+            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 1.0 })?;
+        let color_light_params =
+            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 0.9 })?;
+        let wall_light_params =
+            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 0.3 })?;
         let camera_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
 
@@ -88,39 +104,39 @@ impl Draw {
 
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
         let color_batch = ColorTriangleBatch::new(context.gl())?;
-        let shaded_color_batch = ColorTriangleBatch::new(context.gl())?;
-        let shaded_sprite_batch = SpriteBatch::new(context.gl())?;
-        let shaded_sprite_batch2 = SpriteBatch::new(context.gl())?;
-        let text_batch = TextBatch::new(context.gl())?;
-
-        let light_pipeline = LightPipeline::new(
-            context,
-            LightPipelineParams {
-                shadow_map_resolution: 2048,
-                max_num_lights: 300,
-            },
-        )?;
+        let floor_batch = SpriteBatch::new(context.gl())?;
+        let wall_batch = SpriteBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
         let lights = Vec::new();
+        let text_batch = TextBatch::new(context.gl())?;
 
-        Ok(Draw {
+        let mut draw = Draw {
             font,
-            texture,
-            normal_map,
-            texture2,
-            normal_map2,
+            floor_texture,
+            floor_normal_map,
+            wall_texture,
+            wall_normal_map,
+            light_pipeline,
+            floor_light_params,
+            color_light_params,
+            wall_light_params,
             camera_matrices,
             screen_matrices,
+            floor_batch,
+            wall_batch,
             circle_instances,
             color_batch,
-            shaded_color_batch,
-            shaded_sprite_batch,
-            shaded_sprite_batch2,
-            text_batch,
-            light_pipeline,
             occluder_batch,
             lights,
-        })
+            text_batch,
+        };
+
+        draw.render_floor();
+        for wall in &state.walls {
+            draw.render_wall(wall);
+        }
+
+        Ok(draw)
     }
 
     pub fn render(&mut self, screen: Screen, state: &State) -> Result<(), FrameError> {
@@ -137,9 +153,6 @@ impl Draw {
 
         self.circle_instances.clear();
         self.color_batch.clear();
-        self.shaded_color_batch.clear();
-        self.shaded_sprite_batch.clear();
-        self.shaded_sprite_batch2.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.lights.clear();
@@ -147,9 +160,6 @@ impl Draw {
         self.render_floor();
         for lamp in &state.lamps {
             self.render_lamp(lamp);
-        }
-        for wall in &state.walls {
-            self.render_wall(wall);
         }
         for enemy in &state.enemies {
             self.render_enemy(enemy);
@@ -163,26 +173,26 @@ impl Draw {
     }
 
     fn render_floor(&mut self) {
-        self.shaded_sprite_batch.push(Sprite {
+        self.floor_batch.push(Sprite {
             rect: Rect {
                 center: Point2::origin(),
                 size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
             },
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
-                self.texture.size().cast::<f32>() * 20.0,
+                self.floor_texture.size().cast::<f32>() * 20.0,
             ),
             z: 0.8,
         });
     }
 
     fn render_wall(&mut self, wall: &Wall) {
-        self.shaded_sprite_batch2.push(Sprite {
+        self.wall_batch.push(Sprite {
             rect: wall.rect(),
             z: 0.2,
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
-                (wall.rect().size / 50.0).component_mul(&self.texture2.size().cast::<f32>()),
+                (wall.rect().size / 50.0).component_mul(&self.wall_texture.size().cast::<f32>()),
             ),
         });
         self.occluder_batch.push(OccluderRect {
@@ -201,7 +211,7 @@ impl Draw {
             z: 0.3,
             ..ColorInstance::default()
         });*/
-        self.shaded_color_batch.push(ColorCircle {
+        self.color_batch.push(ColorCircle {
             circle: enemy.circle(),
             angle: enemy.angle,
             z: 0.3,
@@ -227,7 +237,7 @@ impl Draw {
 
     fn render_ball(&mut self, ball: &Ball) {
         let color = Color3::from_u8(134, 187, 189).to_linear();
-        self.shaded_color_batch.push(ColorCircle {
+        self.color_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
             z: 0.3,
@@ -253,7 +263,7 @@ impl Draw {
 
     fn render_lamp(&mut self, lamp: &Lamp) {
         let color = Color3::from_u8(254, 196, 127).to_linear();
-        self.shaded_color_batch.push(ColorCircle {
+        self.color_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
             z: 0.1,
@@ -272,7 +282,7 @@ impl Draw {
 
     fn render_player(&mut self, player: &Player) {
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        self.shaded_color_batch.push(ColorRotatedRect {
+        self.color_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             z: 0.4,
             color: color.to_color4(),
@@ -305,21 +315,23 @@ impl Draw {
 
         self.light_pipeline
             .geometry_phase(&self.camera_matrices)?
-            .draw_geometry_colors(self.shaded_color_batch.draw_unit())
+            .draw_geometry_colors(&self.color_light_params, self.color_batch.draw_unit())
             .draw_geometry_sprite_normals(
-                &self.texture,
-                &self.normal_map,
-                self.shaded_sprite_batch.draw_unit(),
+                &self.floor_light_params,
+                &self.floor_texture,
+                &self.floor_normal_map,
+                self.floor_batch.draw_unit(),
             )?
             .draw_geometry_sprite_normals(
-                &self.texture2,
-                &self.normal_map2,
-                self.shaded_sprite_batch2.draw_unit(),
+                &self.wall_light_params,
+                &self.wall_texture,
+                &self.wall_normal_map,
+                self.wall_batch.draw_unit(),
             )?
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(0.05, 0.05, 0.05).to_linear(),
+                ambient: Color3::new(0.18, 0.18, 0.18).to_linear(),
                 ..GlobalLightParams::default()
             })
             .compose();

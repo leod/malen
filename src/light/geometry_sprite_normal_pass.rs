@@ -9,6 +9,8 @@ use crate::{
     },
 };
 
+use super::{ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;
 
@@ -29,13 +31,13 @@ layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
 
 void main() {
-    f_albedo = pow(texture(sprite, v_uv), vec4(2.2));
+    f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_light_params.ambient_scale);
     f_normal = texture(normal_map, v_uv);
 }
 "#;
 
 pub struct GeometrySpriteNormalPass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 2>,
+    program: Program<(MatricesBlock, SpriteInfoBlock, ObjectLightParams), SpriteVertex, 2>,
     sprite_infos: RefCell<SpriteInfos>,
 }
 
@@ -45,6 +47,7 @@ impl GeometrySpriteNormalPass {
             uniform_blocks: [
                 ("matrices", MATRICES_BLOCK_BINDING),
                 ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
+                ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
             ],
             samplers: ["sprite", "normal_map"],
             vertex_source: VERTEX_SOURCE,
@@ -61,6 +64,7 @@ impl GeometrySpriteNormalPass {
     pub fn draw<E>(
         &self,
         matrices: &Uniform<MatricesBlock>,
+        object_light_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
@@ -76,7 +80,7 @@ impl GeometrySpriteNormalPass {
 
         gl::draw(
             &self.program,
-            (matrices, sprite_info),
+            (matrices, sprite_info, object_light_params),
             [texture, normal_map],
             draw_unit,
             &DrawParams {
