@@ -308,7 +308,7 @@ impl Draw {
         });
     }
 
-    pub fn draw(&mut self, context: &mut Context, show_textures: bool) -> Result<(), FrameError> {
+    pub fn draw(&mut self) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
         self.light_pipeline
@@ -337,24 +337,26 @@ impl Draw {
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;
 
-        if show_textures {
-            context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
-                &self.light_pipeline.shadow_map(),
-            )?;
-            context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
-                &self.light_pipeline.screen_albedo(),
-            )?;
-            context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 510.0), Vector2::new(320.0, 240.0)),
-                &self.light_pipeline.screen_normals(),
-            )?;
-            context.draw_debug_texture(
-                Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
-                &self.light_pipeline.screen_light(),
-            )?;
-        }
+        Ok(())
+    }
+
+    pub fn draw_debug_textures(&self, context: &mut Context) -> Result<(), FrameError> {
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
+            &self.light_pipeline.shadow_map(),
+        )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
+            &self.light_pipeline.screen_albedo(),
+        )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 510.0), Vector2::new(320.0, 240.0)),
+            &self.light_pipeline.screen_normals(),
+        )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
+            &self.light_pipeline.screen_light(),
+        )?;
 
         Ok(())
     }
