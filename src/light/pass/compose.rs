@@ -19,26 +19,88 @@ void main() {
 }
 "#;
 
+const CONE_TRACING_SOURCE: &str = r#"
+const float PI = 3.141592;
+
+vec3 trace_cone(
+    vec2 origin,
+    vec2 dir
+) {
+    const int max_steps = 10;
+    const float cone_angle = PI / 8.0;
+    const float step_factor = 1.0;
+
+    const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
+
+    float t = 5.0;
+    float occlusion = 0.0;
+    vec3 color = vec3(0.0, 0.0, 0.0);
+
+    for (int i = 0; i < max_steps && occlusion <= 0.9; i++) {
+        float cone_diameter = diameter_scale * t;
+        vec2 p = origin + dir * 1.0 / 1000.0 * t;
+        p = clamp(p, 0.0, 1.0);
+
+        float mip_level = log2(cone_diameter);
+        float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
+        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb;
+
+        //if (sample_occlusion > 0.0) {
+            //sample_color /= sample_occlusion;
+
+            //color += (1.0 - occlusion) * sample_occlusion * sample_color;
+            color += sample_color;
+            //occlusion += (1.0 - occlusion) * sample_occlusion;
+        //}
+
+        t += 1.0 * cone_diameter;
+        //t += 10.0;
+        //t += (1.0 + tan(cone_angle / 8.0)) / (1.0 - tan(cone_angle / 8.0)) / 2.0;
+    }
+
+    return color;
+}
+
+vec3 calc_indirect_diffuse_lighting(
+    vec2 origin
+) {
+    const int n = 16;
+    const float dangle = 2.0 * PI / float(n);
+
+    vec3 color = vec3(0.0, 0.0, 0.0);
+    float angle = 0.0;
+
+    for (int i = 0; i < n; i++) {
+        color += trace_cone(origin, vec2(cos(angle), sin(angle)));
+        angle += dangle;
+    }
+
+    return color / float(n);
+}
+"#;
+
 const FRAGMENT_SOURCE: &str = r#"
 in vec2 v_tex_coords;
 out vec4 f_color;
 
 void main() {
     vec4 albedo = texture(screen_albedo, v_tex_coords);
-    vec3 light = texture(screen_light, v_tex_coords).rgb;
+
+    vec3 direct_light = texture(screen_light, v_tex_coords).rgb;
+    vec3 indirect_light = calc_indirect_diffuse_lighting(v_tex_coords);
+    vec3 light = indirect_light;
+
     vec3 diffuse = vec3(albedo) * (light + albedo.a * global_light_params.ambient);
+
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
 
-    const float gamma = 2.2;
-
     f_color = vec4(pow(mapped, vec3(1.0 / global_light_params.gamma)), 1.0);
-    //f_color = vec4(diffuse, 1.0);
 }
 "#;
 
 pub struct ComposePass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 2>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 4>,
 }
 
 impl ComposePass {
@@ -58,9 +120,14 @@ impl ComposePass {
 
         let program_def = ProgramDef {
             uniform_blocks: [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)],
-            samplers: ["screen_albedo", "screen_light"],
+            samplers: [
+                "screen_albedo",
+                "screen_occlusion",
+                "screen_light",
+                "screen_reflectors",
+            ],
             vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
+            fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE),
         };
         let program = Program::new(gl, program_def)?;
 
@@ -74,15 +141,19 @@ impl ComposePass {
         &self,
         global_light_params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
+        screen_occlusion: &Texture,
         screen_light: &Texture,
+        screen_reflectors: &Texture,
     ) {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("light::ComposePass::draw");
-
         gl::draw(
             &self.program,
             global_light_params,
-            [screen_albedo, screen_light],
+            [
+                screen_albedo,
+                screen_occlusion,
+                screen_light,
+                screen_reflectors,
+            ],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),
         );
