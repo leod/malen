@@ -314,13 +314,13 @@ impl Draw {
         self.light_pipeline
             .geometry_phase(&self.camera_matrices)?
             .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
-            .draw_sprite_normals(
+            .draw_sprites_with_normals(
                 &self.floor_light_params,
                 &self.floor_texture,
                 &self.floor_normal_map,
                 self.floor_batch.draw_unit(),
             )?
-            .draw_sprite_normals(
+            .draw_sprites_with_normals(
                 &self.wall_light_params,
                 &self.wall_texture,
                 &self.wall_normal_map,
@@ -333,7 +333,8 @@ impl Draw {
                 ..GlobalLightParams::default()
             })
             .indirect_light_phase()
-            .draw_reflectors(&mut self.occluder_batch)
+            .draw_color_reflectors(self.color_batch.draw_unit())
+            .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())?
             .prepare_cone_tracing()
             .compose();
 
@@ -365,7 +366,10 @@ impl Draw {
             &self.light_pipeline.screen_reflectors(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(0.0, 0.0), context.canvas().borrow().screen().logical_size),
+            Rect::from_top_left(
+                Point2::new(0.0, 0.0),
+                context.canvas().borrow().screen().logical_size,
+            ),
             &self.light_pipeline.screen_reflectors(),
         )?;
 

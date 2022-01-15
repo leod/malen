@@ -32,7 +32,7 @@ void main() {
 }
 "#;
 
-const VISIBILITY_SOURCE: &str = r#"
+pub(crate) const VISIBILITY_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
