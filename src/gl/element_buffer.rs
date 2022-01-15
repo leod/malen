@@ -50,7 +50,7 @@ where
         Ok(element_buffer)
     }
 
-    pub fn set_data(&self, data: &[E]) {
+    pub fn set(&self, data: &[E]) {
         // TODO: Prevent implicit synchronization somehow.
         // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 

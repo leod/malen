@@ -232,7 +232,7 @@ impl<'a> GeometryPhase<'a> {
 
 impl<'a> ShadowMapPhase<'a> {
     fn new(phase: GeometryPhase<'a>, lights: &'a [Light]) -> Self {
-        phase.pipeline.light_instances.set_data(lights);
+        phase.pipeline.light_instances.set(lights);
 
         gl::with_framebuffer(&phase.pipeline.shadow_map, || {
             gl::clear_color(
@@ -259,7 +259,7 @@ impl<'a> ShadowMapPhase<'a> {
     pub fn build_screen_light(self, global_light_params: GlobalLightParams) -> ComposePhase<'a> {
         self.pipeline
             .global_light_params
-            .set_data(global_light_params.into());
+            .set(global_light_params.into());
 
         /*self.pipeline
         .light_area_batch

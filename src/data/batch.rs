@@ -169,10 +169,7 @@ where
 
     pub fn flush(&mut self) {
         if self.dirty {
-            self.vertex_array
-                .vertex_buffers()
-                .1
-                .set_data(&self.instances);
+            self.vertex_array.vertex_buffers().1.set(&self.instances);
             self.dirty = false;
         }
     }

@@ -119,7 +119,7 @@ impl Profile {
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
         coarse_prof::profile!("Profile::render");
 
-        self.screen_matrices.set_data(MatricesBlock {
+        self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
         });
