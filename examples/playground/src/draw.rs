@@ -313,14 +313,14 @@ impl Draw {
 
         self.light_pipeline
             .geometry_phase(&self.camera_matrices)?
-            .draw_geometry_colors(&self.color_light_params, self.color_batch.draw_unit())
-            .draw_geometry_sprite_normals(
+            .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
+            .draw_sprite_normals(
                 &self.floor_light_params,
                 &self.floor_texture,
                 &self.floor_normal_map,
                 self.floor_batch.draw_unit(),
             )?
-            .draw_geometry_sprite_normals(
+            .draw_sprite_normals(
                 &self.wall_light_params,
                 &self.wall_texture,
                 &self.wall_normal_map,
