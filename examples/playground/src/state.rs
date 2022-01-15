@@ -228,7 +228,7 @@ impl State {
     pub fn camera(&self) -> Camera {
         Camera {
             center: self.player.pos,
-            zoom: 1.75,
+            zoom: 2.5,
             angle: 0.0,
         }
     }
