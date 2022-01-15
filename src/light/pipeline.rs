@@ -167,6 +167,16 @@ pub struct ShadowMapPhase<'a> {
     lights: &'a [Light],
 }
 
+pub struct BuiltScreenLightPhase<'a> {
+    pipeline: &'a mut LightPipeline,
+    input: Input<'a>,
+}
+
+pub struct IndirectLightPhase<'a> {
+    pipeline: &'a mut LightPipeline,
+    input: Input<'a>,
+}
+
 pub struct ComposePhase<'a> {
     pipeline: &'a mut LightPipeline,
 }
@@ -226,37 +236,36 @@ impl<'a> GeometryPhase<'a> {
     }
 
     pub fn shadow_map_phase(self, lights: &'a [Light]) -> ShadowMapPhase<'a> {
-        ShadowMapPhase::new(self, lights)
-    }
-}
+        self.pipeline.light_instances.set(lights);
 
-impl<'a> ShadowMapPhase<'a> {
-    fn new(phase: GeometryPhase<'a>, lights: &'a [Light]) -> Self {
-        phase.pipeline.light_instances.set(lights);
-
-        gl::with_framebuffer(&phase.pipeline.shadow_map, || {
+        gl::with_framebuffer(&self.pipeline.shadow_map, || {
             gl::clear_color(
-                &*phase.pipeline.shadow_map.gl(),
+                &*self.pipeline.shadow_map.gl(),
                 Color4::new(1.0, 1.0, 1.0, 1.0),
             );
         });
 
-        Self {
-            pipeline: phase.pipeline,
-            input: phase.input,
+        ShadowMapPhase {
+            pipeline: self.pipeline,
+            input: self.input,
             lights,
         }
     }
+}
 
+impl<'a> ShadowMapPhase<'a> {
     pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
         gl::with_framebuffer(&self.pipeline.shadow_map, || {
-            self.pipeline.shadow_map_pass.draw(batch.draw_unit())
+            self.pipeline.shadow_map_pass.draw(batch.draw_unit());
         });
 
         self
     }
 
-    pub fn build_screen_light(self, global_light_params: GlobalLightParams) -> ComposePhase<'a> {
+    pub fn build_screen_light(
+        self,
+        global_light_params: GlobalLightParams,
+    ) -> BuiltScreenLightPhase<'a> {
         self.pipeline
             .global_light_params
             .set(global_light_params.into());
@@ -301,24 +310,50 @@ impl<'a> ShadowMapPhase<'a> {
             );
         });
 
-        ComposePhase::new(self)
+        BuiltScreenLightPhase {
+            pipeline: self.pipeline,
+            input: self.input,
+        }
     }
 }
 
-impl<'a> ComposePhase<'a> {
-    fn new(phase: ShadowMapPhase<'a>) -> Self {
-        Self {
-            pipeline: phase.pipeline,
+impl<'a> BuiltScreenLightPhase<'a> {
+    pub fn indirect_light_phase(self) -> IndirectLightPhase<'a> {
+        IndirectLightPhase {
+            pipeline: self.pipeline,
+            input: self.input,
         }
     }
 
     pub fn compose(self) {
-        self.pipeline.compose_pass.draw(
-            &self.pipeline.global_light_params,
-            &self.pipeline.screen_geometry.textures()[0],
-            &self.pipeline.screen_light.textures()[0],
-        );
+        compose(self.pipeline);
     }
+}
+
+impl<'a> IndirectLightPhase<'a> {
+    pub fn draw_reflectors(self, batch: &mut OccluderBatch) -> Self {
+        self
+    }
+
+    pub fn prepare_cone_tracing(self) -> ComposePhase<'a> {
+        ComposePhase {
+            pipeline: self.pipeline,
+        }
+    }
+}
+
+impl<'a> ComposePhase<'a> {
+    pub fn compose(self) {
+        compose(self.pipeline);
+    }
+}
+
+fn compose(pipeline: &mut LightPipeline) {
+    pipeline.compose_pass.draw(
+        &pipeline.global_light_params,
+        &pipeline.screen_geometry.textures()[0],
+        &pipeline.screen_light.textures()[0],
+    );
 }
 
 #[must_use]

@@ -332,6 +332,9 @@ impl Draw {
                 ambient: Color3::new(0.18, 0.18, 0.18).to_linear(),
                 ..GlobalLightParams::default()
             })
+            .indirect_light_phase()
+            .draw_reflectors(&mut self.occluder_batch)
+            .prepare_cone_tracing()
             .compose();
 
         self.font
