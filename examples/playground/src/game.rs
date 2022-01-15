@@ -19,7 +19,7 @@ pub struct Game {
 impl Game {
     pub async fn new(context: Context) -> Result<Game, InitError> {
         let state = State::new();
-        let draw = Draw::new(&context).await?;
+        let draw = Draw::new(&context, &state).await?;
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 

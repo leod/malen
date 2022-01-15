@@ -10,8 +10,8 @@ mod pipeline;
 mod screen_light_pass;
 mod shadow_map_pass;
 
-pub use bindings::GLOBAL_LIGHT_PARAMS_BLOCK_BINDING;
-pub use def::{GlobalLightParams, GlobalLightParamsBlock, Light};
+pub use bindings::{GLOBAL_LIGHT_PARAMS_BLOCK_BINDING, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+pub use def::{GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams};
 pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,
 };

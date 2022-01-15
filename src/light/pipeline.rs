@@ -24,7 +24,7 @@ use super::{
     light_area::{LightAreaVertex, LightCircleSegment},
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
-    GlobalLightParams, GlobalLightParamsBlock, Light, OccluderBatch,
+    GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
 };
 
 #[derive(Debug, Clone)]
@@ -183,14 +183,20 @@ impl<'a> GeometryPhase<'a> {
         Self { pipeline, input }
     }
 
-    pub fn draw_geometry_colors<E>(self, draw_unit: DrawUnit<ColorVertex, E>) -> Self
+    pub fn draw_geometry_colors<E>(
+        self,
+        object_light_params: &Uniform<ObjectLightParams>,
+        draw_unit: DrawUnit<ColorVertex, E>,
+    ) -> Self
     where
         E: Element,
     {
         gl::with_framebuffer(&self.pipeline.screen_geometry, || {
-            self.pipeline
-                .geometry_color_pass
-                .draw(self.input.matrices, draw_unit);
+            self.pipeline.geometry_color_pass.draw(
+                self.input.matrices,
+                object_light_params,
+                draw_unit,
+            );
         });
 
         self
@@ -198,6 +204,7 @@ impl<'a> GeometryPhase<'a> {
 
     pub fn draw_geometry_sprite_normals<E>(
         self,
+        object_light_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
@@ -208,6 +215,7 @@ impl<'a> GeometryPhase<'a> {
         gl::with_framebuffer(&self.pipeline.screen_geometry, || {
             self.pipeline.geometry_sprite_normal_pass.draw(
                 self.input.matrices,
+                object_light_params,
                 texture,
                 normal_map,
                 draw_unit,
