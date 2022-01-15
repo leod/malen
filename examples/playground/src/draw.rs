@@ -79,12 +79,27 @@ impl Draw {
             },
         )?;
 
-        let floor_light_params =
-            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 1.0 })?;
-        let color_light_params =
-            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 0.9 })?;
-        let wall_light_params =
-            Uniform::new(context.gl(), ObjectLightParams { ambient_scale: 0.3 })?;
+        let floor_light_params = Uniform::new(
+            context.gl(),
+            ObjectLightParams {
+                ambient_scale: 1.0,
+                occlusion: 0.0,
+            },
+        )?;
+        let color_light_params = Uniform::new(
+            context.gl(),
+            ObjectLightParams {
+                ambient_scale: 0.9,
+                occlusion: 1.0,
+            },
+        )?;
+        let wall_light_params = Uniform::new(
+            context.gl(),
+            ObjectLightParams {
+                ambient_scale: 0.3,
+                occlusion: 1.0,
+            },
+        )?;
         let camera_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
 
@@ -359,17 +374,14 @@ impl Draw {
         )?;
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
-            &self.light_pipeline.screen_light(),
+            &self.light_pipeline.screen_occlusion(),
         )?;
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(340.0, 10.0), Vector2::new(320.0, 240.0)),
-            &self.light_pipeline.screen_reflectors(),
+            &self.light_pipeline.screen_light(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(
-                Point2::new(0.0, 0.0),
-                context.canvas().borrow().screen().logical_size,
-            ),
+            Rect::from_top_left(Point2::new(340.0, 260.0), Vector2::new(320.0, 240.0)),
             &self.light_pipeline.screen_reflectors(),
         )?;
 

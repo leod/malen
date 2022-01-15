@@ -27,10 +27,12 @@ const FRAGMENT_SOURCE: &str = r#"
 in vec4 v_color;
 layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
+layout (location = 2) out vec4 f_occlusion;
 
 void main() {
     f_albedo = vec4(v_color.rgb, object_light_params.ambient_scale);
     f_normal = (vec4(0.0, 0.0, 1.0, 1.0) + 1.0) / 2.0;
+    f_occlusion = vec4(object_light_params.occlusion, 0.0, 0.0, 1.0);
 }
 "#;
 

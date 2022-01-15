@@ -64,6 +64,7 @@ impl UniformBlock for ObjectLightParams {}
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct ObjectLightParams {
     pub ambient_scale: f32,
+    pub occlusion: f32,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]

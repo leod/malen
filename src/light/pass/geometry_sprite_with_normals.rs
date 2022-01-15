@@ -29,10 +29,12 @@ const FRAGMENT_SOURCE: &str = r#"
 in vec2 v_uv;
 layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
+layout (location = 2) out vec4 f_occlusion;
 
 void main() {
     f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_light_params.ambient_scale);
     f_normal = texture(normal_map, v_uv);
+    f_occlusion = vec4(object_light_params.occlusion, 0.0, 0.0, 1.0);
 }
 "#;
 
