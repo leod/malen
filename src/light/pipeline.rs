@@ -183,7 +183,7 @@ impl<'a> GeometryPhase<'a> {
         Self { pipeline, input }
     }
 
-    pub fn draw_geometry_colors<E>(
+    pub fn draw_colors<E>(
         self,
         object_light_params: &Uniform<ObjectLightParams>,
         draw_unit: DrawUnit<ColorVertex, E>,
@@ -202,7 +202,7 @@ impl<'a> GeometryPhase<'a> {
         self
     }
 
-    pub fn draw_geometry_sprite_normals<E>(
+    pub fn draw_sprite_normals<E>(
         self,
         object_light_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
