@@ -261,17 +261,17 @@ impl Draw {
             circle: ball.circle(),
             angle: 0.0,
             num_segments: 32,
-            ignore_light_index1: Some(self.lights.len() as u32),
+            ignore_light_index1: None, //Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
-        self.lights.push(Light {
+        /*self.lights.push(Light {
             position: Point3::new(ball.pos.x, ball.pos.y, 50.0),
             radius: ball.radius * 2.0,
             angle: 0.0,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
             color: color.scale(2.0),
-        });
+        });*/
     }
 
     fn render_lamp(&mut self, lamp: &Lamp) {
@@ -310,17 +310,17 @@ impl Draw {
             radius: 1200.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI / 6.0,
-            start: 22.0,
-            color: Color3::from_u8(255, 255, 255).to_linear().scale(10.0),
+            start: 25.0,
+            color: Color3::from_u8(255, 255, 255).to_linear(),
         });
-        self.lights.push(Light {
+        /*self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 120.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
             color: Color3::from_u8(150, 150, 150).to_linear(),
-        });
+        });*/
     }
 
     pub fn draw(&mut self) -> Result<(), FrameError> {
@@ -344,7 +344,7 @@ impl Draw {
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(0.18, 0.18, 0.18).to_linear(),
+                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
                 ..GlobalLightParams::default()
             })
             .indirect_light_phase()
