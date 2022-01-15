@@ -22,6 +22,7 @@ use super::{
     geometry_color_pass::GeometryColorPass,
     geometry_sprite_normal_pass::GeometrySpriteNormalPass,
     light_area::{LightAreaVertex, LightCircleSegment},
+    reflector_pass::ReflectorPass,
     screen_light_pass::ScreenLightPass,
     shadow_map_pass::ShadowMapPass,
     GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
@@ -43,11 +44,13 @@ pub struct LightPipeline {
     screen_geometry: Framebuffer,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
+    screen_reflectors: Framebuffer,
 
     geometry_color_pass: GeometryColorPass,
     geometry_sprite_normal_pass: GeometrySpriteNormalPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
+    reflector_pass: ReflectorPass,
     compose_pass: ComposePass,
 }
 
@@ -90,11 +93,13 @@ impl LightPipeline {
             )?],
         )?;
         let screen_light = new_screen_framebuffer(canvas.clone(), 1, false)?;
+        let screen_reflectors = new_screen_framebuffer(canvas.clone(), 1, false)?;
 
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
         let geometry_sprite_normal_pass = GeometrySpriteNormalPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
+        let reflector_pass = ReflectorPass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
 
         Ok(Self {
@@ -105,10 +110,12 @@ impl LightPipeline {
             screen_geometry,
             shadow_map,
             screen_light,
+            screen_reflectors,
             geometry_color_pass,
             geometry_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
+            reflector_pass,
             compose_pass,
         })
     }
@@ -133,6 +140,10 @@ impl LightPipeline {
         &self.screen_light.textures()[0]
     }
 
+    pub fn screen_reflectors(&self) -> &Texture {
+        &self.screen_reflectors.textures()[0]
+    }
+
     pub fn new_occluder_batch(&self) -> Result<OccluderBatch, gl::Error> {
         OccluderBatch::new(self.light_instances.clone())
     }
@@ -146,7 +157,17 @@ impl LightPipeline {
             self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false)?;
         }
 
-        Ok(GeometryPhase::new(self, Input { matrices }))
+        #[cfg(feature = "coarse-prof")]
+        coarse_prof::profile!("clear_geometry");
+
+        gl::with_framebuffer(&self.screen_geometry, || {
+            gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
+        });
+
+        Ok(GeometryPhase {
+            pipeline: self,
+            input: Input { matrices },
+        })
     }
 }
 
@@ -182,17 +203,6 @@ pub struct ComposePhase<'a> {
 }
 
 impl<'a> GeometryPhase<'a> {
-    fn new(pipeline: &'a mut LightPipeline, input: Input<'a>) -> Self {
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("clear_geometry");
-
-        gl::with_framebuffer(&pipeline.screen_geometry, || {
-            gl::clear_color_and_depth(&pipeline.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
-        });
-
-        Self { pipeline, input }
-    }
-
     pub fn draw_colors<E>(
         self,
         object_light_params: &Uniform<ObjectLightParams>,
@@ -256,7 +266,7 @@ impl<'a> GeometryPhase<'a> {
 impl<'a> ShadowMapPhase<'a> {
     pub fn draw_occluders(self, batch: &mut OccluderBatch) -> Self {
         gl::with_framebuffer(&self.pipeline.shadow_map, || {
-            self.pipeline.shadow_map_pass.draw(batch.draw_unit());
+            self.pipeline.shadow_map_pass.draw(batch.light_instanced_draw_unit());
         });
 
         self
@@ -319,6 +329,10 @@ impl<'a> ShadowMapPhase<'a> {
 
 impl<'a> BuiltScreenLightPhase<'a> {
     pub fn indirect_light_phase(self) -> IndirectLightPhase<'a> {
+        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
+            gl::clear_color(&self.pipeline.gl(), Color4::new(0.0, 0.0, 0.0, 1.0));
+        });
+
         IndirectLightPhase {
             pipeline: self.pipeline,
             input: self.input,
@@ -332,7 +346,17 @@ impl<'a> BuiltScreenLightPhase<'a> {
 
 impl<'a> IndirectLightPhase<'a> {
     pub fn draw_reflectors(self, batch: &mut OccluderBatch) -> Self {
+        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
+            self.pipeline.reflector_pass.draw(
+                self.input.matrices,
+                &self.pipeline.screen_geometry.textures()[0],
+                &self.pipeline.screen_light.textures()[0],
+                batch.draw_unit(),
+            );
+        });
+
         self
+
     }
 
     pub fn prepare_cone_tracing(self) -> ComposePhase<'a> {
@@ -377,8 +401,8 @@ fn new_screen_framebuffer(
                 screen_light_size(canvas.clone()),
                 TextureParams {
                     value_type: TextureValueType::RgbaF32,
-                    min_filter: TextureMinFilter::Linear,
-                    mag_filter: TextureMagFilter::Linear,
+                    min_filter: TextureMinFilter::Nearest,
+                    mag_filter: TextureMagFilter::Nearest,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
                 },
@@ -392,8 +416,8 @@ fn new_screen_framebuffer(
             screen_light_size(canvas.clone()),
             TextureParams {
                 value_type: TextureValueType::Depth,
-                min_filter: TextureMinFilter::Linear,
-                mag_filter: TextureMagFilter::Linear,
+                min_filter: TextureMinFilter::Nearest,
+                mag_filter: TextureMagFilter::Nearest,
                 wrap_vertical: TextureWrap::ClampToEdge,
                 wrap_horizontal: TextureWrap::ClampToEdge,
             },
