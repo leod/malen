@@ -92,7 +92,7 @@ float visibility(
     float back0m = min(min(back1l, back1r), back0);
 
     float inner_light = front_light *
-        2.0 * pow(1.0 - clamp((dist_to_light - front0m) / global_light_params.back_glow, 0.0, 1.0), 4.0);
+        pow(1.0 - clamp((dist_to_light - front0m) / global_light_params.back_glow, 0.0, 1.0), 4.0);
 
     float front2lm = min(min(front3l, front1l), front2l);
     float front1lm = min(min(front2l, front0), front1l);

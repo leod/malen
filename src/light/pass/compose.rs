@@ -43,7 +43,7 @@ vec3 trace_cone(
 
         float mip_level = log2(cone_diameter);
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
-        vec3 sample_color = 10.0 * textureLod(screen_reflectors, p, mip_level).rgb;
+        vec3 sample_color = 100.0 * textureLod(screen_reflectors, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
             sample_color /= sample_occlusion;

@@ -289,7 +289,7 @@ impl Draw {
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
-            color: color.scale(2.0),
+            color: color.scale(1.0),
         });
     }
 
@@ -313,14 +313,14 @@ impl Draw {
             start: 25.0,
             color: Color3::from_u8(255, 255, 255).to_linear(),
         });
-        /*self.lights.push(Light {
+        self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
-            radius: 120.0,
+            radius: 40.0,
             angle: player.angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
             color: Color3::from_u8(150, 150, 150).to_linear(),
-        });*/
+        });
     }
 
     pub fn draw(&mut self) -> Result<(), FrameError> {

@@ -123,7 +123,7 @@ impl State {
             last_timestamp_secs: None,
         };
 
-        for _ in 0..100 {
+        for _ in 0..200 {
             state.add_wall();
         }
         for _ in 0..80 {
