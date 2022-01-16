@@ -6,6 +6,7 @@ use crate::{
     data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
+    light::LightPipelineParams,
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
@@ -27,7 +28,7 @@ vec3 trace_cone(
     vec2 dir
 ) {
     const int max_steps = 7;
-    const float cone_angle = PI / 8.0;
+    const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
     const float step_factor = 1.5;
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
@@ -64,7 +65,7 @@ vec3 trace_cone(
 vec3 calc_indirect_diffuse_lighting(
     vec2 origin
 ) {
-    const int n = 16;
+    const int n = {num_tracing_cones};
     const float dangle = 2.0 * PI / float(n);
 
     vec3 normal_value = texture(screen_normals, origin).xyz;
@@ -113,7 +114,7 @@ pub struct ComposePass {
 }
 
 impl ComposePass {
-    pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
+    pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let screen_rect = SpriteBatch::from_geometry(
             gl.clone(),
             Sprite {
@@ -136,8 +137,9 @@ impl ComposePass {
                 "screen_light",
                 "screen_reflectors",
             ],
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE),
+            vertex_source: &VERTEX_SOURCE,
+            fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
+                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string()),
         };
         let program = Program::new(gl, program_def)?;
 
