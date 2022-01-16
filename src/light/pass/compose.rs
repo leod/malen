@@ -27,13 +27,13 @@ vec3 trace_cone(
     vec2 origin,
     vec2 dir
 ) {
-    const int max_steps = 10;
+    const int max_steps = 9;
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
-    const float step_factor = 0.75;
+    const float step_factor = 0.55;
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = 1.0;
+    float t = 2.0;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
 
@@ -48,8 +48,9 @@ vec3 trace_cone(
         vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb; // wtf
 
         if (sample_occlusion > 0.0) {
-            sample_color *= 75.0;
-            color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
+            sample_color *= 50.0;
+            //color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
+            color += (1.0 - occlusion) * sample_color;
             occlusion += (1.0 - occlusion) * sample_occlusion;
         }
 
