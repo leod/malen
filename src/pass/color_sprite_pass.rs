@@ -75,9 +75,6 @@ impl ColorSpritePass {
     where
         E: Element,
     {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("ColorSpritePass::draw");
-
         let mut sprite_infos = self.sprite_infos.borrow_mut();
         let sprite_info = sprite_infos.get(texture)?;
 
