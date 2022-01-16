@@ -10,9 +10,9 @@ pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
 pub const PLAYER_SIZE: f32 = 35.0;
-pub const LASER_LENGTH: f32 = 20.0;
+pub const LASER_LENGTH: f32 = 25.0;
 pub const LASER_WIDTH: f32 = 3.0;
-pub const LASER_SPEED: f32 = 400.0;
+pub const LASER_SPEED: f32 = 350.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
@@ -46,6 +46,7 @@ pub struct Lamp {
 pub struct Laser {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
+    pub dead: bool,
 }
 
 pub struct State {
@@ -122,6 +123,10 @@ impl Laser {
         }
         .translate(self.vel.normalize() * LASER_LENGTH / 2.0)
         .rotate(self.vel.y.atan2(self.vel.x))
+    }
+
+    pub fn shape(&self) -> Shape {
+        Shape::RotatedRect(self.rotated_rect())
     }
 }
 
@@ -277,8 +282,9 @@ impl State {
     pub fn handle_key_pressed(&mut self, key: Key) {
         match key {
             Key::Space => self.lasers.push(Laser {
-                pos: self.player.pos + self.player.dir * (PLAYER_SIZE + 10.0),
+                pos: self.player.pos + self.player.dir * PLAYER_SIZE * 0.5,
                 vel: self.player.dir * LASER_SPEED,
+                dead: false,
             }),
             _ => (),
         }
@@ -346,8 +352,15 @@ impl State {
             enemy.angle += delta;
         }
 
-        for laser in self.lasers.iter_mut() {
+        for i in 0..self.lasers.len() {
+            let laser = &mut self.lasers[i];
             laser.pos += laser.vel * dt_secs;
+
+            if self.shape_overlap(&self.lasers[i].shape()).is_some() {
+                self.lasers[i].dead = true;
+            }
         }
+
+        self.lasers.retain(|laser| !laser.dead);
     }
 }
