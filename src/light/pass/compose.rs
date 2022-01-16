@@ -28,7 +28,7 @@ vec3 trace_cone(
 ) {
     const int max_steps = 7;
     const float cone_angle = PI / 8.0;
-    const float step_factor = 0.85;
+    const float step_factor = 0.9;
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 

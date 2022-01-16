@@ -27,7 +27,7 @@ pub struct Enemy {
 pub struct Player {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
-    pub angle: f32,
+    pub dir: Vector2<f32>,
 }
 
 pub struct Ball {
@@ -105,7 +105,7 @@ impl Player {
         RotatedRect {
             center: self.pos,
             size: Vector2::new(PLAYER_SIZE, PLAYER_SIZE),
-            angle: self.angle,
+            angle: self.dir.y.atan2(self.dir.x),
         }
     }
 }
@@ -120,7 +120,7 @@ impl State {
             player: Player {
                 pos: Point2::origin(),
                 vel: Vector2::zeros(),
-                angle: 0.0,
+                dir: Vector2::zeros(),
             },
             last_timestamp_secs: None,
         };
@@ -264,18 +264,18 @@ impl State {
             Vector2::zeros()
         };
 
-        self.player.vel = target_vel - (target_vel - self.player.vel) * (-12.0 * dt_secs).exp();
+        self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
         self.player.pos += dt_secs * self.player.vel;
 
-        self.player.angle = {
+        let target_dir = {
             let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
             let mouse_world_pos = self
                 .camera()
                 .inverse_matrix(screen)
                 .transform_point(&mouse_logical_pos);
-            let offset = mouse_world_pos - self.player.pos;
-            offset.y.atan2(offset.x)
+            (mouse_world_pos - self.player.pos).normalize()
         };
+        self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
 
         for (i, enemy) in self.enemies.iter_mut().enumerate() {
             let mut delta = enemy.rot * dt_secs;
