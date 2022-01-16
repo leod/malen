@@ -32,6 +32,7 @@ use super::{
 pub struct LightPipelineParams {
     pub shadow_map_resolution: u32,
     pub max_num_lights: u32,
+    pub num_tracing_cones: u32,
 }
 
 pub struct LightPipeline {
@@ -107,7 +108,7 @@ impl LightPipeline {
         let reflector_pass = ReflectorPass::new(context.gl())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
-        let compose_pass = ComposePass::new(context.gl())?;
+        let compose_pass = ComposePass::new(context.gl(), params.clone())?;
 
         Ok(Self {
             canvas,
