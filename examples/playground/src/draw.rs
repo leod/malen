@@ -243,7 +243,7 @@ impl Draw {
             radius: 500.0,
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
-            start: 18.0,
+            start: 20.0,
             color: Color3::from_u8(212, 230, 135).to_linear(),
         });
     }
@@ -289,7 +289,7 @@ impl Draw {
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
-            color: color.scale(1.0),
+            color: color.scale(0.7),
         });
     }
 
@@ -344,7 +344,7 @@ impl Draw {
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
+                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.1).to_linear(),
                 ..GlobalLightParams::default()
             })
             .indirect_light_phase()

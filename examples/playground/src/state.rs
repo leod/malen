@@ -8,7 +8,7 @@ use rand::{prelude::SliceRandom, Rng};
 pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
-pub const PLAYER_SIZE: f32 = 50.0;
+pub const PLAYER_SIZE: f32 = 35.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
@@ -26,6 +26,7 @@ pub struct Enemy {
 
 pub struct Player {
     pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
     pub angle: f32,
 }
 
@@ -118,6 +119,7 @@ impl State {
             lamps: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
+                vel: Vector2::zeros(),
                 angle: 0.0,
             },
             last_timestamp_secs: None,
@@ -255,10 +257,15 @@ impl State {
         if input_state.key(Key::D) {
             player_dir.x += 1.0;
         }
-        if player_dir.norm_squared() > 0.0 {
+        let target_vel = if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player.pos += dt_secs * 500.0 * player_dir;
-        }
+            player_dir * 275.0
+        } else {
+            Vector2::zeros()
+        };
+
+        self.player.vel = target_vel - (target_vel - self.player.vel) * (-12.0 * dt_secs).exp();
+        self.player.pos += dt_secs * self.player.vel;
 
         self.player.angle = {
             let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
