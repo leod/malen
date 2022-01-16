@@ -6,7 +6,7 @@ use crate::{
     data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
-    light::LightPipelineParams,
+    light::{IndirectLightPipelineParams, LightPipelineParams},
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
@@ -113,7 +113,10 @@ pub struct ComposePass {
 }
 
 impl ComposePass {
-    pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
+    pub fn new(
+        gl: Rc<gl::Context>,
+        params: IndirectLightPipelineParams,
+    ) -> Result<Self, gl::Error> {
         let screen_rect = SpriteBatch::from_geometry(
             gl.clone(),
             Sprite {
