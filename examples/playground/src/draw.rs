@@ -336,10 +336,11 @@ impl Draw {
         });*/
     }
 
-    pub fn draw(&mut self) -> Result<(), FrameError> {
+    pub fn draw(&mut self, indirect_light: bool) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
-        self.light_pipeline
+        let phase = self
+            .light_pipeline
             .geometry_phase(&self.camera_matrices)?
             .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
             .draw_sprites_with_normals(
@@ -359,12 +360,18 @@ impl Draw {
             .build_screen_light(GlobalLightParams {
                 ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
                 ..GlobalLightParams::default()
-            })
-            .indirect_light_phase()
-            .draw_color_reflectors(self.color_batch.draw_unit())
-            .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())?
-            .prepare_cone_tracing()
-            .compose();
+            });
+
+        if indirect_light {
+            phase
+                .indirect_light_phase()
+                .draw_color_reflectors(self.color_batch.draw_unit())
+                .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())?
+                .prepare_cone_tracing()
+                .compose();
+        } else {
+            phase.compose();
+        }
 
         self.font
             .draw(&self.screen_matrices, &mut self.text_batch)?;

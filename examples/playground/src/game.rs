@@ -12,6 +12,7 @@ pub struct Game {
     draw: Draw,
     profile: Profile,
 
+    indirect_light: bool,
     show_profile: bool,
     show_textures: bool,
 }
@@ -28,6 +29,7 @@ impl Game {
             state,
             draw,
             profile,
+            indirect_light: true,
             show_profile: false,
             show_textures: false,
         })
@@ -69,6 +71,9 @@ impl Game {
             KeyPressed(Key::U) => {
                 self.show_textures = !self.show_textures;
             }
+            KeyPressed(Key::L) => {
+                self.indirect_light = !self.indirect_light;
+            }
             KeyPressed(Key::R) => {
                 coarse_prof::reset();
             }
@@ -99,7 +104,7 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw()?;
+        self.draw.draw(self.indirect_light)?;
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;

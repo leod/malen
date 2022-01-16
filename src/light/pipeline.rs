@@ -20,10 +20,10 @@ use crate::{
 use super::{
     light_area::{LightAreaVertex, LightCircleSegment},
     pass::{
-        compose::ComposePass, geometry_color::GeometryColorPass,
-        geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, reflector::ReflectorPass,
-        screen_light::ScreenLightPass, shaded_color::ShadedColorPass,
-        shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
+        compose::ComposePass, compose_with_indirect::ComposeWithIndirectPass,
+        geometry_color::GeometryColorPass,
+        geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, screen_light::ScreenLightPass,
+        shaded_color::ShadedColorPass, shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
     },
     GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
 };
@@ -57,10 +57,10 @@ pub struct LightPipeline {
     geometry_sprite_normal_pass: GeometrySpriteWithNormalsPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
-    reflector_pass: ReflectorPass,
     shaded_sprite_pass: ShadedSpritePass,
     shaded_color_pass: ShadedColorPass,
     compose_pass: ComposePass,
+    compose_with_indirect_pass: ComposeWithIndirectPass,
 }
 
 #[derive(Debug, Error)]
@@ -111,10 +111,11 @@ impl LightPipeline {
         let geometry_sprite_normal_pass = GeometrySpriteWithNormalsPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
-        let reflector_pass = ReflectorPass::new(context.gl())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
-        let compose_pass = ComposePass::new(context.gl(), params.indirect_light.clone())?;
+        let compose_pass = ComposePass::new(context.gl())?;
+        let compose_with_indirect_pass =
+            ComposeWithIndirectPass::new(context.gl(), params.indirect_light.clone())?;
 
         Ok(Self {
             canvas,
@@ -129,10 +130,10 @@ impl LightPipeline {
             geometry_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
-            reflector_pass,
             shaded_sprite_pass,
             shaded_color_pass,
             compose_pass,
+            compose_with_indirect_pass,
         })
     }
 
@@ -219,7 +220,7 @@ pub struct IndirectLightPhase<'a> {
     input: Input<'a>,
 }
 
-pub struct ComposePhase<'a> {
+pub struct ComposeWithIndirectPhase<'a> {
     pipeline: &'a mut LightPipeline,
 }
 
@@ -366,7 +367,11 @@ impl<'a> BuiltScreenLightPhase<'a> {
     }
 
     pub fn compose(self) {
-        compose(self.pipeline);
+        self.pipeline.compose_pass.draw(
+            &self.pipeline.global_light_params,
+            &self.pipeline.screen_geometry.textures()[0],
+            &self.pipeline.screen_light.textures()[0],
+        );
     }
 }
 
@@ -400,31 +405,27 @@ impl<'a> IndirectLightPhase<'a> {
         Ok(self)
     }
 
-    pub fn prepare_cone_tracing(self) -> ComposePhase<'a> {
+    pub fn prepare_cone_tracing(self) -> ComposeWithIndirectPhase<'a> {
         self.pipeline.screen_occlusion().generate_mipmap();
         self.pipeline.screen_reflectors().generate_mipmap();
 
-        ComposePhase {
+        ComposeWithIndirectPhase {
             pipeline: self.pipeline,
         }
     }
 }
 
-impl<'a> ComposePhase<'a> {
+impl<'a> ComposeWithIndirectPhase<'a> {
     pub fn compose(self) {
-        compose(self.pipeline);
+        self.pipeline.compose_with_indirect_pass.draw(
+            &self.pipeline.global_light_params,
+            &self.pipeline.screen_geometry.textures()[0],
+            &self.pipeline.screen_geometry.textures()[1],
+            &self.pipeline.screen_geometry.textures()[2],
+            &self.pipeline.screen_light.textures()[0],
+            &self.pipeline.screen_reflectors.textures()[0],
+        );
     }
-}
-
-fn compose(pipeline: &mut LightPipeline) {
-    pipeline.compose_pass.draw(
-        &pipeline.global_light_params,
-        &pipeline.screen_geometry.textures()[0],
-        &pipeline.screen_geometry.textures()[1],
-        &pipeline.screen_geometry.textures()[2],
-        &pipeline.screen_light.textures()[0],
-        &pipeline.screen_reflectors.textures()[0],
-    );
 }
 
 #[must_use]
