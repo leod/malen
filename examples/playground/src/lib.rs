@@ -1,4 +1,3 @@
-use nalgebra::Vector2;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{CanvasSizeConfig, Config, Context};
