@@ -28,7 +28,7 @@ vec3 trace_cone(
 ) {
     const int max_steps = 7;
     const float cone_angle = PI / 8.0;
-    const float step_factor = 0.9;
+    const float step_factor = 1.5;
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
@@ -42,7 +42,7 @@ vec3 trace_cone(
         p = clamp(p, 0.0, 1.0);
 
         float mip_level = log2(cone_diameter);
-        float sample_occlusion = 1.0 * textureLod(screen_occlusion, p, mip_level).r;
+        float sample_occlusion = 0.5 * textureLod(screen_occlusion, p, mip_level).r;
         vec3 sample_color = 50.0 * textureLod(screen_reflectors, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
@@ -72,7 +72,7 @@ vec3 calc_indirect_diffuse_lighting(
     normal.y = -normal.y;
 
     vec3 color = vec3(0.0, 0.0, 0.0);
-    float angle = 0.0;
+    float angle = origin.x * origin.y;
 
     for (int i = 0; i < n; i++) {
         vec2 dir = vec2(cos(angle), sin(angle));
