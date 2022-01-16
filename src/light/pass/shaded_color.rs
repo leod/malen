@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
+    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
-
 const VERTEX_SOURCE: &str = r#"
-out vec4 v_color;
+out vec3 v_color;
+out vec2 v_screen_uv;
 
 void main() {
     vec3 position = matrices.projection
@@ -16,31 +16,31 @@ void main() {
         * vec3(a_position.xy, 1.0);
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
-
-    v_color = a_color;
+    v_color = vec3(a_color);
+    v_screen_uv = vec2(position.xy) * 0.5 + 0.5;
 }
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
-in vec4 v_color;
-layout (location = 0) out vec4 f_albedo;
-layout (location = 1) out vec4 f_normal;
+in vec3 v_color;
+in vec2 v_screen_uv;
+out vec4 f_color;
 
 void main() {
-    f_albedo = v_color;
-    f_normal = (vec4(0.0, 0.0, 1.0, 1.0) + 1.0) / 2.0;
+    vec3 light = texture(screen_light, v_screen_uv).rgb;
+    f_color = vec4(v_color * light, 1.0);
 }
 "#;
 
-pub struct GeometryColorPass {
-    program: Program<MatricesBlock, ColorVertex, 0>,
+pub struct ShadedColorPass {
+    program: Program<MatricesBlock, ColorVertex, 1>,
 }
 
-impl GeometryColorPass {
+impl ShadedColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
             uniform_blocks: [("matrices", MATRICES_BLOCK_BINDING)],
-            samplers: [],
+            samplers: ["screen_light"],
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
         };
@@ -51,23 +51,18 @@ impl GeometryColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
+        screen_light: &Texture,
         draw_unit: DrawUnit<ColorVertex, E>,
     ) where
         E: Element,
     {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("light::GeometryColorPass::draw");
-
         gl::draw(
             &self.program,
             matrices,
-            [],
+            [screen_light],
             draw_unit,
-            &DrawParams {
-                depth_test: Some(DepthTest::default()),
-                ..DrawParams::default()
-            },
+            &DrawParams::default(),
         );
     }
 }

@@ -19,7 +19,7 @@ pub struct Game {
 impl Game {
     pub async fn new(context: Context) -> Result<Game, InitError> {
         let state = State::new();
-        let draw = Draw::new(&context).await?;
+        let draw = Draw::new(&context, &state).await?;
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 
@@ -99,10 +99,13 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&mut self.context, self.show_textures)?;
+        self.draw.draw()?;
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;
+        }
+        if self.show_textures {
+            self.draw.draw_debug_textures(&mut self.context)?;
         }
 
         Ok(())

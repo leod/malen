@@ -84,10 +84,10 @@ impl Texture {
         size: Vector2<u32>,
         params: TextureParams,
     ) -> Result<Self, NewTextureError> {
-        assert!(
+        /*assert!(
             !params.min_filter.uses_mipmap(),
             "Empty textures do not have a mipmap"
-        );
+        );*/
 
         let texture = Self::new_impl(gl.clone(), size, params.clone())?;
 
@@ -134,9 +134,7 @@ impl Texture {
         }
 
         if texture.params.min_filter.uses_mipmap() {
-            unsafe {
-                gl.generate_mipmap(glow::TEXTURE_2D);
-            }
+            texture.generate_mipmap();
         }
 
         Ok(texture)
@@ -204,9 +202,16 @@ impl Texture {
         }
 
         if self.params.min_filter.uses_mipmap() {
-            unsafe {
-                self.gl.generate_mipmap(glow::TEXTURE_2D);
-            }
+            self.generate_mipmap();
+        }
+    }
+
+    pub fn generate_mipmap(&self) {
+        assert!(self.params.min_filter.uses_mipmap());
+
+        unsafe {
+            self.gl.bind_texture(glow::TEXTURE_2D, Some(self.id));
+            self.gl.generate_mipmap(glow::TEXTURE_2D);
         }
     }
 
@@ -258,6 +263,18 @@ impl Default for TextureParams {
         Self {
             value_type: TextureValueType::RgbaU8,
             min_filter: TextureMinFilter::Linear,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::Repeat,
+            wrap_horizontal: TextureWrap::Repeat,
+        }
+    }
+}
+
+impl TextureParams {
+    pub fn mipmapped() -> Self {
+        Self {
+            value_type: TextureValueType::RgbaU8,
+            min_filter: TextureMinFilter::LinearMipmapLinear,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::Repeat,
             wrap_horizontal: TextureWrap::Repeat,

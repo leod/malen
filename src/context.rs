@@ -7,7 +7,7 @@ use crate::{
     data::{Sprite, SpriteBatch},
     error::InitError,
     geom::{Rect, Screen},
-    gl::{self, DrawParams, Texture, UniformBuffer},
+    gl::{self, DrawParams, Texture, Uniform},
     input::InputState,
     pass::{ColorPass, ColorSpritePass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
@@ -24,7 +24,7 @@ pub struct Context {
     instanced_color_pass: Rc<InstancedColorPass>,
     plot_pass: Rc<PlotPass>,
 
-    debug_matrices: Option<UniformBuffer<MatricesBlock>>,
+    debug_matrices: Option<Uniform<MatricesBlock>>,
     debug_sprite_batch: Option<SpriteBatch>,
 }
 
@@ -131,7 +131,7 @@ impl Context {
 
     pub fn draw_debug_texture(&mut self, rect: Rect, texture: &Texture) -> Result<(), FrameError> {
         if self.debug_matrices.is_none() {
-            self.debug_matrices = Some(UniformBuffer::new(self.gl(), MatricesBlock::default())?);
+            self.debug_matrices = Some(Uniform::new(self.gl(), MatricesBlock::default())?);
         }
         if self.debug_sprite_batch.is_none() {
             self.debug_sprite_batch = Some(SpriteBatch::new(self.gl())?);
@@ -139,7 +139,7 @@ impl Context {
         let matrices = self.debug_matrices.as_mut().unwrap();
         let batch = self.debug_sprite_batch.as_mut().unwrap();
 
-        matrices.set_data(MatricesBlock {
+        matrices.set(MatricesBlock {
             projection: self.canvas.borrow().screen().orthographic_projection(),
             view: Matrix3::identity(),
         });

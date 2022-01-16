@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    gl::{Blend, DrawParams, UniformBuffer},
+    gl::{Blend, DrawParams, Uniform},
     pass::{ColorPass, MatricesBlock},
     text::Font,
     FrameError,
@@ -20,7 +20,7 @@ impl PlotPass {
 
     pub fn draw(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         font: &Font,
         batch: &mut PlotBatch,
     ) -> Result<(), FrameError> {

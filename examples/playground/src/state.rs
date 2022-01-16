@@ -8,12 +8,13 @@ use rand::{prelude::SliceRandom, Rng};
 pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
-pub const PLAYER_SIZE: f32 = 50.0;
+pub const PLAYER_SIZE: f32 = 35.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
     pub lamp_index: Option<usize>,
+    pub use_texture: bool,
 }
 
 impl Wall {}
@@ -26,7 +27,8 @@ pub struct Enemy {
 
 pub struct Player {
     pub pos: Point2<f32>,
-    pub angle: f32,
+    pub vel: Vector2<f32>,
+    pub dir: Vector2<f32>,
 }
 
 pub struct Ball {
@@ -45,6 +47,7 @@ pub struct State {
     pub balls: Vec<Ball>,
     pub lamps: Vec<Lamp>,
     pub player: Player,
+    pub view_offset: Vector2<f32>,
     pub last_timestamp_secs: Option<f64>,
 }
 
@@ -104,7 +107,7 @@ impl Player {
         RotatedRect {
             center: self.pos,
             size: Vector2::new(PLAYER_SIZE, PLAYER_SIZE),
-            angle: self.angle,
+            angle: self.dir.y.atan2(self.dir.x),
         }
     }
 }
@@ -118,12 +121,14 @@ impl State {
             lamps: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
-                angle: 0.0,
+                vel: Vector2::zeros(),
+                dir: Vector2::zeros(),
             },
+            view_offset: Vector2::zeros(),
             last_timestamp_secs: None,
         };
 
-        for _ in 0..100 {
+        for _ in 0..200 {
             state.add_wall();
         }
         for _ in 0..80 {
@@ -137,6 +142,14 @@ impl State {
         }
 
         state
+    }
+
+    pub fn camera(&self) -> Camera {
+        Camera {
+            center: self.player.pos + self.view_offset,
+            zoom: 2.5,
+            angle: 0.0,
+        }
     }
 
     pub fn shape_overlap(&self, shape: &Shape) -> bool {
@@ -167,6 +180,8 @@ impl State {
             center,
             size,
             lamp_index: None,
+            //use_texture: rng.gen(),
+            use_texture: true,
         };
 
         if !self.shape_overlap(&wall.shape()) {
@@ -225,14 +240,6 @@ impl State {
         }
     }
 
-    pub fn camera(&self) -> Camera {
-        Camera {
-            center: self.player.pos,
-            zoom: 1.75,
-            angle: 0.0,
-        }
-    }
-
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
             .last_timestamp_secs
@@ -255,20 +262,33 @@ impl State {
         if input_state.key(Key::D) {
             player_dir.x += 1.0;
         }
-        if player_dir.norm_squared() > 0.0 {
+        let target_vel = if player_dir.norm_squared() > 0.0 {
             let player_dir = player_dir.normalize();
-            self.player.pos += dt_secs * 500.0 * player_dir;
-        }
-
-        self.player.angle = {
-            let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
-            let mouse_world_pos = self
-                .camera()
-                .inverse_matrix(screen)
-                .transform_point(&mouse_logical_pos);
-            let offset = mouse_world_pos - self.player.pos;
-            offset.y.atan2(offset.x)
+            player_dir * 275.0
+        } else {
+            Vector2::zeros()
         };
+
+        self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
+        self.player.pos += dt_secs * self.player.vel;
+
+        let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
+        let mouse_world_pos = self
+            .camera()
+            .inverse_matrix(screen)
+            .transform_point(&mouse_logical_pos);
+
+        let target_dir = (mouse_world_pos - self.player.pos).normalize();
+        self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
+
+        let target_offset = (mouse_logical_pos - screen.logical_rect().center) / 10.0;
+        let b = screen.logical_size * 0.3;
+        let target_offset = Vector2::new(
+            target_offset.x.min(b.x).max(-b.x),
+            target_offset.y.min(b.y).max(-b.y),
+        );
+        self.view_offset =
+            target_offset - (target_offset - self.view_offset) * (-3.0 * dt_secs).exp();
 
         for (i, enemy) in self.enemies.iter_mut().enumerate() {
             let mut delta = enemy.rot * dt_secs;

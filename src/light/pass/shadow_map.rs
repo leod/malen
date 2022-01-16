@@ -5,7 +5,7 @@ use crate::gl::{
     Program, ProgramDef,
 };
 
-use super::{Light, OccluderLineVertex};
+use super::super::{Light, OccluderLineVertex};
 
 const VERTEX_SOURCE: &str = r#"
 flat out vec2 v_light_position;

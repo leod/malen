@@ -41,6 +41,20 @@ where
             dirty: false,
         })
     }
+
+    pub fn flush(&mut self) {
+        if self.dirty {
+            self.buffer.upload(
+                &*self.vertex_array.element_buffer(),
+                &*self.vertex_array.vertex_buffers(),
+            );
+            self.dirty = false;
+        }
+    }
+
+    pub fn vertex_array(&self) -> &VertexArray<V> {
+        &self.vertex_array
+    }
 }
 
 impl<P, V> GeometryBatch<P, V>
@@ -63,16 +77,6 @@ where
     {
         self.buffer.push(geometry);
         self.dirty = true;
-    }
-
-    pub fn flush(&mut self) {
-        if self.dirty {
-            self.buffer.upload(
-                &*self.vertex_array.element_buffer(),
-                &*self.vertex_array.vertex_buffers(),
-            );
-            self.dirty = false;
-        }
     }
 
     pub fn reset<G, I>(&mut self, iter: I)
@@ -169,10 +173,7 @@ where
 
     pub fn flush(&mut self) {
         if self.dirty {
-            self.vertex_array
-                .vertex_buffers()
-                .1
-                .set_data(&self.instances);
+            self.vertex_array.vertex_buffers().1.set(&self.instances);
             self.dirty = false;
         }
     }

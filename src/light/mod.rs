@@ -1,17 +1,11 @@
-mod bindings;
-mod compose_pass;
 mod def;
-mod geometry_color_pass;
-mod geometry_sprite_normal_pass;
 mod light_area;
 mod occluder;
 mod occluder_batch;
+pub(super) mod pass;
 mod pipeline;
-mod screen_light_pass;
-mod shadow_map_pass;
 
-pub use bindings::GLOBAL_LIGHT_PARAMS_BLOCK_BINDING;
-pub use def::{GlobalLightParams, GlobalLightParamsBlock, Light};
+pub use def::{GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams};
 pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,
 };
