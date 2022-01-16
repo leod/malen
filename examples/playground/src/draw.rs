@@ -240,11 +240,11 @@ impl Draw {
         });
         self.lights.push(Light {
             position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
-            radius: 500.0,
+            radius: 300.0,
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
             start: 20.0,
-            color: Color3::from_u8(212, 230, 135).to_linear(),
+            color: Color3::from_u8(212, 230, 135).to_linear().scale(0.3),
         });
     }
 
@@ -307,7 +307,7 @@ impl Draw {
         });
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
-            radius: 1200.0,
+            radius: 600.0,
             angle: player.dir.y.atan2(player.dir.x),
             angle_size: std::f32::consts::PI / 6.0,
             start: 18.0,

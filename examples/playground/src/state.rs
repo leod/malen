@@ -46,6 +46,7 @@ pub struct State {
     pub balls: Vec<Ball>,
     pub lamps: Vec<Lamp>,
     pub player: Player,
+    pub view_offset: Vector2<f32>,
     pub last_timestamp_secs: Option<f64>,
 }
 
@@ -122,6 +123,7 @@ impl State {
                 vel: Vector2::zeros(),
                 dir: Vector2::zeros(),
             },
+            view_offset: Vector2::zeros(),
             last_timestamp_secs: None,
         };
 
@@ -139,6 +141,14 @@ impl State {
         }
 
         state
+    }
+
+    pub fn camera(&self) -> Camera {
+        Camera {
+            center: self.player.pos + self.view_offset,
+            zoom: 2.5,
+            angle: 0.0,
+        }
     }
 
     pub fn shape_overlap(&self, shape: &Shape) -> bool {
@@ -227,14 +237,6 @@ impl State {
         }
     }
 
-    pub fn camera(&self) -> Camera {
-        Camera {
-            center: self.player.pos,
-            zoom: 2.5,
-            angle: 0.0,
-        }
-    }
-
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
             .last_timestamp_secs
@@ -267,15 +269,23 @@ impl State {
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
         self.player.pos += dt_secs * self.player.vel;
 
-        let target_dir = {
-            let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
-            let mouse_world_pos = self
-                .camera()
-                .inverse_matrix(screen)
-                .transform_point(&mouse_logical_pos);
-            (mouse_world_pos - self.player.pos).normalize()
-        };
+        let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
+        let mouse_world_pos = self
+            .camera()
+            .inverse_matrix(screen)
+            .transform_point(&mouse_logical_pos);
+
+        let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
+
+        let target_offset = (mouse_logical_pos - screen.logical_rect().center) / 10.0;
+        let b = screen.logical_size * 0.3;
+        let target_offset = Vector2::new(
+            target_offset.x.min(b.x).max(-b.x),
+            target_offset.y.min(b.y).max(-b.y),
+        );
+        self.view_offset =
+            target_offset - (target_offset - self.view_offset) * (-3.0 * dt_secs).exp();
 
         for (i, enemy) in self.enemies.iter_mut().enumerate() {
             let mut delta = enemy.rot * dt_secs;
