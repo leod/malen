@@ -3,8 +3,8 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch, Mesh,
-        Sprite, SpriteBatch, TriangleTag,
+        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
+        Mesh, Sprite, SpriteBatch, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
     gl::{Texture, TextureParams, Uniform},
@@ -49,25 +49,25 @@ impl Draw {
         let floor_texture = Texture::load(
             context.gl(),
             "resources/Ground_03.png",
-            TextureParams::default(),
+            TextureParams::mipmapped(),
         )
         .await?;
         let floor_normal_map = Texture::load(
             context.gl(),
             "resources/Ground_03_Nrm.png",
-            TextureParams::default(),
+            TextureParams::mipmapped(),
         )
         .await?;
         let wall_texture = Texture::load(
             context.gl(),
             "resources/boxesandcrates/1.png",
-            TextureParams::default(),
+            TextureParams::mipmapped(),
         )
         .await?;
         let wall_normal_map = Texture::load(
             context.gl(),
             "resources/boxesandcrates/1_N.png",
-            TextureParams::default(),
+            TextureParams::mipmapped(),
         )
         .await?;
 
@@ -76,7 +76,7 @@ impl Draw {
             LightPipelineParams {
                 shadow_map_resolution: 2048,
                 max_num_lights: 300,
-                num_tracing_cones: 4,
+                num_tracing_cones: 8,
             },
         )?;
 
@@ -201,14 +201,23 @@ impl Draw {
     }
 
     fn render_wall(&mut self, wall: &Wall) {
-        self.wall_batch.push(Sprite {
-            rect: wall.rect(),
-            z: 0.2,
-            tex_rect: Rect::from_top_left(
-                Point2::origin(),
-                (wall.rect().size / 50.0).component_mul(&self.wall_texture.size().cast::<f32>()),
-            ),
-        });
+        if wall.use_texture {
+            self.wall_batch.push(Sprite {
+                rect: wall.rect(),
+                z: 0.2,
+                tex_rect: Rect::from_top_left(
+                    Point2::origin(),
+                    (wall.rect().size / 50.0)
+                        .component_mul(&self.wall_texture.size().cast::<f32>()),
+                ),
+            });
+        } else {
+            self.color_batch.push(ColorRect {
+                rect: wall.rect(),
+                z: 0.2,
+                color: Color4::new(0.3, 0.8, 0.3, 1.0),
+            })
+        }
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
             ignore_light_index1: wall.lamp_index.map(|index| index as u32),
@@ -345,7 +354,7 @@ impl Draw {
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.1).to_linear(),
+                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.12).to_linear(),
                 ..GlobalLightParams::default()
             })
             .indirect_light_phase()

@@ -444,11 +444,12 @@ fn new_screen_framebuffer(
                 TextureParams {
                     value_type: TextureValueType::RgbaF32,
                     min_filter: if mip_map && i + 1 == num_textures {
+                        //TextureMinFilter::NearestMipmapNearest
                         TextureMinFilter::LinearMipmapLinear
                     } else {
-                        TextureMinFilter::Nearest
+                        TextureMinFilter::Linear
                     },
-                    mag_filter: TextureMagFilter::Nearest,
+                    mag_filter: TextureMagFilter::Linear,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
                 },

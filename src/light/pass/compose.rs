@@ -27,36 +27,33 @@ vec3 trace_cone(
     vec2 origin,
     vec2 dir
 ) {
-    const int max_steps = 7;
+    const int max_steps = 10;
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
-    const float step_factor = 1.5;
+    const float step_factor = 0.75;
 
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = 4.0;
+    float t = 1.0;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
 
     for (int i = 0; i < max_steps && occlusion <= 0.9; i++) {
         float cone_diameter = diameter_scale * t;
         vec2 p = origin + dir / global_light_params.screen_size * t;
-        p = clamp(p, 0.0, 1.0);
+        if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
+            break;
 
-        float mip_level = log2(cone_diameter);
-        float sample_occlusion = 0.5 * textureLod(screen_occlusion, p, mip_level).r;
-        vec3 sample_color = 50.0 * textureLod(screen_reflectors, p, mip_level).rgb;
+        float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
+        float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
+        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb; // wtf
 
         if (sample_occlusion > 0.0) {
-            sample_color /= sample_occlusion;
-
-            color += (1.0 - occlusion) * sample_occlusion * sample_color;
-            //color += sample_color;
+            sample_color *= 75.0;
+            color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
             occlusion += (1.0 - occlusion) * sample_occlusion;
         }
 
         t += step_factor * cone_diameter;
-        //t += 10.0;
-        //t += (1.0 + tan(cone_angle / 8.0)) / (1.0 - tan(cone_angle / 8.0)) / 2.0;
     }
 
     return color;
@@ -73,7 +70,7 @@ vec3 calc_indirect_diffuse_lighting(
     normal.y = -normal.y;
 
     vec3 color = vec3(0.0, 0.0, 0.0);
-    float angle = origin.x * origin.y;
+    float angle = 0.0;
 
     for (int i = 0; i < n; i++) {
         vec2 dir = vec2(cos(angle), sin(angle));

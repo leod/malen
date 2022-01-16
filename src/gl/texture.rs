@@ -270,6 +270,18 @@ impl Default for TextureParams {
     }
 }
 
+impl TextureParams {
+    pub fn mipmapped() -> Self {
+        Self {
+            value_type: TextureValueType::RgbaU8,
+            min_filter: TextureMinFilter::LinearMipmapLinear,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::Repeat,
+            wrap_horizontal: TextureWrap::Repeat,
+        }
+    }
+}
+
 impl TextureValueType {
     pub fn internal_format_gl(self) -> i32 {
         use TextureValueType::*;
