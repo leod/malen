@@ -15,35 +15,43 @@ pub struct SpritePass {
     sprite_infos: RefCell<SpriteInfos>,
 }
 
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
+    ("matrices", MATRICES_BLOCK_BINDING),
+    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
+];
+
+const SAMPLERS: [&str; 1] = ["sprite"];
+
+const VERTEX_SOURCE: &str = r#"
+    out vec2 v_uv;
+
+    void main() {
+        vec3 position = matrices.projection
+            * matrices.view
+            * vec3(a_position.xy, 1.0);
+
+        gl_Position = vec4(position.xy, a_position.z, 1.0);
+
+        v_uv = a_tex_coords / sprite_info.size;
+    }
+"#;
+
+const FRAGMENT_SOURCE: &str = r#"
+    in vec2 v_uv;
+    out vec4 f_color;
+
+    void main() {
+        f_color = texture(sprite, v_uv);
+    }
+"#;
+
 impl SpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [
-                ("matrices", MATRICES_BLOCK_BINDING),
-                ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-            ],
-            samplers: ["sprite"],
-            vertex_source: r#"
-                out vec2 v_uv;
-
-                void main() {
-                    vec3 position = matrices.projection
-                        * matrices.view
-                        * vec3(a_position.xy, 1.0);
-
-                    gl_Position = vec4(position.xy, a_position.z, 1.0);
-
-                    v_uv = a_tex_coords / sprite_info.size;
-                }
-            "#,
-            fragment_source: r#"
-                in vec2 v_uv;
-                out vec4 f_color;
-
-                void main() {
-                    f_color = texture(sprite, v_uv);
-                }
-            "#,
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
+            vertex_source: VERTEX_SOURCE,
+            fragment_source: FRAGMENT_SOURCE,
         };
         let program = Program::new(gl, program_def)?;
 

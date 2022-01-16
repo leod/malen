@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     data::{Geometry, LineBatch, LineTag, PrimitiveTag},
-    gl::{self, DrawUnit, InstancedDrawUnit, VertexArray, VertexBuffer},
+    gl::{self, InstancedDrawUnit, VertexArray, VertexBuffer},
 };
 
 use super::{Light, OccluderLineVertex};
@@ -45,10 +45,6 @@ impl OccluderBatch {
             0..self.light_instanced_vertex_array.vertex_buffers().0.len(),
             self.light_instanced_vertex_array.vertex_buffers().1.len(),
         )
-    }
-
-    pub(super) fn draw_unit(&mut self) -> DrawUnit<OccluderLineVertex> {
-        self.batch.draw_unit()
     }
 
     pub fn clear(&mut self) {

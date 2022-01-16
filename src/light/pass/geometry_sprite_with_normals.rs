@@ -11,6 +11,19 @@ use crate::{
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
+pub struct GeometrySpriteWithNormalsPass {
+    program: Program<(MatricesBlock, SpriteInfoBlock, ObjectLightParams), SpriteVertex, 2>,
+    sprite_infos: RefCell<SpriteInfos>,
+}
+
+const UNIFORM_BLOCKS: [(&str, u32); 3] = [
+    ("matrices", MATRICES_BLOCK_BINDING),
+    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
+    ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
+];
+
+const SAMPLERS: [&str; 2] = ["sprite", "normal_map"];
+
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;
 
@@ -38,20 +51,11 @@ void main() {
 }
 "#;
 
-pub struct GeometrySpriteWithNormalsPass {
-    program: Program<(MatricesBlock, SpriteInfoBlock, ObjectLightParams), SpriteVertex, 2>,
-    sprite_infos: RefCell<SpriteInfos>,
-}
-
 impl GeometrySpriteWithNormalsPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [
-                ("matrices", MATRICES_BLOCK_BINDING),
-                ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-                ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
-            ],
-            samplers: ["sprite", "normal_map"],
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
         };

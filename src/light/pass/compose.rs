@@ -10,6 +10,16 @@ use crate::{
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
+pub struct ComposePass {
+    screen_rect: Mesh<SpriteVertex>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 2>,
+}
+
+const UNIFORM_BLOCKS: [(&str, u32); 1] =
+    [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
+
+const SAMPLERS: [&str; 2] = ["screen_albedo", "screen_light"];
+
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
 void main() {
@@ -32,11 +42,6 @@ void main() {
 }
 "#;
 
-pub struct ComposePass {
-    screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 2>,
-}
-
 impl ComposePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let screen_rect = SpriteBatch::from_geometry(
@@ -53,8 +58,8 @@ impl ComposePass {
         .into_mesh();
 
         let program_def = ProgramDef {
-            uniform_blocks: [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)],
-            samplers: ["screen_albedo", "screen_light"],
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
         };

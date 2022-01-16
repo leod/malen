@@ -13,6 +13,17 @@ use super::{
     GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
 };
 
+pub struct ScreenLightPass {
+    program: Program<(MatricesBlock, GlobalLightParamsBlock), LightAreaVertex, 2>,
+}
+
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
+    ("matrices", MATRICES_BLOCK_BINDING),
+    ("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
+];
+
+const SAMPLERS: [&str; 2] = ["shadow_map", "screen_normals"];
+
 const VERTEX_SOURCE: &str = r#"
 flat out vec4 v_light_params;
 flat out vec3 v_light_color;
@@ -154,18 +165,11 @@ void main() {
 }
 "#;
 
-pub struct ScreenLightPass {
-    program: Program<(MatricesBlock, GlobalLightParamsBlock), LightAreaVertex, 2>,
-}
-
 impl ScreenLightPass {
     pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [
-                ("matrices", MATRICES_BLOCK_BINDING),
-                ("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
-            ],
-            samplers: ["shadow_map", "screen_normals"],
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),
             fragment_source: &format!(
@@ -190,9 +194,6 @@ impl ScreenLightPass {
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,
     ) {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("light::ScreenLightPass::draw");
-
         gl::draw(
             &self.program,
             (matrices, global_light_params),
