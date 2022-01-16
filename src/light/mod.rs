@@ -10,4 +10,6 @@ pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,
 };
 pub use occluder_batch::OccluderBatch;
-pub use pipeline::{LightPipeline, LightPipelineParams, NewLightPipelineError};
+pub use pipeline::{
+    IndirectLightPipelineParams, LightPipeline, LightPipelineParams, NewLightPipelineError,
+};
