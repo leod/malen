@@ -19,6 +19,7 @@ If the `Makefile` does not work for you, you can run the steps manually.
 
 ```
 wasm-pack build --target web --no-typescript ; cp static/* pkg/ ; python3 server.py pkg
+```
 
 ### Windows Setup
 
