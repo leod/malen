@@ -1,9 +1,10 @@
-use malen::{
-    geom::{shape_shape_overlap, Camera, Circle, Rect, RotatedRect, Screen, Shape},
-    InputState, Key,
-};
 use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
+
+use malen::{
+    geom::{shape_shape_overlap, Camera, Circle, Overlap, Rect, RotatedRect, Screen, Shape},
+    InputState, Key,
+};
 
 pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
@@ -110,6 +111,10 @@ impl Player {
             angle: self.dir.y.atan2(self.dir.x),
         }
     }
+
+    pub fn shape(&self) -> Shape {
+        Shape::RotatedRect(self.rotated_rect())
+    }
 }
 
 impl State {
@@ -152,13 +157,19 @@ impl State {
         }
     }
 
-    pub fn shape_overlap(&self, shape: &Shape) -> bool {
+    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
         self.walls
             .iter()
             .map(Wall::shape)
             .chain(self.balls.iter().map(Ball::shape))
             .chain(self.enemies.iter().map(Enemy::shape))
-            .any(|map_shape| shape_shape_overlap(shape, &map_shape))
+            .filter_map(|map_shape| shape_shape_overlap(shape, &map_shape))
+            .max_by(|o1, o2| {
+                o1.resolution()
+                    .norm_squared()
+                    .partial_cmp(&o2.resolution().norm_squared())
+                    .unwrap()
+            })
     }
 
     pub fn add_wall(&mut self) {
@@ -184,7 +195,7 @@ impl State {
             use_texture: true,
         };
 
-        if !self.shape_overlap(&wall.shape()) {
+        if self.shape_overlap(&wall.shape()).is_none() {
             self.walls.push(wall);
         }
     }
@@ -200,7 +211,7 @@ impl State {
             rot: (0.05 + rng.gen::<f32>() * 0.15) * std::f32::consts::PI,
         };
 
-        if !self.shape_overlap(&enemy.shape()) {
+        if self.shape_overlap(&enemy.shape()).is_none() {
             self.enemies.push(enemy);
         }
     }
@@ -213,7 +224,7 @@ impl State {
 
         let ball = Ball { pos, radius };
 
-        if !self.shape_overlap(&ball.shape()) {
+        if self.shape_overlap(&ball.shape()).is_none() {
             self.balls.push(ball);
         }
     }
@@ -271,6 +282,10 @@ impl State {
 
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
         self.player.pos += dt_secs * self.player.vel;
+
+        if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
+            self.player.pos -= overlap.resolution();
+        }
 
         let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
         let mouse_world_pos = self
