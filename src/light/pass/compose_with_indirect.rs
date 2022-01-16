@@ -11,6 +11,22 @@ use crate::{
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
+pub struct ComposeWithIndirectPass {
+    screen_rect: Mesh<SpriteVertex>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
+}
+
+const UNIFORM_BLOCKS: [(&str, u32); 1] =
+    [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
+
+const SAMPLERS: [&str; 5] = [
+    "screen_albedo",
+    "screen_normals",
+    "screen_occlusion",
+    "screen_light",
+    "screen_reflectors",
+];
+
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
 
@@ -107,11 +123,6 @@ void main() {
 }
 "#;
 
-pub struct ComposeWithIndirectPass {
-    screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
-}
-
 impl ComposeWithIndirectPass {
     pub fn new(
         gl: Rc<gl::Context>,
@@ -131,14 +142,8 @@ impl ComposeWithIndirectPass {
         .into_mesh();
 
         let program_def = ProgramDef {
-            uniform_blocks: [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)],
-            samplers: [
-                "screen_albedo",
-                "screen_normals",
-                "screen_occlusion",
-                "screen_light",
-                "screen_reflectors",
-            ],
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
             vertex_source: &VERTEX_SOURCE,
             fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
                 .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())

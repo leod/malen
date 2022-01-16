@@ -7,6 +7,10 @@ use crate::gl::{
 
 use super::super::{Light, OccluderLineVertex};
 
+pub struct ShadowMapPass {
+    program: Program<(), (OccluderLineVertex, Light), 0>,
+}
+
 const VERTEX_SOURCE: &str = r#"
 flat out vec2 v_light_position;
 flat out float v_light_radius;
@@ -117,10 +121,6 @@ void main() {
 }
 "#;
 
-pub struct ShadowMapPass {
-    program: Program<(), (OccluderLineVertex, Light), 0>,
-}
-
 impl ShadowMapPass {
     pub fn new(gl: Rc<gl::Context>, max_num_lights: u32) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
@@ -135,9 +135,6 @@ impl ShadowMapPass {
     }
 
     pub fn draw(&self, draw_unit: InstancedDrawUnit<(OccluderLineVertex, Light)>) {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("light::ShadowMapPass::draw");
-
         gl::draw_instanced(
             &self.program,
             (),

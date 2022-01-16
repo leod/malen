@@ -11,32 +11,38 @@ pub struct ColorPass {
     program: Program<MatricesBlock, ColorVertex, 0>,
 }
 
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
+
+const VERTEX_SOURCE: &str = r#"
+out vec4 v_color;
+
+void main() {
+    vec3 position = matrices.projection
+        * matrices.view
+        * vec3(a_position.xy, 1.0);
+
+    gl_Position = vec4(position.xy, a_position.z, 1.0);
+
+    v_color = a_color;
+}
+"#;
+
+const FRAGMENT_SOURCE: &str = r#"
+in vec4 v_color;
+out vec4 f_color;
+
+void main() {
+    f_color = v_color;
+}
+"#;
+
 impl ColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [("matrices", MATRICES_BLOCK_BINDING)],
+            uniform_blocks: UNIFORM_BLOCKS,
             samplers: [],
-            vertex_source: r#"
-                out vec4 v_color;
-
-                void main() {
-                    vec3 position = matrices.projection
-                        * matrices.view
-                        * vec3(a_position.xy, 1.0);
-
-                    gl_Position = vec4(position.xy, a_position.z, 1.0);
-
-                    v_color = a_color;
-                }
-            "#,
-            fragment_source: r#"
-                in vec4 v_color;
-                out vec4 f_color;
-
-                void main() {
-                    f_color = v_color;
-                }
-            "#,
+            vertex_source: VERTEX_SOURCE,
+            fragment_source: FRAGMENT_SOURCE,
         };
         let program = Program::new(gl, program_def)?;
 
@@ -51,9 +57,6 @@ impl ColorPass {
     ) where
         E: Element,
     {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("ColorPass::draw");
-
         gl::draw(&self.program, matrices, [], draw_unit, params);
     }
 }

@@ -9,6 +9,18 @@ use crate::{
     },
 };
 
+pub struct ShadedSpritePass {
+    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 2>,
+    sprite_infos: RefCell<SpriteInfos>,
+}
+
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
+    ("matrices", MATRICES_BLOCK_BINDING),
+    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
+];
+
+const SAMPLERS: [&str; 2] = ["sprite", "screen_light"];
+
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_sprite_uv;
 out vec2 v_screen_uv;
@@ -36,19 +48,11 @@ void main() {
 }
 "#;
 
-pub struct ShadedSpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 2>,
-    sprite_infos: RefCell<SpriteInfos>,
-}
-
 impl ShadedSpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [
-                ("matrices", MATRICES_BLOCK_BINDING),
-                ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-            ],
-            samplers: ["sprite", "screen_light"],
+            uniform_blocks: UNIFORM_BLOCKS,
+            samplers: SAMPLERS,
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
         };
