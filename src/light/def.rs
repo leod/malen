@@ -15,10 +15,13 @@ use crate::{
 pub struct GlobalLightParams {
     pub ambient: Color3,
     pub gamma: f32,
-    pub front_glow: f32,
     pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
+    pub indirect_color_scale: f32,
+    pub indirect_start: f32,
+    pub indirect_step_factor: f32,
+    pub indirect_z: f32,
 }
 
 impl Default for GlobalLightParams {
@@ -26,37 +29,56 @@ impl Default for GlobalLightParams {
         Self {
             ambient: Color3::from_u8(0, 0, 0),
             gamma: 2.2,
-            front_glow: 10.0,
-            back_glow: 40.0,
+            back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
+            indirect_color_scale: 75.0,
+            indirect_start: 2.0,
+            indirect_step_factor: 0.65,
+            indirect_z: 0.5,
         }
     }
 }
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightParamsBlock {
+    pub screen_size: Vector2<f32>,
     pub ambient: Vector3<f32>,
     pub gamma: f32,
-    pub front_glow: f32,
     pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
+    pub indirect_color_scale: f32,
+    pub indirect_start: f32,
+    pub indirect_step_factor: f32,
+    pub indirect_z: f32,
 }
 
 impl UniformBlock for GlobalLightParamsBlock {}
 
-impl From<GlobalLightParams> for GlobalLightParamsBlock {
-    fn from(params: GlobalLightParams) -> Self {
+impl GlobalLightParamsBlock {
+    pub fn new(screen_size: Vector2<f32>, params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
+            screen_size,
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
-            front_glow: params.front_glow,
             back_glow: params.back_glow,
             angle_fall_off_size: params.angle_fall_off_size,
             angle_fall_off_factor: params.angle_fall_off_factor,
+            indirect_color_scale: params.indirect_color_scale,
+            indirect_start: params.indirect_start,
+            indirect_step_factor: params.indirect_step_factor,
+            indirect_z: params.indirect_z,
         }
     }
+}
+
+impl UniformBlock for ObjectLightParams {}
+
+#[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
+pub struct ObjectLightParams {
+    pub ambient_scale: f32,
+    pub occlusion: f32,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, UniformBuffer},
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Uniform},
 };
 
 use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
@@ -45,7 +45,7 @@ impl ColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
+        matrices: &Uniform<MatricesBlock>,
         draw_unit: DrawUnit<ColorVertex, E>,
         params: &DrawParams,
     ) where

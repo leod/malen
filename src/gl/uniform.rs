@@ -5,30 +5,30 @@ use glow::HasContext;
 
 use super::{Context, Error};
 
-pub struct UniformBuffer<U> {
+pub struct Uniform<U> {
     gl: Rc<Context>,
     id: <glow::Context as HasContext>::Buffer,
     _phantom: PhantomData<U>,
 }
 
-impl<U> UniformBuffer<U>
+impl<U> Uniform<U>
 where
     U: AsStd140,
 {
     pub fn new(gl: Rc<Context>, uniform: U) -> Result<Self, Error> {
         let id = unsafe { gl.create_buffer() }.map_err(Error::Glow)?;
-        let uniform_buffer = UniformBuffer {
+        let uniform_buffer = Uniform {
             gl,
             id,
             _phantom: PhantomData,
         };
 
-        uniform_buffer.set_data(uniform);
+        uniform_buffer.set(uniform);
 
         Ok(uniform_buffer)
     }
 
-    pub fn set_data(&self, data: U) {
+    pub fn set(&self, data: U) {
         let data_std140 = data.as_std140();
         let data_u8 = bytemuck::bytes_of(&data_std140);
 
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<U> UniformBuffer<U> {
+impl<U> Uniform<U> {
     pub fn gl(&self) -> Rc<Context> {
         self.gl.clone()
     }
@@ -50,7 +50,7 @@ impl<U> UniformBuffer<U> {
     }
 }
 
-impl<U> Drop for UniformBuffer<U> {
+impl<U> Drop for Uniform<U> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_buffer(self.id);

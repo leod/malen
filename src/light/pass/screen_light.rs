@@ -3,13 +3,13 @@ use std::rc::Rc;
 use crate::{
     gl::{
         self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, DrawUnit, Program,
-        ProgramDef, Texture, UniformBuffer,
+        ProgramDef, Texture, Uniform,
     },
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
 use super::{
-    light_area::LightAreaVertex, GlobalLightParamsBlock, LightPipelineParams,
+    super::{light_area::LightAreaVertex, GlobalLightParamsBlock, LightPipelineParams},
     GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
 };
 
@@ -32,7 +32,7 @@ void main() {
 }
 "#;
 
-const FRAGMENT_SOURCE: &str = r#"
+pub(crate) const VISIBILITY_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
@@ -88,23 +88,16 @@ float visibility(
     float back2r = texture(shadow_map, tex_coords + 4.0 * texel).g * light_radius;
     float back3r = texture(shadow_map, tex_coords + 6.0 * texel).g * light_radius;
 
-    float front0m = min(min(front1l, front1r), front0) - global_light_params.front_glow;
+    float front0m = min(min(front1l, front1r), front0);
     float back0m = min(min(back1l, back1r), back0);
 
-    float inner_light = front_light;
-    float to_front = dist_to_light - front0m;
-    if (to_front < global_light_params.front_glow) {
-        inner_light *= 2.0 + sin(PI * (3.0/2.0 + to_front / global_light_params.front_glow));
-    } else {
-        inner_light *= 2.0 * pow(
-            1.0 - clamp((to_front - global_light_params.front_glow) / global_light_params.back_glow, 0.0, 1.0),
-            4.0);
-    } 
+    float inner_light = front_light *
+        pow(1.0 - clamp((dist_to_light - front0m) / global_light_params.back_glow, 0.0, 1.0), 4.0);
 
-    float front2lm = min(min(front3l, front1l), front2l) - global_light_params.front_glow;
-    float front1lm = min(min(front2l, front0), front1l) - global_light_params.front_glow;
-    float front1rm = min(min(front2r, front0), front1r) - global_light_params.front_glow;
-    float front2rm = min(min(front3r, front1r), front2r) - global_light_params.front_glow;
+    float front2lm = min(min(front3l, front1l), front2l);
+    float front1lm = min(min(front2l, front0), front1l);
+    float front1rm = min(min(front2r, front0), front1r);
+    float front2rm = min(min(front3r, front1r), front2r);
     float back2lm = min(min(back3l, back1l), back2l);
     float back1lm = min(min(back2l, back0), back1l);
     float back1rm = min(min(back2r, back0), back1r);
@@ -130,6 +123,9 @@ float visibility(
     return front_light * vis_front + inner_light * (1.0 - vis_front) * vis_back;
 }
 
+"#;
+
+const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
@@ -172,9 +168,13 @@ impl ScreenLightPass {
             samplers: ["shadow_map", "screen_normals"],
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),
-            fragment_source: &FRAGMENT_SOURCE.replace(
-                "{shadow_map_resolution}",
-                &params.shadow_map_resolution.to_string(),
+            fragment_source: &format!(
+                "{}\n{}",
+                VISIBILITY_SOURCE,
+                FRAGMENT_SOURCE.replace(
+                    "{shadow_map_resolution}",
+                    &params.shadow_map_resolution.to_string(),
+                )
             ),
         };
         let program = Program::new(gl, program_def)?;
@@ -184,8 +184,8 @@ impl ScreenLightPass {
 
     pub fn draw(
         &self,
-        matrices: &UniformBuffer<MatricesBlock>,
-        global_light_params: &UniformBuffer<GlobalLightParamsBlock>,
+        matrices: &Uniform<MatricesBlock>,
+        global_light_params: &Uniform<GlobalLightParamsBlock>,
         shadow_map: &Texture,
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,

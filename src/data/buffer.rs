@@ -57,7 +57,7 @@ where
             std::any::type_name::<V>().split("::").last().unwrap(),
         ));*/
 
-        element_buffer.set_data(&self.elements);
-        vertex_buffer.set_data(&self.vertices);
+        element_buffer.set(&self.elements);
+        vertex_buffer.set(&self.vertices);
     }
 }

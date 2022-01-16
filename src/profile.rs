@@ -6,7 +6,7 @@ use nalgebra::{Matrix3, Point2, Vector2};
 use crate::{
     data::ColorRect,
     geom::{Rect, Screen},
-    gl::{DrawTimer, UniformBuffer},
+    gl::{DrawTimer, Uniform},
     pass::MatricesBlock,
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotPass, PlotStyle},
     text::{Font, Text},
@@ -43,7 +43,7 @@ pub struct Profile {
     font: Font,
     params: ProfileParams,
 
-    screen_matrices: UniformBuffer<MatricesBlock>,
+    screen_matrices: Uniform<MatricesBlock>,
     batch: PlotBatch,
     pass: Rc<PlotPass>,
 
@@ -60,7 +60,7 @@ pub struct FrameGuard {
 
 impl Profile {
     pub fn new(context: &Context, font: Font, params: ProfileParams) -> Result<Self, InitError> {
-        let screen_matrices = UniformBuffer::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
         let batch = PlotBatch::new(context.gl())?;
         let pass = context.plot_pass();
 
@@ -119,7 +119,7 @@ impl Profile {
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
         coarse_prof::profile!("Profile::render");
 
-        self.screen_matrices.set_data(MatricesBlock {
+        self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
         });

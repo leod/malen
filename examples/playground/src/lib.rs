@@ -1,3 +1,4 @@
+use nalgebra::Vector2;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use malen::{CanvasSizeConfig, Config, Context};
@@ -15,7 +16,6 @@ pub async fn main() {
 
     let config = Config {
         canvas_size: CanvasSizeConfig::Fill,
-        //canvas_size: CanvasSizeConfig::LogicalSize(Vector2::new(640, 480)),
     };
 
     let context = Context::from_canvas_element_id("canvas", config).unwrap();

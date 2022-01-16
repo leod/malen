@@ -1,60 +1,57 @@
 use std::rc::Rc;
 
 use crate::{
-    data::{Geometry, GeometryBuffer, LineTag, PrimitiveTag},
-    gl::{self, ElementBuffer, InstancedDrawUnit, VertexArray, VertexBuffer},
+    data::{Geometry, LineBatch, LineTag, PrimitiveTag},
+    gl::{self, DrawUnit, InstancedDrawUnit, VertexArray, VertexBuffer},
 };
 
 use super::{Light, OccluderLineVertex};
 
 pub struct OccluderBatch {
-    buffer: GeometryBuffer<LineTag, OccluderLineVertex>,
-    vertex_array: VertexArray<(OccluderLineVertex, Light)>,
-    dirty: bool,
+    batch: LineBatch<OccluderLineVertex>,
+    light_instanced_vertex_array: VertexArray<(OccluderLineVertex, Light)>,
 }
 
 impl OccluderBatch {
     pub(super) fn new(light_instances: Rc<VertexBuffer<Light>>) -> Result<Self, gl::Error> {
-        let buffer = GeometryBuffer::new();
-        let element_buffer = Rc::new(ElementBuffer::new(light_instances.gl())?);
-        let vertex_buffer = Rc::new(VertexBuffer::new(light_instances.gl())?);
-        let vertex_array =
+        let batch = LineBatch::new(light_instances.gl())?;
+        let element_buffer = batch.vertex_array().element_buffer();
+        let vertex_buffer = batch.vertex_array().vertex_buffers();
+        let light_instanced_vertex_array =
             VertexArray::new_instanced(element_buffer, (vertex_buffer, light_instances), &[0, 1])?;
 
         Ok(Self {
-            buffer,
-            vertex_array,
-            dirty: false,
+            batch,
+            light_instanced_vertex_array,
         })
     }
 
     pub fn push<G: Geometry<LineTag, Vertex = OccluderLineVertex>>(&mut self, geometry: G) {
-        self.buffer.push(geometry);
-        self.dirty = true;
+        self.batch.push(geometry);
     }
 
     pub fn flush(&mut self) {
-        if self.dirty {
-            self.buffer.upload(
-                &*self.vertex_array.element_buffer(),
-                &*self.vertex_array.vertex_buffers().0,
-            );
-            self.dirty = false;
-        }
+        self.batch.flush();
     }
 
-    pub(super) fn draw_unit(&mut self) -> InstancedDrawUnit<(OccluderLineVertex, Light)> {
+    pub(super) fn light_instanced_draw_unit(
+        &mut self,
+    ) -> InstancedDrawUnit<(OccluderLineVertex, Light)> {
         self.flush();
+
         InstancedDrawUnit::new(
-            &self.vertex_array,
+            &self.light_instanced_vertex_array,
             LineTag::primitive_mode(),
-            0..self.vertex_array.vertex_buffers().0.len(),
-            self.vertex_array.vertex_buffers().1.len(),
+            0..self.light_instanced_vertex_array.vertex_buffers().0.len(),
+            self.light_instanced_vertex_array.vertex_buffers().1.len(),
         )
     }
 
+    pub(super) fn draw_unit(&mut self) -> DrawUnit<OccluderLineVertex> {
+        self.batch.draw_unit()
+    }
+
     pub fn clear(&mut self) {
-        self.buffer.clear();
-        self.dirty = true;
+        self.batch.clear();
     }
 }
