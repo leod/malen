@@ -60,22 +60,29 @@ impl Game {
             Unfocused => {
                 log::info!("Canvas lost focus");
             }
-            KeyPressed(Key::P) => {
-                log::info!("Profiling:\n{}", coarse_prof::to_string());
-                log::info!(
-                    "Frame timer: {:?}",
-                    self.profile.draw_timer().borrow().timing_info()
-                );
-                self.show_profile = !self.show_profile;
-            }
-            KeyPressed(Key::U) => {
-                self.show_textures = !self.show_textures;
-            }
-            KeyPressed(Key::L) => {
-                self.indirect_light = !self.indirect_light;
-            }
-            KeyPressed(Key::R) => {
-                coarse_prof::reset();
+            KeyPressed(key) => {
+                self.state.handle_key_pressed(key);
+
+                match key {
+                    Key::P => {
+                        log::info!("Profiling:\n{}", coarse_prof::to_string());
+                        log::info!(
+                            "Frame timer: {:?}",
+                            self.profile.draw_timer().borrow().timing_info()
+                        );
+                        self.show_profile = !self.show_profile;
+                    }
+                    Key::U => {
+                        self.show_textures = !self.show_textures;
+                    }
+                    Key::L => {
+                        self.indirect_light = !self.indirect_light;
+                    }
+                    Key::R => {
+                        coarse_prof::reset();
+                    }
+                    _ => (),
+                }
             }
             _ => (),
         }

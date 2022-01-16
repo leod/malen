@@ -2,7 +2,7 @@ use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
-    geom::{shape_shape_overlap, Camera, Circle, Overlap, Rect, RotatedRect, Screen, Shape},
+    geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
     InputState, Key,
 };
 
@@ -10,6 +10,9 @@ pub const MAP_SIZE: f32 = 2048.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
 pub const PLAYER_SIZE: f32 = 35.0;
+pub const LASER_LENGTH: f32 = 20.0;
+pub const LASER_WIDTH: f32 = 3.0;
+pub const LASER_SPEED: f32 = 400.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
@@ -17,8 +20,6 @@ pub struct Wall {
     pub lamp_index: Option<usize>,
     pub use_texture: bool,
 }
-
-impl Wall {}
 
 pub struct Enemy {
     pub pos: Point2<f32>,
@@ -42,11 +43,17 @@ pub struct Lamp {
     pub light_angle: f32,
 }
 
+pub struct Laser {
+    pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
+}
+
 pub struct State {
     pub walls: Vec<Wall>,
     pub enemies: Vec<Enemy>,
     pub balls: Vec<Ball>,
     pub lamps: Vec<Lamp>,
+    pub lasers: Vec<Laser>,
     pub player: Player,
     pub view_offset: Vector2<f32>,
     pub last_timestamp_secs: Option<f64>,
@@ -103,6 +110,21 @@ impl Lamp {
     }
 }
 
+impl Laser {
+    pub fn line(&self) -> Line {
+        Line(self.pos, self.pos + self.vel.normalize() * LASER_LENGTH)
+    }
+
+    pub fn rotated_rect(&self) -> RotatedRect {
+        Rect {
+            center: self.pos,
+            size: Vector2::new(LASER_LENGTH, LASER_WIDTH),
+        }
+        .translate(self.vel.normalize() * LASER_LENGTH / 2.0)
+        .rotate(self.vel.y.atan2(self.vel.x))
+    }
+}
+
 impl Player {
     pub fn rotated_rect(&self) -> RotatedRect {
         RotatedRect {
@@ -124,6 +146,7 @@ impl State {
             enemies: Vec::new(),
             balls: Vec::new(),
             lamps: Vec::new(),
+            lasers: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
                 vel: Vector2::zeros(),
@@ -251,6 +274,16 @@ impl State {
         }
     }
 
+    pub fn handle_key_pressed(&mut self, key: Key) {
+        match key {
+            Key::Space => self.lasers.push(Laser {
+                pos: self.player.pos + self.player.dir * (PLAYER_SIZE + 10.0),
+                vel: self.player.dir * LASER_SPEED,
+            }),
+            _ => (),
+        }
+    }
+
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
             .last_timestamp_secs
@@ -311,6 +344,10 @@ impl State {
                 delta *= -1.0;
             }
             enemy.angle += delta;
+        }
+
+        for laser in self.lasers.iter_mut() {
+            laser.pos += laser.vel * dt_secs;
         }
     }
 }
