@@ -27,17 +27,14 @@ vec3 trace_cone(
     vec2 origin,
     vec2 dir
 ) {
-    const int max_steps = 9;
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
-    const float step_factor = 0.55;
-
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = 2.0;
+    float t = global_light_params.indirect_start;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
 
-    for (int i = 0; i < max_steps && occlusion <= 0.9; i++) {
+    for (int i = 0; i < {num_tracing_steps} && occlusion <= 0.9; i++) {
         float cone_diameter = diameter_scale * t;
         vec2 p = origin + dir / global_light_params.screen_size * t;
         if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
@@ -45,16 +42,20 @@ vec3 trace_cone(
 
         float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
-        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb; // wtf
+        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
-            sample_color *= 50.0;
+            sample_color *= global_light_params.indirect_color_scale;
+
+            // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
+            // of interior lighting.
             //color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
+
             color += (1.0 - occlusion) * sample_color;
             occlusion += (1.0 - occlusion) * sample_occlusion;
         }
 
-        t += step_factor * cone_diameter;
+        t += global_light_params.indirect_step_factor * cone_diameter;
     }
 
     return color;
@@ -77,7 +78,7 @@ vec3 calc_indirect_diffuse_lighting(
         vec2 dir = vec2(cos(angle), sin(angle));
         float scale = normal_value == vec3(0.0) ?
             1.0 :
-            max(dot(normalize(vec3(-dir, 0.5)), normalize(normal)), 0.0);
+            max(dot(normalize(vec3(-dir, global_light_params.indirect_z)), normalize(normal)), 0.0);
 
         color += scale * trace_cone(origin, dir);
         angle += dangle;
@@ -137,7 +138,8 @@ impl ComposePass {
             ],
             vertex_source: &VERTEX_SOURCE,
             fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
-                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string()),
+                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
+                .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
         };
         let program = Program::new(gl, program_def)?;
 

@@ -33,6 +33,7 @@ pub struct LightPipelineParams {
     pub shadow_map_resolution: u32,
     pub max_num_lights: u32,
     pub num_tracing_cones: u32,
+    pub num_tracing_steps: u32,
 }
 
 pub struct LightPipeline {
