@@ -90,7 +90,7 @@ impl Draw {
         let color_light_params = Uniform::new(
             context.gl(),
             ObjectLightParams {
-                ambient_scale: 0.9,
+                ambient_scale: 0.95,
                 occlusion: 1.0,
             },
         )?;
@@ -354,7 +354,7 @@ impl Draw {
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.12).to_linear(),
+                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
                 ..GlobalLightParams::default()
             })
             .indirect_light_phase()
