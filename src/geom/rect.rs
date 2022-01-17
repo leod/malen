@@ -74,6 +74,22 @@ impl Rect {
         self.corners()[3]
     }
 
+    pub fn x_left(self) -> f32 {
+        self.center.x - self.size.x / 2.0
+    }
+
+    pub fn x_right(self) -> f32 {
+        self.center.x + self.size.x / 2.0
+    }
+
+    pub fn y_top(self) -> f32 {
+        self.center.y - self.size.y / 2.0
+    }
+
+    pub fn y_bottom(self) -> f32 {
+        self.center.y + self.size.y / 2.0
+    }
+
     pub fn edges(self) -> [Line; 4] {
         let corners = self.corners();
 
@@ -99,5 +115,10 @@ impl Rect {
     pub fn scale(mut self, scale: f32) -> Rect {
         self.size *= scale;
         self
+    }
+
+    pub fn contains_point(self, p: Point2<f32>) -> bool {
+        (self.x_left()..=self.x_right()).contains(&p.x)
+            && (self.y_top()..=self.y_bottom()).contains(&p.y)
     }
 }

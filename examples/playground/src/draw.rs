@@ -17,7 +17,7 @@ use malen::{
     Color3, Color4, Context, FrameError, InitError,
 };
 
-use crate::state::{self, Ball, Enemy, Lamp, Laser, Player, State, Wall};
+use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 
 pub struct Draw {
     font: Font,
@@ -175,7 +175,7 @@ impl Draw {
         self.occluder_batch.clear();
         self.lights.clear();
 
-        self.render_floor();
+        self.render_floor(state);
         for wall in &state.walls {
             self.render_wall(wall);
         }
@@ -196,12 +196,9 @@ impl Draw {
         Ok(())
     }
 
-    fn render_floor(&mut self) {
+    fn render_floor(&mut self, state: &State) {
         self.floor_batch.push(Sprite {
-            rect: Rect {
-                center: Point2::origin(),
-                size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
-            },
+            rect: state.floor_rect(),
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
                 self.floor_texture.size().cast::<f32>() * 20.0,
