@@ -74,7 +74,7 @@ impl Rect {
         self.corners()[3]
     }
 
-    pub fn lines(self) -> [Line; 4] {
+    pub fn edges(self) -> [Line; 4] {
         let corners = self.corners();
 
         [
