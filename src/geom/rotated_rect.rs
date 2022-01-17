@@ -60,19 +60,4 @@ impl RotatedRect {
             Line(corners[3], corners[0]),
         ]
     }
-
-    pub fn caps(&self) -> [Line; 4] {
-        let corners = self.corners();
-        let (dx, dy) = self.dxdy();
-
-        let dx = (0.25 * dx.norm()).min(30.0) * dx.normalize();
-        let dy = (0.25 * dy.norm()).min(30.0) * dy.normalize();
-
-        [
-            Line(corners[0] + dx, corners[0] + dy),
-            Line(corners[1] - dx, corners[1] + dy),
-            Line(corners[2] - dx, corners[2] - dy),
-            Line(corners[3] + dx, corners[3] - dy),
-        ]
-    }
 }
