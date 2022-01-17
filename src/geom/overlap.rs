@@ -72,7 +72,7 @@ pub fn rect_rect_overlap(r1: Rect, r2: Rect) -> Option<Overlap> {
 pub fn rotated_rect_rotated_rect_overlap(r1: RotatedRect, r2: RotatedRect) -> Option<Overlap> {
     let mut min_dist_axis = None;
 
-    for line in r1.lines().into_iter().chain(r2.lines()) {
+    for line in r1.edges().into_iter().chain(r2.edges()) {
         let axis = Vector2::new(-line.delta().y, line.delta().x).normalize();
 
         let r1_proj = AxisProj::project_rotated_rect(r1, axis);

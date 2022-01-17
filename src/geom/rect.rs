@@ -1,4 +1,5 @@
 use nalgebra::{Point2, Vector2};
+use rand::Rng;
 
 use super::{Line, RotatedRect};
 
@@ -74,7 +75,23 @@ impl Rect {
         self.corners()[3]
     }
 
-    pub fn lines(self) -> [Line; 4] {
+    pub fn x_left(self) -> f32 {
+        self.center.x - self.size.x / 2.0
+    }
+
+    pub fn x_right(self) -> f32 {
+        self.center.x + self.size.x / 2.0
+    }
+
+    pub fn y_top(self) -> f32 {
+        self.center.y - self.size.y / 2.0
+    }
+
+    pub fn y_bottom(self) -> f32 {
+        self.center.y + self.size.y / 2.0
+    }
+
+    pub fn edges(self) -> [Line; 4] {
         let corners = self.corners();
 
         [
@@ -91,20 +108,6 @@ impl Rect {
         [Line(corners[0], corners[2]), Line(corners[1], corners[3])]
     }
 
-    pub fn caps(self) -> [Line; 4] {
-        let corners = self.corners();
-
-        let dx = Vector2::new((0.25 * self.size.x).min(30.0), 0.0);
-        let dy = Vector2::new(0.0, (0.25 * self.size.y).min(30.0));
-
-        [
-            Line(corners[0] + dx, corners[0] + dy),
-            Line(corners[1] - dx, corners[1] + dy),
-            Line(corners[2] - dx, corners[2] - dy),
-            Line(corners[3] + dx, corners[3] - dy),
-        ]
-    }
-
     pub fn enlarge(mut self, add: Vector2<f32>) -> Rect {
         self.size += add;
         self
@@ -113,5 +116,17 @@ impl Rect {
     pub fn scale(mut self, scale: f32) -> Rect {
         self.size *= scale;
         self
+    }
+
+    pub fn contains_point(self, p: Point2<f32>) -> bool {
+        (self.x_left()..=self.x_right()).contains(&p.x)
+            && (self.y_top()..=self.y_bottom()).contains(&p.y)
+    }
+
+    pub fn sample<R: Rng>(self, rng: &mut R) -> Point2<f32> {
+        let x = rng.gen_range(-0.5, 0.5) * self.size.x;
+        let y = rng.gen_range(-0.5, 0.5) * self.size.y;
+
+        self.center + Vector2::new(x, y)
     }
 }
