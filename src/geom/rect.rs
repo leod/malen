@@ -91,20 +91,6 @@ impl Rect {
         [Line(corners[0], corners[2]), Line(corners[1], corners[3])]
     }
 
-    pub fn caps(self) -> [Line; 4] {
-        let corners = self.corners();
-
-        let dx = Vector2::new((0.25 * self.size.x).min(30.0), 0.0);
-        let dy = Vector2::new(0.0, (0.25 * self.size.y).min(30.0));
-
-        [
-            Line(corners[0] + dx, corners[0] + dy),
-            Line(corners[1] - dx, corners[1] + dy),
-            Line(corners[2] - dx, corners[2] - dy),
-            Line(corners[3] + dx, corners[3] - dy),
-        ]
-    }
-
     pub fn enlarge(mut self, add: Vector2<f32>) -> Rect {
         self.size += add;
         self
