@@ -6,7 +6,7 @@ use malen::{
     InputState, Key,
 };
 
-pub const MAP_SIZE: f32 = 2048.0;
+pub const MAP_SIZE: f32 = 4096.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
 pub const PLAYER_SIZE: f32 = 35.0;
@@ -185,6 +185,13 @@ impl State {
         }
     }
 
+    pub fn floor_rect(&self) -> Rect {
+        Rect {
+            center: Point2::origin(),
+            size: Vector2::new(MAP_SIZE, MAP_SIZE),
+        }
+    }
+
     pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
         self.walls
             .iter()
@@ -268,7 +275,7 @@ impl State {
         if let Some(empty_wall) = empty_walls.choose_mut(&mut rng) {
             (*empty_wall).lamp_index = Some(self.lamps.len());
 
-            let lines = empty_wall.rect().lines();
+            let lines = empty_wall.rect().edges();
             let line = lines.choose(&mut rng).unwrap();
             let normal = Vector2::new(line.1.y - line.0.y, line.0.x - line.1.x).normalize();
             let lamp = Lamp {
@@ -353,10 +360,14 @@ impl State {
         }
 
         for i in 0..self.lasers.len() {
-            let laser = &mut self.lasers[i];
-            laser.pos += laser.vel * dt_secs;
+            let vel = self.lasers[i].vel;
+            self.lasers[i].pos += vel * dt_secs;
 
-            if self.shape_overlap(&self.lasers[i].shape()).is_some() {
+            let overlap = self.shape_overlap(&self.lasers[i].shape()).is_some();
+            let out_of_bounds = !self.floor_rect().contains_point(self.lasers[i].line().0)
+                && !self.floor_rect().contains_point(self.lasers[i].line().0);
+
+            if overlap || out_of_bounds {
                 self.lasers[i].dead = true;
             }
         }
