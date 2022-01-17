@@ -1,4 +1,5 @@
 use nalgebra::{Point2, Vector2};
+use rand::Rng;
 
 use super::{Line, RotatedRect};
 
@@ -120,5 +121,12 @@ impl Rect {
     pub fn contains_point(self, p: Point2<f32>) -> bool {
         (self.x_left()..=self.x_right()).contains(&p.x)
             && (self.y_top()..=self.y_bottom()).contains(&p.y)
+    }
+
+    pub fn sample<R: Rng>(self, rng: &mut R) -> Point2<f32> {
+        let x = rng.gen_range(-0.5, 0.5) * self.size.x;
+        let y = rng.gen_range(-0.5, 0.5) * self.size.y;
+
+        self.center + Vector2::new(x, y)
     }
 }
