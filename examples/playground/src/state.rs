@@ -209,8 +209,7 @@ impl State {
 
     pub fn add_wall(&mut self) {
         let mut rng = rand::thread_rng();
-        let center =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let center = self.floor_rect().sample(&mut rng);
 
         let size = match rng.gen_range(0, 3) {
             0 => {
@@ -237,8 +236,7 @@ impl State {
 
     pub fn add_enemy(&mut self) {
         let mut rng = rand::thread_rng();
-        let pos =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let pos = self.floor_rect().sample(&mut rng);
 
         let enemy = Enemy {
             pos,
@@ -253,8 +251,7 @@ impl State {
 
     pub fn add_ball(&mut self) {
         let mut rng = rand::thread_rng();
-        let pos =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let pos = self.floor_rect().sample(&mut rng);
         let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
 
         let ball = Ball { pos, radius };
