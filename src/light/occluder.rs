@@ -120,7 +120,7 @@ impl Geometry<LineTag> for OccluderRect {
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         for line in self
             .rect
-            .lines()
+            .edges()
             .iter()
             //.chain(self.rect.caps().iter())
             .copied()
@@ -141,7 +141,7 @@ impl Geometry<LineTag> for OccluderRotatedRect {
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         for line in self
             .rect
-            .lines()
+            .edges()
             .iter()
             //.chain(self.rect.caps().iter())
             .copied()

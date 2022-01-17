@@ -17,7 +17,7 @@ use malen::{
     Color3, Color4, Context, FrameError, InitError,
 };
 
-use crate::state::{self, Ball, Enemy, Lamp, Player, State, Wall};
+use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 
 pub struct Draw {
     font: Font,
@@ -37,7 +37,8 @@ pub struct Draw {
     floor_batch: SpriteBatch,
     wall_batch: SpriteBatch,
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
-    color_batch: ColorTriangleBatch,
+    color_triangle_batch: ColorTriangleBatch,
+    indirect_color_triangle_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
     lights: Vec<Light>,
     text_batch: TextBatch,
@@ -122,7 +123,8 @@ impl Draw {
         )?;
 
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
-        let color_batch = ColorTriangleBatch::new(context.gl())?;
+        let color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
+        let indirect_color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
         let floor_batch = SpriteBatch::new(context.gl())?;
         let wall_batch = SpriteBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
@@ -144,7 +146,8 @@ impl Draw {
             floor_batch,
             wall_batch,
             circle_instances,
-            color_batch,
+            color_triangle_batch,
+            indirect_color_triangle_batch,
             occluder_batch,
             lights,
             text_batch,
@@ -166,12 +169,13 @@ impl Draw {
         self.floor_batch.clear();
         self.wall_batch.clear();
         self.circle_instances.clear();
-        self.color_batch.clear();
+        self.color_triangle_batch.clear();
+        self.indirect_color_triangle_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.lights.clear();
 
-        self.render_floor();
+        self.render_floor(state);
         for wall in &state.walls {
             self.render_wall(wall);
         }
@@ -184,17 +188,17 @@ impl Draw {
         for ball in &state.balls {
             self.render_ball(ball);
         }
+        for laser in &state.lasers {
+            self.render_laser(laser);
+        }
         self.render_player(&state.player);
 
         Ok(())
     }
 
-    fn render_floor(&mut self) {
+    fn render_floor(&mut self, state: &State) {
         self.floor_batch.push(Sprite {
-            rect: Rect {
-                center: Point2::origin(),
-                size: 2.0 * Vector2::new(state::MAP_SIZE, state::MAP_SIZE),
-            },
+            rect: state.floor_rect(),
             tex_rect: Rect::from_top_left(
                 Point2::origin(),
                 self.floor_texture.size().cast::<f32>() * 20.0,
@@ -215,7 +219,7 @@ impl Draw {
                 ),
             });
         } else {
-            self.color_batch.push(ColorRect {
+            self.color_triangle_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
                 color: Color4::new(0.3, 0.8, 0.3, 1.0),
@@ -237,7 +241,7 @@ impl Draw {
             z: 0.3,
             ..ColorInstance::default()
         });*/
-        self.color_batch.push(ColorCircle {
+        self.color_triangle_batch.push(ColorCircle {
             circle: enemy.circle(),
             angle: enemy.angle,
             z: 0.3,
@@ -263,7 +267,7 @@ impl Draw {
 
     fn render_ball(&mut self, ball: &Ball) {
         let color = Color3::from_u8(134, 187, 189).to_linear();
-        self.color_batch.push(ColorCircle {
+        self.color_triangle_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
             z: 0.3,
@@ -274,22 +278,14 @@ impl Draw {
             circle: ball.circle(),
             angle: 0.0,
             num_segments: 32,
-            ignore_light_index1: None, //Some(self.lights.len() as u32),
+            ignore_light_index1: None,
             ignore_light_index2: None,
         });
-        /*self.lights.push(Light {
-            position: Point3::new(ball.pos.x, ball.pos.y, 50.0),
-            radius: ball.radius * 2.0,
-            angle: 0.0,
-            angle_size: std::f32::consts::PI * 2.0,
-            start: 0.0,
-            color: color.scale(2.0),
-        });*/
     }
 
     fn render_lamp(&mut self, lamp: &Lamp) {
         let color = Color3::from_u8(254, 196, 127).to_linear();
-        self.color_batch.push(ColorCircle {
+        self.color_triangle_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
             z: 0.1,
@@ -306,9 +302,23 @@ impl Draw {
         });
     }
 
+    fn render_laser(&mut self, laser: &Laser) {
+        let color = Color3::from_u8(200, 70, 30).to_linear();
+        self.color_triangle_batch.push(ColorRotatedRect {
+            rect: laser.rotated_rect(),
+            z: 0.2,
+            color: color.to_color4(),
+        });
+        self.indirect_color_triangle_batch.push(ColorRotatedRect {
+            rect: laser.rotated_rect(),
+            z: 0.2,
+            color: color.scale(0.5).to_color4(),
+        });
+    }
+
     fn render_player(&mut self, player: &Player) {
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        self.color_batch.push(ColorRotatedRect {
+        self.color_triangle_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             z: 0.4,
             color: color.to_color4(),
@@ -342,7 +352,10 @@ impl Draw {
         let phase = self
             .light_pipeline
             .geometry_phase(&self.camera_matrices)?
-            .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
+            .draw_colors(
+                &self.color_light_params,
+                self.color_triangle_batch.draw_unit(),
+            )
             .draw_sprites_with_normals(
                 &self.floor_light_params,
                 &self.floor_texture,
@@ -365,8 +378,9 @@ impl Draw {
         if indirect_light {
             phase
                 .indirect_light_phase()
-                .draw_color_reflectors(self.color_batch.draw_unit())
+                .draw_color_reflectors(self.color_triangle_batch.draw_unit())
                 .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())?
+                .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
                 .prepare_cone_tracing()
                 .compose();
         } else {

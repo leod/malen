@@ -9,11 +9,11 @@ use thiserror::Error;
 use crate::{
     data::{ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
-        self, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError, Texture,
-        TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap, Uniform,
-        VertexBuffer,
+        self, DrawParams, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError,
+        Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
+        Uniform, VertexBuffer,
     },
-    pass::MatricesBlock,
+    pass::{ColorPass, MatricesBlock},
     Canvas, Color4, Context, FrameError,
 };
 
@@ -53,6 +53,7 @@ pub struct LightPipeline {
     screen_light: Framebuffer,
     screen_reflectors: Framebuffer,
 
+    color_pass: Rc<ColorPass>,
     geometry_color_pass: GeometryColorPass,
     geometry_sprite_normal_pass: GeometrySpriteWithNormalsPass,
     shadow_map_pass: ShadowMapPass,
@@ -107,6 +108,7 @@ impl LightPipeline {
         let screen_light = new_screen_framebuffer(canvas.clone(), 1, false, false)?;
         let screen_reflectors = new_screen_framebuffer(canvas.clone(), 1, false, true)?;
 
+        let color_pass = context.color_pass();
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
         let geometry_sprite_normal_pass = GeometrySpriteWithNormalsPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
@@ -126,6 +128,7 @@ impl LightPipeline {
             shadow_map,
             screen_light,
             screen_reflectors,
+            color_pass,
             geometry_color_pass,
             geometry_sprite_normal_pass,
             shadow_map_pass,
@@ -383,6 +386,16 @@ impl<'a> IndirectLightPhase<'a> {
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
             );
+        });
+
+        self
+    }
+
+    pub fn draw_color_sources(self, draw_unit: DrawUnit<ColorVertex>) -> Self {
+        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
+            self.pipeline
+                .color_pass
+                .draw(self.input.matrices, draw_unit, &DrawParams::default());
         });
 
         self

@@ -2,14 +2,17 @@ use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
-    geom::{shape_shape_overlap, Camera, Circle, Overlap, Rect, RotatedRect, Screen, Shape},
+    geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
     InputState, Key,
 };
 
-pub const MAP_SIZE: f32 = 2048.0;
+pub const MAP_SIZE: f32 = 4096.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 15.0;
 pub const PLAYER_SIZE: f32 = 35.0;
+pub const LASER_LENGTH: f32 = 25.0;
+pub const LASER_WIDTH: f32 = 3.0;
+pub const LASER_SPEED: f32 = 350.0;
 
 pub struct Wall {
     pub center: Point2<f32>,
@@ -17,8 +20,6 @@ pub struct Wall {
     pub lamp_index: Option<usize>,
     pub use_texture: bool,
 }
-
-impl Wall {}
 
 pub struct Enemy {
     pub pos: Point2<f32>,
@@ -42,11 +43,18 @@ pub struct Lamp {
     pub light_angle: f32,
 }
 
+pub struct Laser {
+    pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
+    pub dead: bool,
+}
+
 pub struct State {
     pub walls: Vec<Wall>,
     pub enemies: Vec<Enemy>,
     pub balls: Vec<Ball>,
     pub lamps: Vec<Lamp>,
+    pub lasers: Vec<Laser>,
     pub player: Player,
     pub view_offset: Vector2<f32>,
     pub last_timestamp_secs: Option<f64>,
@@ -103,6 +111,25 @@ impl Lamp {
     }
 }
 
+impl Laser {
+    pub fn line(&self) -> Line {
+        Line(self.pos, self.pos + self.vel.normalize() * LASER_LENGTH)
+    }
+
+    pub fn rotated_rect(&self) -> RotatedRect {
+        Rect {
+            center: self.pos,
+            size: Vector2::new(LASER_LENGTH, LASER_WIDTH),
+        }
+        .translate(self.vel.normalize() * LASER_LENGTH / 2.0)
+        .rotate(self.vel.y.atan2(self.vel.x))
+    }
+
+    pub fn shape(&self) -> Shape {
+        Shape::RotatedRect(self.rotated_rect())
+    }
+}
+
 impl Player {
     pub fn rotated_rect(&self) -> RotatedRect {
         RotatedRect {
@@ -124,6 +151,7 @@ impl State {
             enemies: Vec::new(),
             balls: Vec::new(),
             lamps: Vec::new(),
+            lasers: Vec::new(),
             player: Player {
                 pos: Point2::origin(),
                 vel: Vector2::zeros(),
@@ -157,6 +185,13 @@ impl State {
         }
     }
 
+    pub fn floor_rect(&self) -> Rect {
+        Rect {
+            center: Point2::origin(),
+            size: Vector2::new(MAP_SIZE, MAP_SIZE),
+        }
+    }
+
     pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
         self.walls
             .iter()
@@ -174,8 +209,7 @@ impl State {
 
     pub fn add_wall(&mut self) {
         let mut rng = rand::thread_rng();
-        let center =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let center = self.floor_rect().sample(&mut rng);
 
         let size = match rng.gen_range(0, 3) {
             0 => {
@@ -202,8 +236,7 @@ impl State {
 
     pub fn add_enemy(&mut self) {
         let mut rng = rand::thread_rng();
-        let pos =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let pos = self.floor_rect().sample(&mut rng);
 
         let enemy = Enemy {
             pos,
@@ -218,8 +251,7 @@ impl State {
 
     pub fn add_ball(&mut self) {
         let mut rng = rand::thread_rng();
-        let pos =
-            Point2::new(rng.gen(), rng.gen()) * 2.0 * MAP_SIZE - Vector2::new(1.0, 1.0) * MAP_SIZE;
+        let pos = self.floor_rect().sample(&mut rng);
         let radius = *vec![50.0, 100.0].choose(&mut rng).unwrap();
 
         let ball = Ball { pos, radius };
@@ -240,7 +272,7 @@ impl State {
         if let Some(empty_wall) = empty_walls.choose_mut(&mut rng) {
             (*empty_wall).lamp_index = Some(self.lamps.len());
 
-            let lines = empty_wall.rect().lines();
+            let lines = empty_wall.rect().edges();
             let line = lines.choose(&mut rng).unwrap();
             let normal = Vector2::new(line.1.y - line.0.y, line.0.x - line.1.x).normalize();
             let lamp = Lamp {
@@ -248,6 +280,17 @@ impl State {
                 light_angle: normal.y.atan2(normal.x),
             };
             self.lamps.push(lamp);
+        }
+    }
+
+    pub fn handle_key_pressed(&mut self, key: Key) {
+        match key {
+            Key::Space => self.lasers.push(Laser {
+                pos: self.player.pos + self.player.dir * PLAYER_SIZE * 0.5,
+                vel: self.player.dir * LASER_SPEED,
+                dead: false,
+            }),
+            _ => (),
         }
     }
 
@@ -312,5 +355,20 @@ impl State {
             }
             enemy.angle += delta;
         }
+
+        for i in 0..self.lasers.len() {
+            let vel = self.lasers[i].vel;
+            self.lasers[i].pos += vel * dt_secs;
+
+            let overlap = self.shape_overlap(&self.lasers[i].shape()).is_some();
+            let out_of_bounds = !self.floor_rect().contains_point(self.lasers[i].line().0)
+                && !self.floor_rect().contains_point(self.lasers[i].line().0);
+
+            if overlap || out_of_bounds {
+                self.lasers[i].dead = true;
+            }
+        }
+
+        self.lasers.retain(|laser| !laser.dead);
     }
 }
