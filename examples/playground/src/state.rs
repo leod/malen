@@ -14,6 +14,7 @@ pub const LASER_LENGTH: f32 = 25.0;
 pub const LASER_WIDTH: f32 = 3.0;
 pub const LASER_SPEED: f32 = 350.0;
 
+#[derive(Debug, Clone)]
 pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
@@ -21,34 +22,40 @@ pub struct Wall {
     pub use_texture: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct Enemy {
     pub pos: Point2<f32>,
     pub angle: f32,
     pub rot: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Player {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
     pub dir: Vector2<f32>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Ball {
     pub pos: Point2<f32>,
     pub radius: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Lamp {
     pub pos: Point2<f32>,
     pub light_angle: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Laser {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
     pub dead: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct State {
     pub walls: Vec<Wall>,
     pub enemies: Vec<Enemy>,
@@ -327,7 +334,7 @@ impl State {
             Vector2::zeros()
         };
 
-        self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
+        self.player.vel = target_vel; //- (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
 
         let delta = dt_secs * self.player.vel;
         self.player.pos += delta;
@@ -339,11 +346,18 @@ impl State {
         })
         .sum::<Vector2<f32>>();*/
 
-        for _ in 0..10 {
-            if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
-                self.player.pos -= 0.5 * overlap.resolution() - 0.55 * delta;
+        let mut first = true;
+        let mut player = self.player.clone();
+        for (i, shape) in self.shapes().enumerate() {
+            if let Some(overlap) = shape_shape_overlap(&player.shape(), &shape) {
+                player.pos += overlap.resolution();
             }
         }
+        self.player = player;
+
+        /*if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
+            self.player.pos -= overlap.resolution();
+        }*/
 
         let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
         let mouse_world_pos = self
