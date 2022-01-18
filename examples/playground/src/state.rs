@@ -161,7 +161,7 @@ impl State {
             last_timestamp_secs: None,
         };
 
-        for _ in 0..200 {
+        for _ in 0..350 {
             state.add_wall();
         }
         for _ in 0..80 {
@@ -192,12 +192,16 @@ impl State {
         }
     }
 
-    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
+    pub fn shapes(&self) -> impl Iterator<Item = Shape> + '_ {
         self.walls
             .iter()
             .map(Wall::shape)
             .chain(self.balls.iter().map(Ball::shape))
             .chain(self.enemies.iter().map(Enemy::shape))
+    }
+
+    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
+        self.shapes()
             .filter_map(|map_shape| shape_shape_overlap(shape, &map_shape))
             .max_by(|o1, o2| {
                 o1.resolution()
@@ -324,10 +328,21 @@ impl State {
         };
 
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
-        self.player.pos += dt_secs * self.player.vel;
 
-        if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
-            self.player.pos -= overlap.resolution();
+        let delta = dt_secs * self.player.vel;
+        self.player.pos += delta;
+
+        /*self.player.pos -= self
+        .shapes()
+        .filter_map(|shape| {
+            shape_shape_overlap(&self.player.shape(), &shape).map(Overlap::resolution)
+        })
+        .sum::<Vector2<f32>>();*/
+
+        for _ in 0..10 {
+            if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
+                self.player.pos -= 0.5 * overlap.resolution() - 0.55 * delta;
+            }
         }
 
         let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
