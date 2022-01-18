@@ -34,7 +34,7 @@ pub fn rect_circle_overlap(r: Rect, c: Circle) -> Option<Overlap> {
             delta / dist
         };
 
-        Some(Overlap(-normal * (c.radius - dist + 1.0)))
+        Some(Overlap(normal * (c.radius - dist + 1.0)))
     } else {
         None
     }
@@ -75,8 +75,8 @@ pub fn rotated_rect_rotated_rect_overlap(r1: RotatedRect, r2: RotatedRect) -> Op
     for line in r1.edges().into_iter().chain(r2.edges()) {
         let axis = Vector2::new(-line.delta().y, line.delta().x).normalize();
 
-        let r1_proj = AxisProj::project_rotated_rect(r1, axis);
-        let r2_proj = AxisProj::project_rotated_rect(r2, axis);
+        let r1_proj = AxisProj::project_rotated_rect(axis, r1);
+        let r2_proj = AxisProj::project_rotated_rect(axis, r2);
 
         let dist = r1_proj.interval_distance(r2_proj);
 
@@ -89,11 +89,7 @@ pub fn rotated_rect_rotated_rect_overlap(r1: RotatedRect, r2: RotatedRect) -> Op
         if min_dist_axis.map_or(true, |(min_dist, _)| dist.abs() < min_dist) {
             min_dist_axis = Some((
                 dist.abs(),
-                if (r1.center - r2.center).dot(&axis) < 0.0 {
-                    axis
-                } else {
-                    -axis
-                },
+                (r1.center - r2.center).dot(&axis).signum() * axis,
             ));
         }
     }
@@ -116,7 +112,7 @@ pub fn shape_shape_overlap(s1: &Shape, s2: &Shape) -> Option<Overlap> {
         (Shape::RotatedRect(r1), Shape::RotatedRect(r2)) => {
             rotated_rect_rotated_rect_overlap(*r1, *r2)
         }
-        (Shape::Circle(r1), Shape::Circle(r2)) => circle_circle_overlap(*r1, *r2).map(Overlap::neg),
+        (Shape::Circle(r1), Shape::Circle(r2)) => circle_circle_overlap(*r1, *r2),
 
         (Shape::Rect(r1), Shape::RotatedRect(r2)) => {
             rotated_rect_rotated_rect_overlap(r1.to_rotated_rect(), *r2)
@@ -142,7 +138,7 @@ struct AxisProj {
 }
 
 impl AxisProj {
-    fn project_rotated_rect(r: RotatedRect, edge: Vector2<f32>) -> Self {
+    fn project_rotated_rect(edge: Vector2<f32>, r: RotatedRect) -> Self {
         use std::cmp::Ordering::Equal;
 
         Self {
