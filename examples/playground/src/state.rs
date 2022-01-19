@@ -334,30 +334,18 @@ impl State {
             Vector2::zeros()
         };
 
-        self.player.vel = target_vel; //- (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
+        self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
 
         let delta = dt_secs * self.player.vel;
         self.player.pos += delta;
 
-        /*self.player.pos -= self
-        .shapes()
-        .filter_map(|shape| {
-            shape_shape_overlap(&self.player.shape(), &shape).map(Overlap::resolution)
-        })
-        .sum::<Vector2<f32>>();*/
-
-        let mut first = true;
         let mut player = self.player.clone();
-        for (i, shape) in self.shapes().enumerate() {
+        for shape in self.shapes() {
             if let Some(overlap) = shape_shape_overlap(&player.shape(), &shape) {
                 player.pos += overlap.resolution();
             }
         }
         self.player = player;
-
-        /*if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
-            self.player.pos -= overlap.resolution();
-        }*/
 
         let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
         let mouse_world_pos = self
