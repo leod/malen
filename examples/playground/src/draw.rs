@@ -78,8 +78,8 @@ impl Draw {
                 shadow_map_resolution: 2048,
                 max_num_lights: 300,
                 indirect_light: IndirectLightPipelineParams {
-                    num_tracing_cones: 8,
-                    num_tracing_steps: 8,
+                    num_tracing_cones: 6,
+                    num_tracing_steps: 5,
                 },
             },
         )?;
@@ -227,7 +227,7 @@ impl Draw {
         }
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
-            ignore_light_index1: wall.lamp_index.map(|index| index as u32),
+            ignore_light_index1: None, //wall.lamp_index.map(|index| index as u32),
             ignore_light_index2: None,
         });
     }
