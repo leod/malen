@@ -60,3 +60,9 @@ There are many different installation instructions flying around. This one actua
    Author: Texasfunk101
 
    URL: https://opengameart.org/content/tileable-crates
+
+- Smoke:
+
+   Author: Fupi
+
+   URL: https://opengameart.org/content/smoke-vapor-particles

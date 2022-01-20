@@ -17,6 +17,7 @@ pub mod data;
 pub mod geom;
 pub mod gl;
 pub mod light;
+pub mod particles;
 pub mod pass;
 pub mod plot;
 pub mod text;
