@@ -239,7 +239,7 @@ impl State {
             size,
             lamp_index: None,
             //use_texture: rng.gen(),
-            use_texture: true,
+            use_texture: false,
         };
 
         if self.shape_overlap(&wall.shape()).is_none() {

@@ -212,7 +212,7 @@ impl Draw {
     fn render_floor(&mut self, state: &State) {
         self.color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(1.0, 1.0, 1.0, 1.0),
+            color: Color4::new(0.5, 0.5, 0.5, 1.0),
             z: 0.8,
         });
         self.floor_batch.push(Sprite {
@@ -239,7 +239,7 @@ impl Draw {
             self.reflecting_color_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
-                color: Color4::new(0.3, 0.8, 0.3, 1.0),
+                color: Color4::new(0.3, 0.3, 0.3, 1.0),
             })
         }
         self.occluder_batch.push(OccluderRect {
@@ -392,7 +392,7 @@ impl Draw {
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightParams {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.2).to_linear(),
                     ..GlobalLightParams::default()
                 });
 
