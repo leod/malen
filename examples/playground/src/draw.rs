@@ -361,13 +361,13 @@ impl Draw {
                 &self.floor_texture,
                 &self.floor_normal_map,
                 self.floor_batch.draw_unit(),
-            )?
+            )
             .draw_sprites_with_normals(
                 &self.wall_light_params,
                 &self.wall_texture,
                 &self.wall_normal_map,
                 self.wall_batch.draw_unit(),
-            )?
+            )
             .shadow_map_phase(&self.lights)
             .draw_occluders(&mut self.occluder_batch)
             .build_screen_light(GlobalLightParams {
@@ -379,7 +379,7 @@ impl Draw {
             phase
                 .indirect_light_phase()
                 .draw_color_reflectors(self.color_triangle_batch.draw_unit())
-                .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())?
+                .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())
                 .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
                 .prepare_cone_tracing()
                 .compose();
@@ -387,8 +387,7 @@ impl Draw {
             phase.compose();
         }
 
-        self.font
-            .draw(&self.screen_matrices, &mut self.text_batch)?;
+        self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
         Ok(())
     }

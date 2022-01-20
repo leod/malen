@@ -1,29 +1,22 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::{
     data::ColorSpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
 };
 
-use super::{
-    sprite_info::{SpriteInfoBlock, SpriteInfos},
-    MatricesBlock, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING,
-};
+use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 pub struct ColorSpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), ColorSpriteVertex, 1>,
-    sprite_infos: RefCell<SpriteInfos>,
+    program: Program<MatricesBlock, ColorSpriteVertex, 1>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-];
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 1] = ["sprite"];
 
 const VERTEX_SOURCE: &str = r#"
-out vec2 v_tex_coords;
+out vec2 v_uv;
 out vec4 v_color;
 
 void main() {
@@ -33,19 +26,18 @@ void main() {
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-    v_tex_coords = a_tex_coords;
+    v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
     v_color = a_color;
 }
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
-in vec2 v_tex_coords;
+in vec2 v_uv;
 in vec4 v_color;
 out vec4 f_color;
 
 void main() {
-    vec2 uv = v_tex_coords / sprite_info.size;
-    f_color = texture(sprite, uv) * v_color;
+    f_color = texture(sprite, v_uv) * v_color;
 }
 "#;
 
@@ -59,10 +51,7 @@ impl ColorSpritePass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self {
-            program,
-            sprite_infos: RefCell::new(SpriteInfos::new()),
-        })
+        Ok(Self { program })
     }
 
     pub fn draw<E>(
@@ -71,21 +60,9 @@ impl ColorSpritePass {
         texture: &Texture,
         draw_unit: DrawUnit<ColorSpriteVertex, E>,
         params: &DrawParams,
-    ) -> Result<(), gl::Error>
-    where
+    ) where
         E: Element,
     {
-        let mut sprite_infos = self.sprite_infos.borrow_mut();
-        let sprite_info = sprite_infos.get(texture)?;
-
-        gl::draw(
-            &self.program,
-            (matrices, sprite_info),
-            [texture],
-            draw_unit,
-            params,
-        );
-
-        Ok(())
+        gl::draw(&self.program, matrices, [texture], draw_unit, params);
     }
 }

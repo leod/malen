@@ -1,24 +1,17 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
 };
 
-use super::{
-    sprite_info::{SpriteInfoBlock, SpriteInfos},
-    MatricesBlock, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING,
-};
+use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 pub struct SpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 1>,
-    sprite_infos: RefCell<SpriteInfos>,
+    program: Program<MatricesBlock, SpriteVertex, 1>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-];
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 1] = ["sprite"];
 
@@ -32,7 +25,7 @@ const VERTEX_SOURCE: &str = r#"
 
         gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-        v_uv = a_tex_coords / sprite_info.size;
+        v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
     }
 "#;
 
@@ -55,10 +48,7 @@ impl SpritePass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self {
-            program,
-            sprite_infos: RefCell::new(SpriteInfos::new()),
-        })
+        Ok(Self { program })
     }
 
     pub fn draw<E>(
@@ -67,21 +57,9 @@ impl SpritePass {
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,
-    ) -> Result<(), gl::Error>
-    where
+    ) where
         E: Element,
     {
-        let mut sprite_infos = self.sprite_infos.borrow_mut();
-        let sprite_info = sprite_infos.get(texture)?;
-
-        gl::draw(
-            &self.program,
-            (matrices, sprite_info),
-            [texture],
-            draw_unit,
-            params,
-        );
-
-        Ok(())
+        gl::draw(&self.program, matrices, [texture], draw_unit, params);
     }
 }
