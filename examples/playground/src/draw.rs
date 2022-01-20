@@ -239,7 +239,7 @@ impl Draw {
             self.reflecting_color_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
-                color: Color4::new(0.3, 0.3, 0.3, 1.0),
+                color: Color4::new(0.2, 0.2, 0.2, 1.0),
             })
         }
         self.occluder_batch.push(OccluderRect {
