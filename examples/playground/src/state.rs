@@ -8,12 +8,14 @@ use malen::{
 
 pub const MAP_SIZE: f32 = 4096.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
-pub const LAMP_RADIUS: f32 = 15.0;
+pub const LAMP_RADIUS: f32 = 12.0;
 pub const PLAYER_SIZE: f32 = 35.0;
+pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.01;
 pub const LASER_LENGTH: f32 = 25.0;
 pub const LASER_WIDTH: f32 = 3.0;
-pub const LASER_SPEED: f32 = 350.0;
+pub const LASER_SPEED: f32 = 700.0;
 
+#[derive(Debug, Clone)]
 pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
@@ -21,34 +23,41 @@ pub struct Wall {
     pub use_texture: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct Enemy {
     pub pos: Point2<f32>,
     pub angle: f32,
     pub rot: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Player {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
     pub dir: Vector2<f32>,
+    pub shot_cooldown_secs: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Ball {
     pub pos: Point2<f32>,
     pub radius: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Lamp {
     pub pos: Point2<f32>,
     pub light_angle: f32,
 }
 
+#[derive(Debug, Clone)]
 pub struct Laser {
     pub pos: Point2<f32>,
     pub vel: Vector2<f32>,
     pub dead: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct State {
     pub walls: Vec<Wall>,
     pub enemies: Vec<Enemy>,
@@ -156,12 +165,13 @@ impl State {
                 pos: Point2::origin(),
                 vel: Vector2::zeros(),
                 dir: Vector2::zeros(),
+                shot_cooldown_secs: 0.0,
             },
             view_offset: Vector2::zeros(),
             last_timestamp_secs: None,
         };
 
-        for _ in 0..200 {
+        for _ in 0..350 {
             state.add_wall();
         }
         for _ in 0..80 {
@@ -170,7 +180,7 @@ impl State {
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..40 {
+        for _ in 0..200 {
             state.add_lamp();
         }
 
@@ -178,8 +188,10 @@ impl State {
     }
 
     pub fn camera(&self) -> Camera {
+        let center = self.player.pos + self.view_offset;
+
         Camera {
-            center: self.player.pos + self.view_offset,
+            center,
             zoom: 2.5,
             angle: 0.0,
         }
@@ -192,12 +204,16 @@ impl State {
         }
     }
 
-    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
+    pub fn shapes(&self) -> impl Iterator<Item = Shape> + '_ {
         self.walls
             .iter()
             .map(Wall::shape)
             .chain(self.balls.iter().map(Ball::shape))
             .chain(self.enemies.iter().map(Enemy::shape))
+    }
+
+    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
+        self.shapes()
             .filter_map(|map_shape| shape_shape_overlap(shape, &map_shape))
             .max_by(|o1, o2| {
                 o1.resolution()
@@ -226,7 +242,7 @@ impl State {
             size,
             lamp_index: None,
             //use_texture: rng.gen(),
-            use_texture: true,
+            use_texture: false,
         };
 
         if self.shape_overlap(&wall.shape()).is_none() {
@@ -276,23 +292,14 @@ impl State {
             let line = lines.choose(&mut rng).unwrap();
             let normal = Vector2::new(line.1.y - line.0.y, line.0.x - line.1.x).normalize();
             let lamp = Lamp {
-                pos: line.0 + 0.5 * (line.1 - line.0) - normal * 25.0,
+                pos: line.0 + 0.5 * (line.1 - line.0) + normal * 5.0,
                 light_angle: normal.y.atan2(normal.x),
             };
             self.lamps.push(lamp);
         }
     }
 
-    pub fn handle_key_pressed(&mut self, key: Key) {
-        match key {
-            Key::Space => self.lasers.push(Laser {
-                pos: self.player.pos + self.player.dir * PLAYER_SIZE * 0.5,
-                vel: self.player.dir * LASER_SPEED,
-                dead: false,
-            }),
-            _ => (),
-        }
-    }
+    pub fn handle_key_pressed(&mut self, _: Key) {}
 
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
@@ -324,11 +331,17 @@ impl State {
         };
 
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
-        self.player.pos += dt_secs * self.player.vel;
 
-        if let Some(overlap) = self.shape_overlap(&self.player.shape()) {
-            self.player.pos -= overlap.resolution();
+        let delta = dt_secs * self.player.vel;
+        self.player.pos += delta;
+
+        let mut player = self.player.clone();
+        for shape in self.shapes() {
+            if let Some(overlap) = shape_shape_overlap(&player.shape(), &shape) {
+                player.pos += overlap.resolution();
+            }
         }
+        self.player = player;
 
         let mouse_logical_pos = input_state.mouse_logical_pos().cast::<f32>();
         let mouse_world_pos = self
@@ -338,6 +351,26 @@ impl State {
 
         let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
+
+        if input_state.key(Key::Space) {
+            let mut time_budget = dt_secs;
+
+            while self.player.shot_cooldown_secs < time_budget {
+                let start_pos = self.player.pos + self.player.dir * PLAYER_SIZE * 0.5;
+                let vel = self.player.dir * LASER_SPEED;
+
+                self.lasers.push(Laser {
+                    pos: start_pos + (dt_secs - time_budget) * vel,
+                    vel,
+                    dead: false,
+                });
+
+                time_budget -= self.player.shot_cooldown_secs;
+                self.player.shot_cooldown_secs = PLAYER_SHOT_COOLDOWN_SECS;
+            }
+
+            self.player.shot_cooldown_secs -= time_budget;
+        }
 
         let target_offset = (mouse_logical_pos - screen.logical_rect().center) / 10.0;
         let b = screen.logical_size * 0.3;

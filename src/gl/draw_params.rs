@@ -7,6 +7,7 @@ pub struct DrawParams {
     pub blend: Option<Blend>,
     pub depth_test: Option<DepthTest>,
     pub line_width: f32,
+    pub color_mask: (bool, bool, bool, bool),
 }
 
 impl Default for DrawParams {
@@ -15,6 +16,7 @@ impl Default for DrawParams {
             blend: None,
             depth_test: None,
             line_width: 1.0,
+            color_mask: (true, true, true, true),
         }
     }
 }
@@ -26,6 +28,12 @@ pub fn set_draw_params(gl: &Context, draw_params: &DrawParams) {
     set_depth_test(gl, draw_params.depth_test);
     unsafe {
         gl.line_width(draw_params.line_width);
+        gl.color_mask(
+            draw_params.color_mask.0,
+            draw_params.color_mask.1,
+            draw_params.color_mask.2,
+            draw_params.color_mask.3,
+        );
     }
 }
 

@@ -19,7 +19,7 @@ pub struct ScreenLightPass {
 
 const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("matrices", MATRICES_BLOCK_BINDING),
-    ("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
+    ("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
 const SAMPLERS: [&str; 2] = ["shadow_map", "screen_normals"];
@@ -28,7 +28,7 @@ const VERTEX_SOURCE: &str = r#"
 flat out vec4 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
-out vec2 v_screen_pos;
+out vec2 v_screen_uv;
 out vec3 v_delta;
 
 void main() {
@@ -38,7 +38,7 @@ void main() {
 
     vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
     gl_Position = vec4(p.xy, 0.0, 1.0);
-    v_screen_pos = p.xy;
+    v_screen_uv = p.xy * 0.5 + 0.5;
     v_delta = vec3(a_position.xy, 0.0) - a_light_position;
 }
 "#;
@@ -51,6 +51,7 @@ float visibility(
     in vec2 delta
 ) {
     const float PI = 3.141592;
+    const float DEPTH_TEXELS = 2.0;
 
     float light_radius = light_params.x;
     float light_angle = light_params.y;
@@ -70,82 +71,55 @@ float visibility(
     if (angle_diff > PI)
         angle_diff = 2.0 * PI - angle_diff;
 
-    if (abs(light_angle_size - 2.0 * PI) > 0.001
-            && angle_diff * 2.0 > light_angle_size - global_light_params.angle_fall_off_size) {
-        float t = (
-            angle_diff * 2.0
-            - light_angle_size
-            + global_light_params.angle_fall_off_size
-        ) / global_light_params.angle_fall_off_size;
+    float angle_to_border = angle_diff * 2.0 - light_angle_size
+        + params.angle_fall_off_size;
+    if (abs(light_angle_size - 2.0 * PI) > 0.001 && angle_to_border > 0.0) {
+        float t = angle_to_border / params.angle_fall_off_size;
         front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
     }
 
     vec2 tex_coords = vec2(angle / (2.0 * PI) + 0.5, light_offset);
     vec2 texel = vec2(1.0 / float(textureSize(shadow_map, 0).x), 0.0);
 
-    float front3l = texture(shadow_map, tex_coords - 6.0 * texel).r * light_radius;
-    float front2l = texture(shadow_map, tex_coords - 4.0 * texel).r * light_radius;
-    float front1l = texture(shadow_map, tex_coords - 2.0 * texel).r * light_radius;
-    float front0 = texture(shadow_map, tex_coords).r * light_radius;
-    float front1r = texture(shadow_map, tex_coords + 2.0 * texel).r * light_radius;
-    float front2r = texture(shadow_map, tex_coords + 4.0 * texel).r * light_radius;
-    float front3r = texture(shadow_map, tex_coords + 6.0 * texel).r * light_radius;
+    vec2 depth3l = texture(shadow_map, tex_coords - 3.0 * DEPTH_TEXELS * texel).xy * light_radius;
+    vec2 depth2l = texture(shadow_map, tex_coords - 2.0 * DEPTH_TEXELS * texel).xy * light_radius;
+    vec2 depth1l = texture(shadow_map, tex_coords - 1.0 * DEPTH_TEXELS * texel).xy * light_radius;
+    vec2 depth0  = texture(shadow_map, tex_coords                             ).xy * light_radius;
+    vec2 depth1r = texture(shadow_map, tex_coords + 1.0 * DEPTH_TEXELS * texel).xy * light_radius;
+    vec2 depth2r = texture(shadow_map, tex_coords + 2.0 * DEPTH_TEXELS * texel).xy * light_radius;
+    vec2 depth3r = texture(shadow_map, tex_coords + 3.0 * DEPTH_TEXELS * texel).xy * light_radius;
 
-    float back3l = texture(shadow_map, tex_coords - 6.0 * texel).g * light_radius;
-    float back2l = texture(shadow_map, tex_coords - 4.0 * texel).g * light_radius;
-    float back1l = texture(shadow_map, tex_coords - 2.0 * texel).g * light_radius;
-    float back0 = texture(shadow_map, tex_coords).g * light_radius;
-    float back1r = texture(shadow_map, tex_coords + 2.0 * texel).g * light_radius;
-    float back2r = texture(shadow_map, tex_coords + 4.0 * texel).g * light_radius;
-    float back3r = texture(shadow_map, tex_coords + 6.0 * texel).g * light_radius;
+    vec2 depth2lm = min(depth2l, min(depth1l, depth3l));
+    vec2 depth1lm = min(depth1l, min(depth2l, depth0 ));
+    vec2 depth0m  = min(depth0 , min(depth1l, depth1r));
+    vec2 depth1rm = min(depth1r, min(depth0 , depth2r));
+    vec2 depth2rm = min(depth2r, min(depth1r, depth3r));
 
-    float front0m = min(min(front1l, front1r), front0);
-    float back0m = min(min(back1l, back1r), back0);
+    vec2 vis_depth2lm = step(dist_to_light, depth2lm);
+    vec2 vis_depth1lm = step(dist_to_light, depth1lm);
+    vec2 vis_depth0m  = step(dist_to_light, depth0m );
+    vec2 vis_depth1rm = step(dist_to_light, depth1rm);
+    vec2 vis_depth2rm = step(dist_to_light, depth2rm);
 
     float inner_light = front_light *
-        pow(1.0 - clamp((dist_to_light - front0m) / global_light_params.back_glow, 0.0, 1.0), 4.0);
+        pow(1.0 - clamp((dist_to_light - depth0m.x) / params.back_glow, 0.0, 1.0), 4.0);
 
-    float front2lm = min(min(front3l, front1l), front2l);
-    float front1lm = min(min(front2l, front0), front1l);
-    float front1rm = min(min(front2r, front0), front1r);
-    float front2rm = min(min(front3r, front1r), front2r);
-    float back2lm = min(min(back3l, back1l), back2l);
-    float back1lm = min(min(back2l, back0), back1l);
-    float back1rm = min(min(back2r, back0), back1r);
-    float back2rm = min(min(back3r, back1r), back2r);
+    vec2 vis_avg = (vis_depth2lm + vis_depth1lm + vis_depth0m + vis_depth1rm + vis_depth2rm) / 5.0;
 
-    float vis_front2lm = step(dist_to_light, front2lm);
-    float vis_front1lm = step(dist_to_light, front1lm);
-    float vis_front0m = step(dist_to_light, front0m);
-    float vis_front1rm = step(dist_to_light, front1rm);
-    float vis_front2rm = step(dist_to_light, front2rm);
-
-    float vis_back2lm = step(dist_to_light, back2lm);
-    float vis_back1lm = step(dist_to_light, back1lm);
-    float vis_back0m = step(dist_to_light, back0m);
-    float vis_back1rm = step(dist_to_light, back1rm);
-    float vis_back2rm = step(dist_to_light, back2rm);
-
-    //float vis_front = vis_front0m;
-    //float vis_back = vis_back0m;
-    float vis_front = (vis_front0m + vis_front1lm + vis_front2lm + vis_front1rm + vis_front2rm) / 5.0;
-    float vis_back = (vis_back0m + vis_back1lm + vis_back2lm + vis_back1rm + vis_back2rm) / 5.0;
-
-    return front_light * vis_front + inner_light * (1.0 - vis_front) * vis_back;
+    return vis_avg.x * front_light + (1.0 - vis_avg.x) * vis_avg.y * inner_light;
 }
-
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
-in vec2 v_screen_pos;
+in vec2 v_screen_uv;
 in vec3 v_delta;
 out vec4 f_color;
 
 void main() {
-    vec3 normal_value = texture(screen_normals, v_screen_pos * 0.5 + 0.5).xyz;
+    vec3 normal_value = texture(screen_normals, v_screen_uv).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
 
@@ -189,14 +163,14 @@ impl ScreenLightPass {
     pub fn draw(
         &self,
         matrices: &Uniform<MatricesBlock>,
-        global_light_params: &Uniform<GlobalLightParamsBlock>,
+        params: &Uniform<GlobalLightParamsBlock>,
         shadow_map: &Texture,
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,
     ) {
         gl::draw(
             &self.program,
-            (matrices, global_light_params),
+            (matrices, params),
             [shadow_map, screen_normals],
             draw_unit,
             &DrawParams {

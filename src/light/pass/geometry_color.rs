@@ -41,7 +41,7 @@ layout (location = 2) out vec4 f_occlusion;
 void main() {
     f_albedo = vec4(v_color.rgb, object_light_params.ambient_scale);
     f_normal = (vec4(0.0, 0.0, 1.0, 1.0) + 1.0) / 2.0;
-    f_occlusion = vec4(object_light_params.occlusion, 0.0, 0.0, 1.0);
+    f_occlusion.a = object_light_params.occlusion;
 }
 "#;
 

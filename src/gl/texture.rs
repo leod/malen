@@ -40,6 +40,7 @@ pub struct TextureParams {
 pub enum TextureValueType {
     RgbaU8,
     RgbaF32,
+    RgF16,
     Depth,
 }
 
@@ -289,6 +290,7 @@ impl TextureValueType {
         match self {
             RgbaU8 => glow::RGBA8 as i32,
             RgbaF32 => glow::RGBA32F as i32,
+            RgF16 => glow::RG16F as i32,
             Depth => glow::DEPTH_COMPONENT24 as i32,
         }
     }
@@ -299,6 +301,7 @@ impl TextureValueType {
         match self {
             RgbaU8 => glow::RGBA,
             RgbaF32 => glow::RGBA,
+            RgF16 => glow::RG,
             Depth => glow::DEPTH_COMPONENT,
         }
     }
@@ -309,6 +312,7 @@ impl TextureValueType {
         match self {
             RgbaU8 => glow::UNSIGNED_BYTE,
             RgbaF32 => glow::FLOAT,
+            RgF16 => glow::HALF_FLOAT,
             Depth => glow::UNSIGNED_INT,
         }
     }

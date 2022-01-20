@@ -218,11 +218,7 @@ impl Font {
         Ok(size)
     }
 
-    pub fn draw(
-        &self,
-        matrices: &Uniform<MatricesBlock>,
-        batch: &mut TextBatch,
-    ) -> Result<(), gl::Error> {
+    pub fn draw(&self, matrices: &Uniform<MatricesBlock>, batch: &mut TextBatch) {
         //#[cfg(feature = "coarse-prof")]
         //coarse_prof::profile!("Font::draw");
 
@@ -235,10 +231,8 @@ impl Font {
                     blend: Some(Blend::default()),
                     ..DrawParams::default()
                 },
-            )?;
+            );
         }
-
-        Ok(())
     }
 
     fn get_glyph_loc(

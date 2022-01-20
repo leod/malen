@@ -152,7 +152,7 @@ impl Context {
         });
 
         self.sprite_pass
-            .draw(matrices, texture, batch.draw_unit(), &DrawParams::default())?;
+            .draw(matrices, texture, batch.draw_unit(), &DrawParams::default());
 
         Ok(())
     }

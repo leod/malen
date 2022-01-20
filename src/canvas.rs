@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+use web_sys::{HtmlCanvasElement, WebGl2RenderingContext, WebGlContextAttributes};
 
 use glow::HasContext;
 use nalgebra::{Point2, Vector2};
@@ -66,10 +66,21 @@ impl Canvas {
         element: HtmlCanvasElement,
         size_config: CanvasSizeConfig,
     ) -> Result<Self, InitError> {
+        use web_sys::WebGlPowerPreference;
+
         let event_handlers = EventHandlers::new(element.clone())?;
 
+        let mut context_attributes = WebGlContextAttributes::new();
+        context_attributes.alpha(false);
+        context_attributes.depth(true);
+        context_attributes.stencil(true);
+        context_attributes.antialias(false);
+        context_attributes.power_preference(WebGlPowerPreference::HighPerformance);
+        context_attributes.preserve_drawing_buffer(false);
+        context_attributes.xr_compatible(false);
+
         let webgl_context = element
-            .get_context("webgl2")
+            .get_context_with_context_options("webgl2", &context_attributes.into())
             .map_err(|e| InitError::GetContext(e.as_string().unwrap_or_else(|| "error".into())))?
             .ok_or(InitError::InitializeWebGl)?
             .dyn_into::<WebGl2RenderingContext>()

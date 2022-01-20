@@ -4,7 +4,6 @@ use crate::{
     gl::{Blend, DrawParams, Uniform},
     pass::{ColorPass, MatricesBlock},
     text::Font,
-    FrameError,
 };
 
 use super::PlotBatch;
@@ -18,15 +17,7 @@ impl PlotPass {
         Self { color_pass }
     }
 
-    pub fn draw(
-        &self,
-        matrices: &Uniform<MatricesBlock>,
-        font: &Font,
-        batch: &mut PlotBatch,
-    ) -> Result<(), FrameError> {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("PlotPass::draw");
-
+    pub fn draw(&self, matrices: &Uniform<MatricesBlock>, font: &Font, batch: &mut PlotBatch) {
         let draw_params = DrawParams {
             blend: Some(Blend::default()),
             ..DrawParams::default()
@@ -36,8 +27,6 @@ impl PlotPass {
             .draw(matrices, batch.triangle_batch.draw_unit(), &draw_params);
         self.color_pass
             .draw(matrices, batch.line_batch.draw_unit(), &draw_params);
-        font.draw(matrices, &mut batch.text_batch)?;
-
-        Ok(())
+        font.draw(matrices, &mut batch.text_batch);
     }
 }
