@@ -58,6 +58,7 @@ impl ShadedColorPass {
         matrices: &Uniform<MatricesBlock>,
         screen_light: &Texture,
         draw_unit: DrawUnit<ColorVertex, E>,
+        draw_params: &DrawParams,
     ) where
         E: Element,
     {
@@ -66,7 +67,7 @@ impl ShadedColorPass {
             matrices,
             [screen_light],
             draw_unit,
-            &DrawParams::default(),
+            draw_params,
         );
     }
 }

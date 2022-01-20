@@ -22,6 +22,7 @@ pub struct GlobalLightParams {
     pub indirect_start: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
+    pub indirect_self_occlusion: f32,
 }
 
 impl Default for GlobalLightParams {
@@ -32,17 +33,17 @@ impl Default for GlobalLightParams {
             back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_color_scale: 75.0,
-            indirect_start: 2.0,
-            indirect_step_factor: 0.65,
+            indirect_color_scale: 5.0,
+            indirect_start: 2.5,
+            indirect_step_factor: 0.5,
             indirect_z: 0.5,
+            indirect_self_occlusion: 1.0,
         }
     }
 }
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightParamsBlock {
-    pub screen_size: Vector2<f32>,
     pub ambient: Vector3<f32>,
     pub gamma: f32,
     pub back_glow: f32,
@@ -52,14 +53,14 @@ pub struct GlobalLightParamsBlock {
     pub indirect_start: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
+    pub indirect_self_occlusion: f32,
 }
 
 impl UniformBlock for GlobalLightParamsBlock {}
 
 impl GlobalLightParamsBlock {
-    pub fn new(screen_size: Vector2<f32>, params: GlobalLightParams) -> Self {
+    pub fn new(params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
-            screen_size,
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
             back_glow: params.back_glow,
@@ -69,6 +70,7 @@ impl GlobalLightParamsBlock {
             indirect_start: params.indirect_start,
             indirect_step_factor: params.indirect_step_factor,
             indirect_z: params.indirect_z,
+            indirect_self_occlusion: params.indirect_self_occlusion,
         }
     }
 }

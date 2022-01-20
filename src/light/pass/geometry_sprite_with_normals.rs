@@ -1,25 +1,20 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
     gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
-    pass::{
-        MatricesBlock, SpriteInfoBlock, SpriteInfos, MATRICES_BLOCK_BINDING,
-        SPRITE_INFO_BLOCK_BINDING,
-    },
+    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
 pub struct GeometrySpriteWithNormalsPass {
-    program: Program<(MatricesBlock, SpriteInfoBlock, ObjectLightParams), SpriteVertex, 2>,
-    sprite_infos: RefCell<SpriteInfos>,
+    program: Program<(MatricesBlock, ObjectLightParams), SpriteVertex, 2>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 3] = [
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("matrices", MATRICES_BLOCK_BINDING),
-    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-    ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
+    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
 const SAMPLERS: [&str; 2] = ["sprite", "normal_map"];
@@ -31,10 +26,9 @@ void main() {
     vec3 position = matrices.projection
         * matrices.view
         * vec3(a_position.xy, 1.0);
-
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-    v_uv = a_tex_coords / sprite_info.size;
+    v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
 }
 "#;
 
@@ -45,9 +39,9 @@ layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
 
 void main() {
-    f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_light_params.ambient_scale);
+    f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_params.ambient_scale);
     f_normal = texture(normal_map, v_uv);
-    f_occlusion = vec4(object_light_params.occlusion, 0.0, 0.0, 1.0);
+    f_occlusion.a = object_params.occlusion;
 }
 "#;
 
@@ -61,29 +55,22 @@ impl GeometrySpriteWithNormalsPass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self {
-            program,
-            sprite_infos: RefCell::new(SpriteInfos::new()),
-        })
+        Ok(Self { program })
     }
 
     pub fn draw<E>(
         &self,
         matrices: &Uniform<MatricesBlock>,
-        object_light_params: &Uniform<ObjectLightParams>,
+        object_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
-    ) -> Result<(), gl::Error>
-    where
+    ) where
         E: Element,
     {
-        let mut sprite_infos = self.sprite_infos.borrow_mut();
-        let sprite_info = sprite_infos.get(texture)?;
-
         gl::draw(
             &self.program,
-            (matrices, sprite_info, object_light_params),
+            (matrices, object_params),
             [texture, normal_map],
             draw_unit,
             &DrawParams {
@@ -91,7 +78,5 @@ impl GeometrySpriteWithNormalsPass {
                 ..DrawParams::default()
             },
         );
-
-        Ok(())
     }
 }
