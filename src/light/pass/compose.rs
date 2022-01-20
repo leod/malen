@@ -16,7 +16,7 @@ pub struct ComposePass {
 }
 
 const UNIFORM_BLOCKS: [(&str, u32); 1] =
-    [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
+    [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 2] = ["screen_albedo", "screen_light"];
 
@@ -34,10 +34,9 @@ out vec4 f_color;
 void main() {
     vec4 albedo = texture(screen_albedo, v_tex_coords);
     vec3 light = texture(screen_light, v_tex_coords).rgb;
-    vec3 diffuse = vec3(albedo) * (light + albedo.a * global_light_params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    const float gamma = 2.2;
-    f_color = vec4(pow(mapped, vec3(1.0 / global_light_params.gamma)), 1.0);
+    f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
     //f_color = vec4(diffuse, 1.0);
 }
 "#;
@@ -73,13 +72,13 @@ impl ComposePass {
 
     pub fn draw(
         &self,
-        global_light_params: &Uniform<GlobalLightParamsBlock>,
+        params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
         screen_light: &Texture,
     ) {
         gl::draw(
             &self.program,
-            global_light_params,
+            params,
             [screen_albedo, screen_light],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),
