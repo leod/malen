@@ -29,6 +29,13 @@ pub struct Sprite {
     pub tex_rect: Rect,
 }
 
+pub struct ColorRotatedSprite {
+    pub rect: RotatedRect,
+    pub z: f32,
+    pub tex_rect: Rect,
+    pub color: Color4,
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct ColorSprite {
     pub rect: Rect,
@@ -86,6 +93,22 @@ impl Geometry<TriangleTag> for Sprite {
 }
 
 impl Geometry<TriangleTag> for ColorSprite {
+    type Vertex = ColorSpriteVertex;
+
+    fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
+        elements.extend_from_slice(&quad_triangle_indices(vertices.len() as u32));
+
+        for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
+            vertices.push(ColorSpriteVertex {
+                position: Point3::new(p.x, p.y, self.z),
+                tex_coords,
+                color: self.color,
+            });
+        }
+    }
+}
+
+impl Geometry<TriangleTag> for ColorRotatedSprite {
     type Vertex = ColorSpriteVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {

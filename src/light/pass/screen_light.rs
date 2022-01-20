@@ -123,6 +123,9 @@ void main() {
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
 
+    // TODO: Use normal again -- broken since particles for some reason (???)
+    normal = vec3(0.0, 0.0, 1.0);
+
     float scale = normal_value == vec3(0.0) ?
         1.0 :
         max(dot(normalize(-v_delta), normalize(normal)), 0.0);

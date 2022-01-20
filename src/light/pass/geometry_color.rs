@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Uniform},
+    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Uniform},
 };
 
 use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
@@ -15,7 +15,7 @@ pub struct GeometryColorPass {
 
 const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("matrices", MATRICES_BLOCK_BINDING),
-    ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
+    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
 const VERTEX_SOURCE: &str = r#"
@@ -39,9 +39,9 @@ layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
 
 void main() {
-    f_albedo = vec4(v_color.rgb, object_light_params.ambient_scale);
-    f_normal = (vec4(0.0, 0.0, 1.0, 1.0) + 1.0) / 2.0;
-    f_occlusion.a = object_light_params.occlusion;
+    f_albedo = vec4(v_color.rgb, 1.0);
+    f_normal = vec4(0.0, 0.0, 1.0, object_params.ambient_scale);
+    f_occlusion.a = object_params.occlusion;
 }
 "#;
 
@@ -63,6 +63,7 @@ impl GeometryColorPass {
         matrices: &Uniform<MatricesBlock>,
         object_light_params: &Uniform<ObjectLightParams>,
         draw_unit: DrawUnit<ColorVertex, E>,
+        draw_params: &DrawParams,
     ) where
         E: Element,
     {
@@ -71,10 +72,7 @@ impl GeometryColorPass {
             (matrices, object_light_params),
             [],
             draw_unit,
-            &DrawParams {
-                depth_test: Some(DepthTest::default()),
-                ..DrawParams::default()
-            },
+            draw_params,
         );
     }
 }

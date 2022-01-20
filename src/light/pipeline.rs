@@ -7,7 +7,7 @@ use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::{
-    data::{ColorVertex, SpriteVertex, TriangleBatch},
+    data::{ColorSpriteVertex, ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
         self, DrawParams, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError,
         Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
@@ -21,7 +21,7 @@ use super::{
     light_area::{LightAreaVertex, LightCircleSegment},
     pass::{
         compose::ComposePass, compose_with_indirect::ComposeWithIndirectPass,
-        geometry_color::GeometryColorPass,
+        geometry_color::GeometryColorPass, geometry_color_sprite::GeometryColorSpritePass,
         geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, screen_light::ScreenLightPass,
         shaded_color::ShadedColorPass, shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
     },
@@ -55,6 +55,7 @@ pub struct LightPipeline {
 
     color_pass: Rc<ColorPass>,
     geometry_color_pass: GeometryColorPass,
+    geometry_color_sprite_pass: GeometryColorSpritePass,
     geometry_sprite_normal_pass: GeometrySpriteWithNormalsPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
@@ -97,6 +98,7 @@ impl LightPipeline {
 
         let color_pass = context.color_pass();
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
+        let geometry_color_sprite_pass = GeometryColorSpritePass::new(context.gl())?;
         let geometry_sprite_normal_pass = GeometrySpriteWithNormalsPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
@@ -117,6 +119,7 @@ impl LightPipeline {
             screen_light,
             color_pass,
             geometry_color_pass,
+            geometry_color_sprite_pass,
             geometry_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
@@ -215,6 +218,7 @@ impl<'a> GeometryPhase<'a> {
         self,
         object_light_params: &Uniform<ObjectLightParams>,
         draw_unit: DrawUnit<ColorVertex, E>,
+        draw_params: &DrawParams,
     ) -> Self
     where
         E: Element,
@@ -224,6 +228,30 @@ impl<'a> GeometryPhase<'a> {
                 self.input.matrices,
                 object_light_params,
                 draw_unit,
+                draw_params,
+            );
+        });
+
+        self
+    }
+
+    pub fn draw_color_sprites<E>(
+        self,
+        object_light_params: &Uniform<ObjectLightParams>,
+        texture: &Texture,
+        draw_unit: DrawUnit<ColorSpriteVertex, E>,
+        draw_params: &DrawParams,
+    ) -> Self
+    where
+        E: Element,
+    {
+        gl::with_framebuffer(&self.pipeline.screen_geometry, || {
+            self.pipeline.geometry_color_sprite_pass.draw(
+                self.input.matrices,
+                object_light_params,
+                texture,
+                draw_unit,
+                draw_params,
             );
         });
 
@@ -236,6 +264,7 @@ impl<'a> GeometryPhase<'a> {
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
+        draw_params: &DrawParams,
     ) -> Self
     where
         E: Element,
@@ -247,6 +276,7 @@ impl<'a> GeometryPhase<'a> {
                 texture,
                 normal_map,
                 draw_unit,
+                draw_params,
             );
         });
 
