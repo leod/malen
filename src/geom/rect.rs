@@ -108,13 +108,18 @@ impl Rect {
         [Line(corners[0], corners[2]), Line(corners[1], corners[3])]
     }
 
-    pub fn enlarge(mut self, add: Vector2<f32>) -> Rect {
+    pub fn enlarge(mut self, add: Vector2<f32>) -> Self {
         self.size += add;
         self
     }
 
-    pub fn scale(mut self, scale: f32) -> Rect {
+    pub fn scale(mut self, scale: f32) -> Self {
         self.size *= scale;
+        self
+    }
+
+    pub fn half_texel_correction(mut self) -> Self {
+        self.size -= Vector2::new(1.0 / self.size.x, 1.0 / self.size.y);
         self
     }
 

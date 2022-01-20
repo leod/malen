@@ -30,6 +30,7 @@ pub struct Draw {
 
     floor_light_params: Uniform<ObjectLightParams>,
     color_light_params: Uniform<ObjectLightParams>,
+    reflecting_color_light_params: Uniform<ObjectLightParams>,
     wall_light_params: Uniform<ObjectLightParams>,
     camera_matrices: Uniform<MatricesBlock>,
     screen_matrices: Uniform<MatricesBlock>,
@@ -37,7 +38,8 @@ pub struct Draw {
     floor_batch: SpriteBatch,
     wall_batch: SpriteBatch,
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
-    color_triangle_batch: ColorTriangleBatch,
+    color_batch: ColorTriangleBatch,
+    reflecting_color_batch: ColorTriangleBatch,
     indirect_color_triangle_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
     lights: Vec<Light>,
@@ -95,6 +97,13 @@ impl Draw {
             context.gl(),
             ObjectLightParams {
                 ambient_scale: 0.95,
+                occlusion: 0.0,
+            },
+        )?;
+        let reflecting_color_light_params = Uniform::new(
+            context.gl(),
+            ObjectLightParams {
+                ambient_scale: 0.95,
                 occlusion: 1.0,
             },
         )?;
@@ -123,7 +132,8 @@ impl Draw {
         )?;
 
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
-        let color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
+        let color_batch = ColorTriangleBatch::new(context.gl())?;
+        let reflecting_color_batch = ColorTriangleBatch::new(context.gl())?;
         let indirect_color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
         let floor_batch = SpriteBatch::new(context.gl())?;
         let wall_batch = SpriteBatch::new(context.gl())?;
@@ -140,13 +150,15 @@ impl Draw {
             light_pipeline,
             floor_light_params,
             color_light_params,
+            reflecting_color_light_params,
             wall_light_params,
             camera_matrices,
             screen_matrices,
             floor_batch,
             wall_batch,
             circle_instances,
-            color_triangle_batch,
+            color_batch,
+            reflecting_color_batch,
             indirect_color_triangle_batch,
             occluder_batch,
             lights,
@@ -169,7 +181,8 @@ impl Draw {
         self.floor_batch.clear();
         self.wall_batch.clear();
         self.circle_instances.clear();
-        self.color_triangle_batch.clear();
+        self.color_batch.clear();
+        self.reflecting_color_batch.clear();
         self.indirect_color_triangle_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
@@ -197,6 +210,11 @@ impl Draw {
     }
 
     fn render_floor(&mut self, state: &State) {
+        self.color_batch.push(ColorRect {
+            rect: state.floor_rect(),
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
+            z: 0.8,
+        });
         self.floor_batch.push(Sprite {
             rect: state.floor_rect(),
             tex_rect: Rect::from_top_left(
@@ -209,17 +227,16 @@ impl Draw {
 
     fn render_wall(&mut self, wall: &Wall) {
         if wall.use_texture {
+            let tex_size =
+                (wall.rect().size / 50.0).component_mul(&self.wall_texture.size().cast::<f32>());
+
             self.wall_batch.push(Sprite {
                 rect: wall.rect(),
                 z: 0.2,
-                tex_rect: Rect::from_top_left(
-                    Point2::origin(),
-                    (wall.rect().size / 50.0)
-                        .component_mul(&self.wall_texture.size().cast::<f32>()),
-                ),
+                tex_rect: Rect::from_top_left(Point2::origin(), tex_size),
             });
         } else {
-            self.color_triangle_batch.push(ColorRect {
+            self.reflecting_color_batch.push(ColorRect {
                 rect: wall.rect(),
                 z: 0.2,
                 color: Color4::new(0.3, 0.8, 0.3, 1.0),
@@ -241,7 +258,7 @@ impl Draw {
             z: 0.3,
             ..ColorInstance::default()
         });*/
-        self.color_triangle_batch.push(ColorCircle {
+        self.reflecting_color_batch.push(ColorCircle {
             circle: enemy.circle(),
             angle: enemy.angle,
             z: 0.3,
@@ -267,7 +284,7 @@ impl Draw {
 
     fn render_ball(&mut self, ball: &Ball) {
         let color = Color3::from_u8(134, 187, 189).to_linear();
-        self.color_triangle_batch.push(ColorCircle {
+        self.reflecting_color_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
             z: 0.3,
@@ -285,7 +302,7 @@ impl Draw {
 
     fn render_lamp(&mut self, lamp: &Lamp) {
         let color = Color3::from_u8(254, 196, 127).to_linear();
-        self.color_triangle_batch.push(ColorCircle {
+        self.reflecting_color_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
             z: 0.1,
@@ -304,7 +321,7 @@ impl Draw {
 
     fn render_laser(&mut self, laser: &Laser) {
         let color = Color3::from_u8(200, 70, 30).to_linear();
-        self.color_triangle_batch.push(ColorRotatedRect {
+        self.reflecting_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             z: 0.2,
             color: color.to_color4(),
@@ -318,7 +335,7 @@ impl Draw {
 
     fn render_player(&mut self, player: &Player) {
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        self.color_triangle_batch.push(ColorRotatedRect {
+        self.reflecting_color_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             z: 0.4,
             color: color.to_color4(),
@@ -346,45 +363,77 @@ impl Draw {
         });*/
     }
 
-    pub fn draw(&mut self, indirect_light: bool) -> Result<(), FrameError> {
+    pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
-        let phase = self
-            .light_pipeline
-            .geometry_phase(&self.camera_matrices)?
-            .draw_colors(
-                &self.color_light_params,
-                self.color_triangle_batch.draw_unit(),
-            )
-            .draw_sprites_with_normals(
-                &self.floor_light_params,
-                &self.floor_texture,
-                &self.floor_normal_map,
-                self.floor_batch.draw_unit(),
-            )
-            .draw_sprites_with_normals(
-                &self.wall_light_params,
-                &self.wall_texture,
-                &self.wall_normal_map,
-                self.wall_batch.draw_unit(),
-            )
-            .shadow_map_phase(&self.lights)
-            .draw_occluders(&mut self.occluder_batch)
-            .build_screen_light(GlobalLightParams {
-                ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
-                ..GlobalLightParams::default()
-            });
+        let light = true;
 
-        if indirect_light {
-            phase
-                .indirect_light_phase()
-                .draw_color_reflectors(self.color_triangle_batch.draw_unit())
-                .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())
-                .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
-                .prepare_cone_tracing()
-                .compose();
+        if light {
+            let phase = self
+                .light_pipeline
+                .geometry_phase(&self.camera_matrices)?
+                .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
+                .draw_colors(
+                    &self.reflecting_color_light_params,
+                    self.reflecting_color_batch.draw_unit(),
+                )
+                /*.draw_sprites_with_normals(
+                    &self.floor_light_params,
+                    &self.floor_texture,
+                    &self.floor_normal_map,
+                    self.floor_batch.draw_unit(),
+                )*/
+                .draw_sprites_with_normals(
+                    &self.wall_light_params,
+                    &self.wall_texture,
+                    &self.wall_normal_map,
+                    self.wall_batch.draw_unit(),
+                )
+                .shadow_map_phase(&self.lights)
+                .draw_occluders(&mut self.occluder_batch)
+                .build_screen_light(GlobalLightParams {
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.13).to_linear(),
+                    ..GlobalLightParams::default()
+                });
+
+            if indirect_light {
+                phase
+                    .indirect_light_phase()
+                    .draw_color_reflectors(self.reflecting_color_batch.draw_unit())
+                    .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())
+                    .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
+                    .prepare_cone_tracing()
+                    .compose();
+            } else {
+                phase.compose();
+            }
         } else {
-            phase.compose();
+            /*context.sprite_pass().draw(
+                &self.camera_matrices,
+                &self.floor_texture,
+                self.floor_batch.draw_unit(),
+                &malen::gl::DrawParams {
+                    depth_test: Some(malen::gl::DepthTest::default()),
+                    ..malen::gl::DrawParams::default()
+                },
+            );*/
+            context.sprite_pass().draw(
+                &self.camera_matrices,
+                &self.wall_texture,
+                self.wall_batch.draw_unit(),
+                &malen::gl::DrawParams {
+                    depth_test: Some(malen::gl::DepthTest::default()),
+                    ..malen::gl::DrawParams::default()
+                },
+            );
+            context.color_pass().draw(
+                &self.camera_matrices,
+                self.reflecting_color_batch.draw_unit(),
+                &malen::gl::DrawParams {
+                    depth_test: Some(malen::gl::DepthTest::default()),
+                    ..malen::gl::DrawParams::default()
+                },
+            );
         }
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);

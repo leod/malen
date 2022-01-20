@@ -30,6 +30,8 @@ coarse-prof = { git = "https://github.com/leod/coarse-prof", branch = "string_na
 version = "0.3"
 features = [
     "WebGl2RenderingContext",
+    "WebGlContextAttributes",
+    "WebGlPowerPreference",
     "HtmlCanvasElement",
     "Window",
     "KeyboardEvent",

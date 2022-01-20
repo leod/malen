@@ -186,7 +186,7 @@ impl LightPipeline {
         coarse_prof::profile!("clear_geometry");
 
         gl::with_framebuffer(&self.screen_geometry, || {
-            gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
+            gl::clear_color_and_depth(&self.gl(), Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
         });
 
         Ok(GeometryPhase {
@@ -464,9 +464,9 @@ fn new_screen_framebuffer(
                         //TextureMinFilter::NearestMipmapNearest
                         TextureMinFilter::LinearMipmapLinear
                     } else {
-                        TextureMinFilter::Nearest
+                        TextureMinFilter::Linear
                     },
-                    mag_filter: TextureMagFilter::Nearest,
+                    mag_filter: TextureMagFilter::Linear,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
                 },
