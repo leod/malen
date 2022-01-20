@@ -22,6 +22,7 @@ pub struct GlobalLightParams {
     pub indirect_start: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
+    pub indirect_self_occlusion: f32,
 }
 
 impl Default for GlobalLightParams {
@@ -32,10 +33,11 @@ impl Default for GlobalLightParams {
             back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_color_scale: 10.0,
-            indirect_start: 3.0,
+            indirect_color_scale: 4.0,
+            indirect_start: 2.3,
             indirect_step_factor: 0.45,
             indirect_z: 0.5,
+            indirect_self_occlusion: 1.0,
         }
     }
 }
@@ -51,6 +53,7 @@ pub struct GlobalLightParamsBlock {
     pub indirect_start: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
+    pub indirect_self_occlusion: f32,
 }
 
 impl UniformBlock for GlobalLightParamsBlock {}
@@ -67,6 +70,7 @@ impl GlobalLightParamsBlock {
             indirect_start: params.indirect_start,
             indirect_step_factor: params.indirect_step_factor,
             indirect_z: params.indirect_z,
+            indirect_self_occlusion: params.indirect_self_occlusion,
         }
     }
 }
