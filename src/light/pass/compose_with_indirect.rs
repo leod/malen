@@ -63,8 +63,8 @@ vec3 trace_cone(
         if (sample_occlusion > 0.0) {
             sample_color *= params.indirect_color_scale;
 
-            occlusion += (1.0 - occlusion) * sample_occlusion;
             color += (1.0 - occlusion) * sample_color;
+            occlusion += (1.0 - occlusion) * sample_occlusion;
 
             // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
             // of interior lighting.
@@ -83,6 +83,8 @@ vec3 calc_indirect_diffuse_lighting(
     const int n = {num_tracing_cones};
     const float dangle = 2.0 * PI / float(n);
 
+    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
+
     vec3 normal_value = texture(screen_normals, origin).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
@@ -100,7 +102,7 @@ vec3 calc_indirect_diffuse_lighting(
         angle += dangle;
     }
 
-    return color / float(n);
+    return (1.0 - params.indirect_self_occlusion * self_occlusion) * color / float(n);
 }
 "#;
 
