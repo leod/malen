@@ -36,7 +36,6 @@ void main() {
     vec3 diffuse = vec3(albedo) * (light + params.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
     f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
-    f_color = vec4(diffuse, 1.0);
 }
 "#;
 

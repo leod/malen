@@ -309,7 +309,7 @@ impl State {
 
         for _ in 0..n {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
-            let speed = rng.gen_range(10.0, 11.0);
+            let speed = 1.5 * rng.gen_range(10.0, 100.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let max_age_secs = rng.gen_range(0.7, 1.3);
 
@@ -321,7 +321,7 @@ impl State {
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
-                max_age_secs: 20.0,
+                max_age_secs,
             };
 
             self.smoke.spawn(particle);
@@ -428,7 +428,7 @@ impl State {
                     self.lasers[i].line().1 + overlap.resolution(),
                     angle,
                     0.95 * std::f32::consts::PI,
-                    1,
+                    8,
                 );
                 self.lasers[i].dead = true;
             }
