@@ -42,7 +42,6 @@ impl Default for GlobalLightParams {
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightParamsBlock {
-    pub screen_size: Vector2<f32>,
     pub ambient: Vector3<f32>,
     pub gamma: f32,
     pub back_glow: f32,
@@ -57,9 +56,8 @@ pub struct GlobalLightParamsBlock {
 impl UniformBlock for GlobalLightParamsBlock {}
 
 impl GlobalLightParamsBlock {
-    pub fn new(screen_size: Vector2<f32>, params: GlobalLightParams) -> Self {
+    pub fn new(params: GlobalLightParams) -> Self {
         GlobalLightParamsBlock {
-            screen_size,
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
             back_glow: params.back_glow,

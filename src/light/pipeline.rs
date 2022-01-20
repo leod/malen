@@ -87,7 +87,7 @@ impl LightPipeline {
         let light_area_batch = TriangleBatch::new(context.gl())?;
         let global_light_params = Uniform::new(
             context.gl(),
-            GlobalLightParamsBlock::new(Vector2::zeros(), GlobalLightParams::default()),
+            GlobalLightParamsBlock::new(GlobalLightParams::default()),
         )?;
 
         let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true, true)?;
@@ -253,7 +253,7 @@ impl<'a> GeometryPhase<'a> {
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
-    ) -> Result<Self, FrameError>
+    ) -> Self
     where
         E: Element,
     {
@@ -264,10 +264,10 @@ impl<'a> GeometryPhase<'a> {
                 texture,
                 normal_map,
                 draw_unit,
-            )
-        })?;
+            );
+        });
 
-        Ok(self)
+        self
     }
 
     pub fn shadow_map_phase(self, lights: &'a [Light]) -> ShadowMapPhase<'a> {
@@ -305,10 +305,7 @@ impl<'a> ShadowMapPhase<'a> {
     ) -> BuiltScreenLightPhase<'a> {
         self.pipeline
             .global_light_params
-            .set(GlobalLightParamsBlock::new(
-                self.pipeline.screen_albedo().size().cast::<f32>(),
-                global_light_params,
-            ));
+            .set(GlobalLightParamsBlock::new(global_light_params));
 
         /*self.pipeline
         .light_area_batch
@@ -405,7 +402,7 @@ impl<'a> IndirectLightPhase<'a> {
         self,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex>,
-    ) -> Result<Self, FrameError> {
+    ) -> Self {
         gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
             self.pipeline.shaded_sprite_pass.draw(
                 self.input.matrices,
@@ -413,9 +410,9 @@ impl<'a> IndirectLightPhase<'a> {
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
             )
-        })?;
+        });
 
-        Ok(self)
+        self
     }
 
     pub fn prepare_cone_tracing(self) -> ComposeWithIndirectPhase<'a> {

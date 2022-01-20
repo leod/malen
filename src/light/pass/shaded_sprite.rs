@@ -1,23 +1,16 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
-    pass::{
-        MatricesBlock, SpriteInfoBlock, SpriteInfos, MATRICES_BLOCK_BINDING,
-        SPRITE_INFO_BLOCK_BINDING,
-    },
+    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
 pub struct ShadedSpritePass {
-    program: Program<(MatricesBlock, SpriteInfoBlock), SpriteVertex, 2>,
-    sprite_infos: RefCell<SpriteInfos>,
+    program: Program<MatricesBlock, SpriteVertex, 2>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
-];
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 2] = ["sprite", "screen_light"];
 
@@ -31,7 +24,7 @@ void main() {
         * vec3(a_position.xy, 1.0);
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
-    v_sprite_uv = a_tex_coords / sprite_info.size;
+    v_sprite_uv = a_tex_coords / vec2(textureSize(sprite, 0));
     v_screen_uv = vec2(position.xy) * 0.5 + 0.5;
 }
 "#;
@@ -58,10 +51,7 @@ impl ShadedSpritePass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self {
-            program,
-            sprite_infos: RefCell::new(SpriteInfos::new()),
-        })
+        Ok(Self { program })
     }
 
     pub fn draw<E>(
@@ -70,21 +60,15 @@ impl ShadedSpritePass {
         texture: &Texture,
         screen_light: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
-    ) -> Result<(), gl::Error>
-    where
+    ) where
         E: Element,
     {
-        let mut sprite_infos = self.sprite_infos.borrow_mut();
-        let sprite_info = sprite_infos.get(texture)?;
-
         gl::draw(
             &self.program,
-            (matrices, sprite_info),
+            matrices,
             [texture, screen_light],
             draw_unit,
             &DrawParams::default(),
         );
-
-        Ok(())
     }
 }

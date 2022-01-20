@@ -1,24 +1,19 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
     gl::{self, DepthTest, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
-    pass::{
-        MatricesBlock, SpriteInfoBlock, SpriteInfos, MATRICES_BLOCK_BINDING,
-        SPRITE_INFO_BLOCK_BINDING,
-    },
+    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
 pub struct GeometrySpriteWithNormalsPass {
-    program: Program<(MatricesBlock, SpriteInfoBlock, ObjectLightParams), SpriteVertex, 2>,
-    sprite_infos: RefCell<SpriteInfos>,
+    program: Program<(MatricesBlock, ObjectLightParams), SpriteVertex, 2>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 3] = [
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("matrices", MATRICES_BLOCK_BINDING),
-    ("sprite_info", SPRITE_INFO_BLOCK_BINDING),
     ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
@@ -34,7 +29,7 @@ void main() {
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-    v_uv = a_tex_coords / sprite_info.size;
+    v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
 }
 "#;
 
@@ -61,10 +56,7 @@ impl GeometrySpriteWithNormalsPass {
         };
         let program = Program::new(gl, program_def)?;
 
-        Ok(Self {
-            program,
-            sprite_infos: RefCell::new(SpriteInfos::new()),
-        })
+        Ok(Self { program })
     }
 
     pub fn draw<E>(
@@ -74,16 +66,12 @@ impl GeometrySpriteWithNormalsPass {
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
-    ) -> Result<(), gl::Error>
-    where
+    ) where
         E: Element,
     {
-        let mut sprite_infos = self.sprite_infos.borrow_mut();
-        let sprite_info = sprite_infos.get(texture)?;
-
         gl::draw(
             &self.program,
-            (matrices, sprite_info, object_light_params),
+            (matrices, object_light_params),
             [texture, normal_map],
             draw_unit,
             &DrawParams {
@@ -91,7 +79,5 @@ impl GeometrySpriteWithNormalsPass {
                 ..DrawParams::default()
             },
         );
-
-        Ok(())
     }
 }

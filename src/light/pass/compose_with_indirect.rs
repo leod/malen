@@ -49,10 +49,11 @@ vec3 trace_cone(
     float t = global_light_params.indirect_start;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
+    vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
 
     for (int i = 0; i < {num_tracing_steps} && occlusion <= 0.9; i++) {
         float cone_diameter = diameter_scale * t;
-        vec2 p = origin + dir / global_light_params.screen_size * t;
+        vec2 p = origin + dir / screen_size * t;
         if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
             break;
 
