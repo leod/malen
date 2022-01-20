@@ -467,9 +467,9 @@ fn new_screen_framebuffer(
                         //TextureMinFilter::NearestMipmapNearest
                         TextureMinFilter::LinearMipmapLinear
                     } else {
-                        TextureMinFilter::Linear
+                        TextureMinFilter::Nearest
                     },
-                    mag_filter: TextureMagFilter::Linear,
+                    mag_filter: TextureMagFilter::Nearest,
                     wrap_vertical: TextureWrap::ClampToEdge,
                     wrap_horizontal: TextureWrap::ClampToEdge,
                 },
