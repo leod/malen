@@ -22,8 +22,9 @@ use super::{
     pass::{
         compose::ComposePass, compose_with_indirect::ComposeWithIndirectPass,
         geometry_color::GeometryColorPass, geometry_color_sprite::GeometryColorSpritePass,
-        geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, screen_light::ScreenLightPass,
-        shaded_color::ShadedColorPass, shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
+        geometry_color_sprite_with_normals::GeometryColorSpriteWithNormalsPass,
+        screen_light::ScreenLightPass, shaded_color::ShadedColorPass,
+        shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
     },
     GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
 };
@@ -56,7 +57,7 @@ pub struct LightPipeline {
     color_pass: Rc<ColorPass>,
     geometry_color_pass: GeometryColorPass,
     geometry_color_sprite_pass: GeometryColorSpritePass,
-    geometry_sprite_normal_pass: GeometrySpriteWithNormalsPass,
+    geometry_color_sprite_normal_pass: GeometryColorSpriteWithNormalsPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
     shaded_sprite_pass: ShadedSpritePass,
@@ -99,7 +100,8 @@ impl LightPipeline {
         let color_pass = context.color_pass();
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
         let geometry_color_sprite_pass = GeometryColorSpritePass::new(context.gl())?;
-        let geometry_sprite_normal_pass = GeometrySpriteWithNormalsPass::new(context.gl())?;
+        let geometry_color_sprite_normal_pass =
+            GeometryColorSpriteWithNormalsPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
@@ -120,7 +122,7 @@ impl LightPipeline {
             color_pass,
             geometry_color_pass,
             geometry_color_sprite_pass,
-            geometry_sprite_normal_pass,
+            geometry_color_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
             shaded_sprite_pass,
@@ -258,19 +260,19 @@ impl<'a> GeometryPhase<'a> {
         self
     }
 
-    pub fn draw_sprites_with_normals<E>(
+    pub fn draw_color_sprites_with_normals<E>(
         self,
         object_light_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         normal_map: &Texture,
-        draw_unit: DrawUnit<SpriteVertex, E>,
+        draw_unit: DrawUnit<ColorSpriteVertex, E>,
         draw_params: &DrawParams,
     ) -> Self
     where
         E: Element,
     {
         gl::with_framebuffer(&self.pipeline.screen_geometry, || {
-            self.pipeline.geometry_sprite_normal_pass.draw(
+            self.pipeline.geometry_color_sprite_normal_pass.draw(
                 self.input.matrices,
                 object_light_params,
                 texture,

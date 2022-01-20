@@ -16,26 +16,27 @@ const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
 const SAMPLERS: [&str; 1] = ["sprite"];
 
 const VERTEX_SOURCE: &str = r#"
-    out vec2 v_uv;
+out vec2 v_uv;
 
-    void main() {
-        vec3 position = matrices.projection
-            * matrices.view
-            * vec3(a_position.xy, 1.0);
+void main() {
+    vec3 position = matrices.projection
+        * matrices.view
+        * vec3(a_position.xy, 1.0);
 
-        gl_Position = vec4(position.xy, a_position.z, 1.0);
+    gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-        v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
-    }
+    v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
+    v_uv.y = 1.0 - v_uv.y;
+}
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
-    in vec2 v_uv;
-    out vec4 f_color;
+in vec2 v_uv;
+out vec4 f_color;
 
-    void main() {
-        f_color = texture(sprite, v_uv);
-    }
+void main() {
+    f_color = texture(sprite, v_uv);
+}
 "#;
 
 impl SpritePass {

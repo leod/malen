@@ -22,6 +22,7 @@ use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 pub struct Draw {
     font: Font,
     smoke_texture: Texture,
+    smoke_normal_texture: Texture,
 
     light_pipeline: LightPipeline,
 
@@ -48,6 +49,12 @@ impl Draw {
         let smoke_texture = Texture::load(
             context.gl(),
             "resources/smoke1.png",
+            TextureParams::mipmapped(),
+        )
+        .await?;
+        let smoke_normal_texture = Texture::load(
+            context.gl(),
+            "resources/smoke1_Nrm.png",
             TextureParams::mipmapped(),
         )
         .await?;
@@ -121,6 +128,7 @@ impl Draw {
         Ok(Draw {
             font,
             smoke_texture,
+            smoke_normal_texture,
             light_pipeline,
             floor_light_params,
             color_light_params,
@@ -276,7 +284,7 @@ impl Draw {
             color: color.to_color4(),
         });
         self.lights.push(Light {
-            position: Point3::new(lamp.pos.x, lamp.pos.y, 100.0),
+            position: Point3::new(lamp.pos.x, lamp.pos.y, 10.0),
             radius: 300.0,
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
@@ -346,9 +354,10 @@ impl Draw {
                         ..DrawParams::default()
                     },
                 )
-                .draw_color_sprites(
+                .draw_color_sprites_with_normals(
                     &self.color_light_params,
                     &self.smoke_texture,
+                    &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
                     &DrawParams {
                         blend: Some(Blend::default()),

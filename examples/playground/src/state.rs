@@ -4,7 +4,7 @@ use rand::{prelude::SliceRandom, Rng};
 use malen::{
     geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
     particles::{Particle, Particles},
-    Color3, Color4, InputState, Key,
+    Color3, InputState, Key,
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
@@ -309,21 +309,19 @@ impl State {
 
         for _ in 0..n {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
-            let speed = rng.gen_range(10.0, 150.0);
+            let speed = rng.gen_range(10.0, 11.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let max_age_secs = rng.gen_range(0.7, 1.3);
 
             let particle = Particle {
                 pos,
                 angle,
                 vel,
                 size: Vector2::new(18.0, 18.0),
-                color: Color3::new(1.0, 0.8, 0.8)
-                    .to_linear()
-                    .scale(0.35)
-                    .to_color4(),
+                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
-                max_age_secs: 1.0,
+                max_age_secs: 20.0,
             };
 
             self.smoke.spawn(particle);
@@ -430,7 +428,7 @@ impl State {
                     self.lasers[i].line().1 + overlap.resolution(),
                     angle,
                     0.95 * std::f32::consts::PI,
-                    10,
+                    1,
                 );
                 self.lasers[i].dead = true;
             }
