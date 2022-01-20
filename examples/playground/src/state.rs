@@ -185,8 +185,10 @@ impl State {
     }
 
     pub fn camera(&self) -> Camera {
+        let center = self.player.pos + self.view_offset;
+
         Camera {
-            center: self.player.pos + self.view_offset,
+            center,
             zoom: 2.5,
             angle: 0.0,
         }

@@ -15,8 +15,7 @@ pub struct ComposePass {
     program: Program<GlobalLightParamsBlock, SpriteVertex, 2>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 1] =
-    [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 2] = ["screen_albedo", "screen_light"];
 
@@ -37,7 +36,6 @@ void main() {
     vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
     f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
-    //f_color = vec4(diffuse, 1.0);
 }
 "#;
 

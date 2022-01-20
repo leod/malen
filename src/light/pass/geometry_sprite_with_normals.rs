@@ -14,7 +14,7 @@ pub struct GeometrySpriteWithNormalsPass {
 
 const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("matrices", MATRICES_BLOCK_BINDING),
-    ("object_light_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
+    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
 const SAMPLERS: [&str; 2] = ["sprite", "normal_map"];
@@ -26,7 +26,6 @@ void main() {
     vec3 position = matrices.projection
         * matrices.view
         * vec3(a_position.xy, 1.0);
-
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
     v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
@@ -40,9 +39,9 @@ layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
 
 void main() {
-    f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_light_params.ambient_scale);
+    f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_params.ambient_scale);
     f_normal = texture(normal_map, v_uv);
-    f_occlusion = vec4(object_light_params.occlusion, 0.0, 0.0, 1.0);
+    f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, 1.0);
 }
 "#;
 
@@ -62,7 +61,7 @@ impl GeometrySpriteWithNormalsPass {
     pub fn draw<E>(
         &self,
         matrices: &Uniform<MatricesBlock>,
-        object_light_params: &Uniform<ObjectLightParams>,
+        object_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
@@ -71,7 +70,7 @@ impl GeometrySpriteWithNormalsPass {
     {
         gl::draw(
             &self.program,
-            (matrices, object_light_params),
+            (matrices, object_params),
             [texture, normal_map],
             draw_unit,
             &DrawParams {

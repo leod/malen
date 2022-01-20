@@ -28,7 +28,7 @@ const VERTEX_SOURCE: &str = r#"
 flat out vec4 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
-out vec2 v_screen_pos;
+out vec2 v_screen_uv;
 out vec3 v_delta;
 
 void main() {
@@ -38,7 +38,7 @@ void main() {
 
     vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
     gl_Position = vec4(p.xy, 0.0, 1.0);
-    v_screen_pos = p.xy;
+    v_screen_uv = p.xy * 0.5 + 0.5;
     v_delta = vec3(a_position.xy, 0.0) - a_light_position;
 }
 "#;
@@ -114,12 +114,12 @@ const FRAGMENT_SOURCE: &str = r#"
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
-in vec2 v_screen_pos;
+in vec2 v_screen_uv;
 in vec3 v_delta;
 out vec4 f_color;
 
 void main() {
-    vec3 normal_value = texture(screen_normals, v_screen_pos * 0.5 + 0.5).xyz;
+    vec3 normal_value = texture(screen_normals, v_screen_uv).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
 

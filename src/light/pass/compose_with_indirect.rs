@@ -63,12 +63,12 @@ vec3 trace_cone(
         if (sample_occlusion > 0.0) {
             sample_color *= params.indirect_color_scale;
 
+            color += (1.0 - occlusion) * sample_color;
+            occlusion += (1.0 - occlusion) * sample_occlusion;
+
             // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
             // of interior lighting.
             //color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
-
-            color += (1.0 - occlusion) * sample_color;
-            occlusion += (1.0 - occlusion) * sample_occlusion;
         }
 
         t += params.indirect_step_factor * cone_diameter;
