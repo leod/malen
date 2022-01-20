@@ -16,8 +16,7 @@ pub struct ComposeWithIndirectPass {
     program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 1] =
-    [("global_light_params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
+const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
 const SAMPLERS: [&str; 5] = [
     "screen_albedo",
@@ -46,7 +45,7 @@ vec3 trace_cone(
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = global_light_params.indirect_start;
+    float t = params.indirect_start;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
     vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
@@ -62,7 +61,7 @@ vec3 trace_cone(
         vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
-            sample_color *= global_light_params.indirect_color_scale;
+            sample_color *= params.indirect_color_scale;
 
             // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
             // of interior lighting.
@@ -72,7 +71,7 @@ vec3 trace_cone(
             occlusion += (1.0 - occlusion) * sample_occlusion;
         }
 
-        t += global_light_params.indirect_step_factor * cone_diameter;
+        t += params.indirect_step_factor * cone_diameter;
     }
 
     return color;
@@ -95,7 +94,7 @@ vec3 calc_indirect_diffuse_lighting(
         vec2 dir = vec2(cos(angle), sin(angle));
         float scale = normal_value == vec3(0.0) ?
             1.0 :
-            max(dot(normalize(vec3(-dir, global_light_params.indirect_z)), normalize(normal)), 0.0);
+            max(dot(normalize(vec3(-dir, params.indirect_z)), normalize(normal)), 0.0);
 
         color += scale * trace_cone(origin, dir);
         angle += dangle;
@@ -116,11 +115,11 @@ void main() {
     vec3 indirect_light = calc_indirect_diffuse_lighting(v_tex_coords);
     vec3 light = direct_light + indirect_light;
 
-    vec3 diffuse = vec3(albedo) * (light + albedo.a * global_light_params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
 
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
 
-    f_color = vec4(pow(mapped, vec3(1.0 / global_light_params.gamma)), 1.0);
+    f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
 }
 "#;
 
@@ -160,7 +159,7 @@ impl ComposeWithIndirectPass {
 
     pub fn draw(
         &self,
-        global_light_params: &Uniform<GlobalLightParamsBlock>,
+        params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
         screen_normal: &Texture,
         screen_occlusion: &Texture,
@@ -169,7 +168,7 @@ impl ComposeWithIndirectPass {
     ) {
         gl::draw(
             &self.program,
-            global_light_params,
+            params,
             [
                 screen_albedo,
                 screen_normal,
