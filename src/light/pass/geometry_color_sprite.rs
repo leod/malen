@@ -30,6 +30,7 @@ void main() {
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
     v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
+    v_uv.y = 1.0 - v_uv.y;
     v_color = a_color;
 }
 "#;

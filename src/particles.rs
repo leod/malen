@@ -77,7 +77,7 @@ impl<'a> Geometry<TriangleTag> for &'a Particles {
                     center: particle.pos,
                     size: particle.size,
                 }
-                .rotate(particle.angle),
+                .rotate(particle.angle - std::f32::consts::PI / 2.0),
                 z: 0.0,
                 tex_rect: Rect::from_top_left(Point2::origin(), self.texture_size),
                 color: Color4::new(

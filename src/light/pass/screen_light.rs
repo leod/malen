@@ -121,10 +121,7 @@ out vec4 f_color;
 void main() {
     vec3 normal_value = texture(screen_normals, v_screen_uv).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
-    normal.y = -normal.y;
-
-    // TODO: Use normal again -- broken since particles for some reason (???)
-    normal = vec3(0.0, 0.0, 1.0);
+    //normal.y = -normal.y;
 
     float scale = normal_value == vec3(0.0) ?
         1.0 :
