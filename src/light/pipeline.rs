@@ -49,9 +49,9 @@ pub struct LightPipeline {
     global_light_params: Uniform<GlobalLightParamsBlock>,
 
     screen_geometry: Framebuffer,
+    screen_reflectors: Framebuffer,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
-    screen_reflectors: Framebuffer,
 
     color_pass: Rc<ColorPass>,
     geometry_color_pass: GeometryColorPass,
@@ -90,23 +90,10 @@ impl LightPipeline {
             GlobalLightParamsBlock::new(GlobalLightParams::default()),
         )?;
 
-        let screen_geometry = new_screen_framebuffer(canvas.clone(), 3, true, true)?;
-        let shadow_map = Framebuffer::from_textures(
-            context.gl(),
-            vec![Texture::new(
-                context.gl(),
-                Vector2::new(params.shadow_map_resolution, params.max_num_lights),
-                TextureParams {
-                    value_type: TextureValueType::RgbaF32,
-                    min_filter: TextureMinFilter::Linear,
-                    mag_filter: TextureMagFilter::Linear,
-                    wrap_vertical: TextureWrap::ClampToEdge,
-                    wrap_horizontal: TextureWrap::ClampToEdge,
-                },
-            )?],
-        )?;
-        let screen_light = new_screen_framebuffer(canvas.clone(), 1, false, false)?;
-        let screen_reflectors = new_screen_framebuffer(canvas.clone(), 1, false, true)?;
+        let screen_geometry = new_screen_geometry(canvas.clone())?;
+        let screen_reflectors = new_screen_reflectors(&screen_geometry)?;
+        let shadow_map = new_shadow_map(context.gl(), &params)?;
+        let screen_light = new_screen_light(canvas.clone())?;
 
         let color_pass = context.color_pass();
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
@@ -125,9 +112,9 @@ impl LightPipeline {
             light_area_batch,
             global_light_params,
             screen_geometry,
+            screen_reflectors,
             shadow_map,
             screen_light,
-            screen_reflectors,
             color_pass,
             geometry_color_pass,
             geometry_sprite_normal_pass,
@@ -164,10 +151,6 @@ impl LightPipeline {
         &self.screen_light.textures()[0]
     }
 
-    pub fn screen_reflectors(&self) -> &Texture {
-        &self.screen_reflectors.textures()[0]
-    }
-
     pub fn new_occluder_batch(&self) -> Result<OccluderBatch, gl::Error> {
         OccluderBatch::new(self.light_instances.clone())
     }
@@ -177,9 +160,9 @@ impl LightPipeline {
         matrices: &'a Uniform<MatricesBlock>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
         if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
-            self.screen_geometry = new_screen_framebuffer(self.canvas.clone(), 3, true, true)?;
-            self.screen_light = new_screen_framebuffer(self.canvas.clone(), 1, false, false)?;
-            self.screen_reflectors = new_screen_framebuffer(self.canvas.clone(), 1, false, true)?;
+            self.screen_geometry = new_screen_geometry(self.canvas.clone())?;
+            self.screen_reflectors = new_screen_reflectors(&self.screen_geometry)?;
+            self.screen_light = new_screen_light(self.canvas.clone())?;
         }
 
         #[cfg(feature = "coarse-prof")]
@@ -356,10 +339,6 @@ impl<'a> ShadowMapPhase<'a> {
 
 impl<'a> BuiltScreenLightPhase<'a> {
     pub fn indirect_light_phase(self) -> IndirectLightPhase<'a> {
-        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
-            gl::clear_color(&self.pipeline.gl(), Color4::new(0.0, 0.0, 0.0, 1.0));
-        });
-
         IndirectLightPhase {
             pipeline: self.pipeline,
             input: self.input,
@@ -376,12 +355,20 @@ impl<'a> BuiltScreenLightPhase<'a> {
 }
 
 impl<'a> IndirectLightPhase<'a> {
+    fn draw_params() -> DrawParams {
+        DrawParams {
+            color_mask: (true, true, true, false),
+            ..DrawParams::default()
+        }
+    }
+
     pub fn draw_color_reflectors(self, draw_unit: DrawUnit<ColorVertex>) -> Self {
         gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
             self.pipeline.shaded_color_pass.draw(
                 self.input.matrices,
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
+                &Self::draw_params(),
             );
         });
 
@@ -392,7 +379,7 @@ impl<'a> IndirectLightPhase<'a> {
         gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
             self.pipeline
                 .color_pass
-                .draw(self.input.matrices, draw_unit, &DrawParams::default());
+                .draw(self.input.matrices, draw_unit, &Self::draw_params());
         });
 
         self
@@ -409,6 +396,7 @@ impl<'a> IndirectLightPhase<'a> {
                 texture,
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
+                &Self::draw_params(),
             )
         });
 
@@ -417,7 +405,6 @@ impl<'a> IndirectLightPhase<'a> {
 
     pub fn prepare_cone_tracing(self) -> ComposeWithIndirectPhase<'a> {
         self.pipeline.screen_occlusion().generate_mipmap();
-        self.pipeline.screen_reflectors().generate_mipmap();
 
         ComposeWithIndirectPhase {
             pipeline: self.pipeline,
@@ -433,12 +420,10 @@ impl<'a> ComposeWithIndirectPhase<'a> {
             &self.pipeline.screen_geometry.textures()[1],
             &self.pipeline.screen_geometry.textures()[2],
             &self.pipeline.screen_light.textures()[0],
-            &self.pipeline.screen_reflectors.textures()[0],
         );
     }
 }
 
-#[must_use]
 fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {
     let canvas = canvas.borrow();
     let physical_size = canvas.physical_size();
@@ -447,46 +432,98 @@ fn screen_light_size(canvas: Rc<RefCell<Canvas>>) -> Vector2<u32> {
     Vector2::new(physical_size.x.min(max_size), physical_size.y.min(max_size))
 }
 
-fn new_screen_framebuffer(
-    canvas: Rc<RefCell<Canvas>>,
-    num_textures: usize,
-    depth: bool,
-    mip_map: bool,
+fn new_shadow_map(
+    gl: Rc<gl::Context>,
+    params: &LightPipelineParams,
 ) -> Result<Framebuffer, NewFramebufferError> {
-    let mut textures = (0..num_textures)
-        .map(|i| {
-            Texture::new(
-                canvas.borrow().gl(),
-                screen_light_size(canvas.clone()),
-                TextureParams {
-                    value_type: TextureValueType::RgbaF32,
-                    min_filter: if mip_map && i + 1 == num_textures {
-                        //TextureMinFilter::NearestMipmapNearest
-                        TextureMinFilter::LinearMipmapLinear
-                    } else {
-                        TextureMinFilter::Linear
-                    },
-                    mag_filter: TextureMagFilter::Linear,
-                    wrap_vertical: TextureWrap::ClampToEdge,
-                    wrap_horizontal: TextureWrap::ClampToEdge,
-                },
-            )
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    if depth {
-        textures.push(Texture::new(
-            canvas.borrow().gl(),
-            screen_light_size(canvas.clone()),
+    Framebuffer::from_textures(
+        gl.clone(),
+        vec![Texture::new(
+            gl.clone(),
+            Vector2::new(params.shadow_map_resolution, params.max_num_lights),
             TextureParams {
-                value_type: TextureValueType::Depth,
-                min_filter: TextureMinFilter::Nearest,
-                mag_filter: TextureMagFilter::Nearest,
+                value_type: TextureValueType::RgbaF32,
+                min_filter: TextureMinFilter::Linear,
+                mag_filter: TextureMagFilter::Linear,
                 wrap_vertical: TextureWrap::ClampToEdge,
                 wrap_horizontal: TextureWrap::ClampToEdge,
             },
-        )?);
-    }
+        )?],
+    )
+}
 
-    Framebuffer::from_textures(canvas.borrow().gl(), textures)
+fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFramebufferError> {
+    let size = screen_light_size(canvas.clone());
+    let albedo = Texture::new(
+        canvas.borrow().gl(),
+        size,
+        TextureParams {
+            value_type: TextureValueType::RgbaU8,
+            min_filter: TextureMinFilter::Nearest,
+            mag_filter: TextureMagFilter::Nearest,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        },
+    )?;
+    let normals = Texture::new(
+        canvas.borrow().gl(),
+        size,
+        TextureParams {
+            value_type: TextureValueType::RgbaU8,
+            min_filter: TextureMinFilter::Nearest,
+            mag_filter: TextureMagFilter::Nearest,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        },
+    )?;
+    let occluder = Texture::new(
+        canvas.borrow().gl(),
+        size,
+        TextureParams {
+            value_type: TextureValueType::RgbaU8,
+            min_filter: TextureMinFilter::LinearMipmapLinear,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        },
+    )?;
+    let depth = Texture::new(
+        canvas.borrow().gl(),
+        size,
+        TextureParams {
+            value_type: TextureValueType::Depth,
+            min_filter: TextureMinFilter::Nearest,
+            mag_filter: TextureMagFilter::Nearest,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        },
+    )?;
+
+    Framebuffer::from_textures(canvas.borrow().gl(), vec![albedo, normals, occluder, depth])
+}
+
+fn new_screen_reflectors(
+    screen_geometry: &Framebuffer,
+) -> Result<Framebuffer, NewFramebufferError> {
+    Framebuffer::new(
+        screen_geometry.gl(),
+        vec![screen_geometry.textures()[2].clone()],
+    )
+}
+
+fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFramebufferError> {
+    let size = screen_light_size(canvas.clone());
+    let light = Texture::new(
+        canvas.borrow().gl(),
+        size,
+        TextureParams {
+            value_type: TextureValueType::RgbaF32,
+            min_filter: TextureMinFilter::Nearest,
+            mag_filter: TextureMagFilter::Nearest,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        },
+    )?;
+
+    Framebuffer::from_textures(canvas.borrow().gl(), vec![light])
 }

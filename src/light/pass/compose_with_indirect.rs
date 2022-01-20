@@ -13,17 +13,16 @@ use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDIN
 
 pub struct ComposeWithIndirectPass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 4>,
 }
 
 const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
-const SAMPLERS: [&str; 5] = [
+const SAMPLERS: [&str; 4] = [
     "screen_albedo",
     "screen_normals",
     "screen_occlusion",
     "screen_light",
-    "screen_reflectors",
 ];
 
 const VERTEX_SOURCE: &str = r#"
@@ -57,8 +56,9 @@ vec3 trace_cone(
             break;
 
         float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
-        float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
-        vec3 sample_color = textureLod(screen_reflectors, p, mip_level).rgb;
+        vec4 read = textureLod(screen_occlusion, p, mip_level);
+        float sample_occlusion = read.a;
+        vec3 sample_color = read.rgb;
 
         if (sample_occlusion > 0.0) {
             sample_color *= params.indirect_color_scale;
@@ -83,7 +83,7 @@ vec3 calc_indirect_diffuse_lighting(
     const int n = {num_tracing_cones};
     const float dangle = 2.0 * PI / float(n);
 
-    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
+    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).a;
 
     vec3 normal_value = texture(screen_normals, origin).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
@@ -111,16 +111,14 @@ in vec2 v_tex_coords;
 out vec4 f_color;
 
 void main() {
-    vec4 albedo = texture(screen_albedo, v_tex_coords);
-
     vec3 direct_light = texture(screen_light, v_tex_coords).rgb;
     vec3 indirect_light = calc_indirect_diffuse_lighting(v_tex_coords);
     vec3 light = direct_light + indirect_light;
 
+    vec4 albedo = texture(screen_albedo, v_tex_coords);
     vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
 
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
-
     f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
 }
 "#;
@@ -166,18 +164,11 @@ impl ComposeWithIndirectPass {
         screen_normal: &Texture,
         screen_occlusion: &Texture,
         screen_light: &Texture,
-        screen_reflectors: &Texture,
     ) {
         gl::draw(
             &self.program,
             params,
-            [
-                screen_albedo,
-                screen_normal,
-                screen_occlusion,
-                screen_light,
-                screen_reflectors,
-            ],
+            [screen_albedo, screen_normal, screen_occlusion, screen_light],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),
         );

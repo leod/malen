@@ -60,6 +60,7 @@ impl ShadedSpritePass {
         texture: &Texture,
         screen_light: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
+        draw_params: &DrawParams,
     ) where
         E: Element,
     {
@@ -68,7 +69,7 @@ impl ShadedSpritePass {
             matrices,
             [texture, screen_light],
             draw_unit,
-            &DrawParams::default(),
+            draw_params,
         );
     }
 }

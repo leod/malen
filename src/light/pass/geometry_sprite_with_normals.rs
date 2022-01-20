@@ -41,7 +41,7 @@ layout (location = 2) out vec4 f_occlusion;
 void main() {
     f_albedo = vec4(pow(texture(sprite, v_uv).rgb, vec3(2.2)), object_params.ambient_scale);
     f_normal = texture(normal_map, v_uv);
-    f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, 1.0);
+    f_occlusion.a = object_params.occlusion;
 }
 "#;
 

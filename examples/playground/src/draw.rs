@@ -462,10 +462,6 @@ impl Draw {
             Rect::from_top_left(Point2::new(340.0, 10.0), Vector2::new(320.0, 240.0)),
             &self.light_pipeline.screen_light(),
         )?;
-        context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(340.0, 260.0), Vector2::new(320.0, 240.0)),
-            &self.light_pipeline.screen_reflectors(),
-        )?;
 
         Ok(())
     }

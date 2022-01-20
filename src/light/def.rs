@@ -33,9 +33,9 @@ impl Default for GlobalLightParams {
             back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_color_scale: 4.0,
-            indirect_start: 2.3,
-            indirect_step_factor: 0.45,
+            indirect_color_scale: 5.0,
+            indirect_start: 2.5,
+            indirect_step_factor: 0.5,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
         }
