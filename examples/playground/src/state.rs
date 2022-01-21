@@ -183,7 +183,7 @@ impl State {
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..200 {
+        for _ in 0..300 {
             state.add_lamp();
         }
 
@@ -195,7 +195,7 @@ impl State {
 
         Camera {
             center,
-            zoom: 2.5,
+            zoom: 3.5,
             angle: 0.0,
         }
     }
@@ -230,13 +230,14 @@ impl State {
         let mut rng = rand::thread_rng();
         let center = self.floor_rect().sample(&mut rng);
 
+        let one = 30.0;
         let size = match rng.gen_range(0, 3) {
             0 => {
-                let x = 50.0 * rng.gen_range(1, 10) as f32;
+                let x = one * rng.gen_range(1, 4) as f32;
                 Vector2::new(x, x)
             }
-            1 => Vector2::new(50.0, 50.0 * rng.gen_range(2, 20) as f32),
-            2 => Vector2::new(50.0 * rng.gen_range(2, 20) as f32, 50.0),
+            1 => Vector2::new(one, one * rng.gen_range(8, 30) as f32),
+            2 => Vector2::new(one * rng.gen_range(8, 30) as f32, one),
             _ => unreachable!(),
         };
 
@@ -317,7 +318,7 @@ impl State {
                 pos,
                 angle,
                 vel,
-                size: Vector2::new(20.0, 20.0),
+                size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8)
                     .to_linear()
                     .scale(0.7)
@@ -431,7 +432,7 @@ impl State {
                     self.lasers[i].line().1 + overlap.resolution(),
                     angle,
                     0.95 * std::f32::consts::PI,
-                    8,
+                    5,
                 );
                 self.lasers[i].dead = true;
             }
