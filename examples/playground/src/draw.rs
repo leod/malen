@@ -3,8 +3,8 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorSpriteBatch, ColorTriangleBatch,
-        ColorVertex, InstanceBatch, Mesh, TriangleTag,
+        ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorSpriteBatch,
+        ColorTriangleBatch, ColorVertex, InstanceBatch, Mesh, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
     gl::{
@@ -41,6 +41,7 @@ pub struct Draw {
     reflecting_color_batch: ColorTriangleBatch,
     indirect_color_triangle_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
+    outline_batch: ColorLineBatch,
     smoke_batch: ColorSpriteBatch,
     lights: Vec<Light>,
     text_batch: TextBatch,
@@ -124,6 +125,7 @@ impl Draw {
         let reflecting_color_batch = ColorTriangleBatch::new(context.gl())?;
         let indirect_color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
+        let outline_batch = ColorLineBatch::new(context.gl())?;
         let smoke_batch = ColorSpriteBatch::new(context.gl())?;
         let lights = Vec::new();
         let text_batch = TextBatch::new(context.gl())?;
@@ -144,6 +146,7 @@ impl Draw {
             reflecting_color_batch,
             indirect_color_triangle_batch,
             occluder_batch,
+            outline_batch,
             smoke_batch,
             lights,
             text_batch,
@@ -169,6 +172,7 @@ impl Draw {
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.smoke_batch.clear();
+        self.outline_batch.clear();
         self.lights.clear();
 
         self.render_floor(state);
@@ -194,10 +198,14 @@ impl Draw {
         Ok(())
     }
 
+    fn outline_color(&self) -> Color4 {
+        Color4::new(1.0, 1.0, 1.0, 1.0)
+    }
+
     fn render_floor(&mut self, state: &State) {
         self.color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.3, 0.3, 0.35, 1.0),
+            color: Color4::new(0.9, 0.9, 1.0, 1.0),
             z: 0.8,
         });
     }
@@ -224,6 +232,11 @@ impl Draw {
             ignore_light_index1: None, //wall.lamp_index.map(|index| index as u32),
             ignore_light_index2: None,
         });
+        self.outline_batch.push(ColorRect {
+            rect: wall.rect(),
+            z: 0.4,
+            color: self.outline_color(),
+        });
     }
 
     fn render_enemy(&mut self, enemy: &Enemy) {
@@ -249,6 +262,13 @@ impl Draw {
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
+        self.outline_batch.push(ColorCircle {
+            circle: enemy.circle(),
+            angle: enemy.angle,
+            z: 0.3,
+            num_segments: 16,
+            color: self.outline_color(),
+        });
         self.lights.push(Light {
             position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
             radius: 300.0,
@@ -267,6 +287,13 @@ impl Draw {
             z: 0.3,
             num_segments: 64,
             color: color.to_color4(),
+        });
+        self.outline_batch.push(ColorCircle {
+            circle: ball.circle(),
+            angle: 0.0,
+            z: 0.3,
+            num_segments: 64,
+            color: self.outline_color(),
         });
         self.occluder_batch.push(OccluderCircle {
             circle: ball.circle(),
@@ -321,6 +348,11 @@ impl Draw {
             rect: player.rotated_rect(),
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: Some(self.lights.len() as u32 + 1),
+        });
+        self.outline_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            z: 0.4,
+            color: self.outline_color(),
         });
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
@@ -426,6 +458,12 @@ impl Draw {
                 },
             );
         }
+
+        /*context.color_pass().draw(
+            &self.camera_matrices,
+            self.outline_batch.draw_unit(),
+            &DrawParams::default(),
+        );*/
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
