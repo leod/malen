@@ -197,7 +197,7 @@ impl Draw {
     fn render_floor(&mut self, state: &State) {
         self.color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.5, 0.5, 0.5, 1.0),
+            color: Color4::new(0.3, 0.3, 0.35, 1.0),
             z: 0.8,
         });
     }
@@ -326,7 +326,7 @@ impl Draw {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 600.0,
             angle: player.dir.y.atan2(player.dir.x),
-            angle_size: std::f32::consts::PI / 6.0,
+            angle_size: std::f32::consts::PI / 5.0,
             start: 18.0,
             color: Color3::from_u8(200, 200, 200).to_linear(),
         });
