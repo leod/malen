@@ -9,7 +9,7 @@ use crate::{
     geom::{Rect, Screen},
     gl::{self, DrawParams, Texture, Uniform},
     input::InputState,
-    pass::{ColorPass, ColorSpritePass, InstancedColorPass, MatricesBlock, SpritePass},
+    pass::{ColorPass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
     Canvas, Color4, Config, Event, FrameError,
 };
@@ -19,7 +19,6 @@ pub struct Context {
     input_state: InputState,
 
     sprite_pass: Rc<SpritePass>,
-    color_sprite_pass: Rc<ColorSpritePass>,
     color_pass: Rc<ColorPass>,
     instanced_color_pass: Rc<InstancedColorPass>,
     plot_pass: Rc<PlotPass>,
@@ -49,7 +48,6 @@ impl Context {
     fn from_canvas(canvas: Canvas, _: Config) -> Result<Self, InitError> {
         let input_state = InputState::default();
         let sprite_pass = Rc::new(SpritePass::new(canvas.gl())?);
-        let color_sprite_pass = Rc::new(ColorSpritePass::new(canvas.gl())?);
         let color_pass = Rc::new(ColorPass::new(canvas.gl())?);
         let instanced_color_pass = Rc::new(InstancedColorPass::new(canvas.gl())?);
         let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
@@ -58,7 +56,6 @@ impl Context {
             canvas: Rc::new(RefCell::new(canvas)),
             input_state,
             sprite_pass,
-            color_sprite_pass,
             color_pass,
             instanced_color_pass,
             plot_pass,
@@ -113,10 +110,6 @@ impl Context {
         self.sprite_pass.clone()
     }
 
-    pub fn color_sprite_pass(&self) -> Rc<ColorSpritePass> {
-        self.color_sprite_pass.clone()
-    }
-
     pub fn color_pass(&self) -> Rc<ColorPass> {
         self.color_pass.clone()
     }
@@ -147,8 +140,9 @@ impl Context {
         batch.clear();
         batch.push(Sprite {
             rect,
-            z: 0.0,
+            depth: 0.0,
             tex_rect: Rect::from_top_left(Point2::origin(), texture.size().cast::<f32>()),
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
         });
 
         self.sprite_pass

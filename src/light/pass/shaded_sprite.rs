@@ -17,6 +17,7 @@ const SAMPLERS: [&str; 2] = ["sprite", "screen_light"];
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_sprite_uv;
 out vec2 v_screen_uv;
+out vec4 v_color;
 
 void main() {
     vec3 position = matrices.projection
@@ -26,18 +27,23 @@ void main() {
     gl_Position = vec4(position.xy, a_position.z, 1.0);
     v_sprite_uv = a_tex_coords / vec2(textureSize(sprite, 0));
     v_screen_uv = vec2(position.xy) * 0.5 + 0.5;
+    v_color = a_color;
 }
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
 in vec2 v_sprite_uv;
 in vec2 v_screen_uv;
+in vec4 v_color;
 out vec4 f_color;
 
 void main() {
-    vec3 albedo = pow(texture(sprite, v_sprite_uv).rgb, vec3(2.2));
+    vec4 data = texture(sprite, v_sprite_uv);
+    vec3 albedo = pow(data.rgb, vec3(2.2));
     vec3 light = texture(screen_light, v_screen_uv).rgb;
-    f_color = vec4(albedo * light, 1.0);
+
+    // FIXME: This is pretty arbitrary, and was designed for mad overdraw with particles...
+    f_color = vec4(v_color.rgb * albedo * light, v_color.a * data.a * data.a * 0.1);
 }
 "#;
 

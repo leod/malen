@@ -1,15 +1,15 @@
 use std::rc::Rc;
 
 use crate::{
-    data::ColorSpriteVertex,
+    data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct GeometryColorSpriteWithNormalsPass {
-    program: Program<(MatricesBlock, ObjectLightParams), ColorSpriteVertex, 2>,
+pub struct GeometrySpritePass {
+    program: Program<(MatricesBlock, ObjectLightParams), SpriteVertex, 1>,
 }
 
 const UNIFORM_BLOCKS: [(&str, u32); 2] = [
@@ -17,7 +17,7 @@ const UNIFORM_BLOCKS: [(&str, u32); 2] = [
     ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
 ];
 
-const SAMPLERS: [&str; 2] = ["sprite", "normal_map"];
+const SAMPLERS: [&str; 1] = ["sprite"];
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;
@@ -42,26 +42,15 @@ layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
 
-float myatan2(vec2 dir) {
-    float angle = asin(dir.x) > 0.0 ? acos(dir.y) : -acos(dir.y);
-    return angle;
-}
-
 void main() {
     vec4 albedo = texture(sprite, v_uv);
     f_albedo = v_color * vec4(pow(albedo.rgb, vec3(2.2)), albedo.a);
-
-    float angle = -myatan2(vec2(-dFdy(5.0 * v_uv.x), dFdx(5.0 * v_uv.x)));
-    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-    vec3 normal = texture(normal_map, v_uv).rgb * 2.0 - 1.0;
-    normal.xy = rot * normal.xy;
-
-    f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
+    f_normal = vec4(0.0, 0.0, 1.0, 1.0);
     f_occlusion.a = object_params.occlusion;
 }
 "#;
 
-impl GeometryColorSpriteWithNormalsPass {
+impl GeometrySpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,
@@ -79,8 +68,7 @@ impl GeometryColorSpriteWithNormalsPass {
         matrices: &Uniform<MatricesBlock>,
         object_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
-        normal_map: &Texture,
-        draw_unit: DrawUnit<ColorSpriteVertex, E>,
+        draw_unit: DrawUnit<SpriteVertex, E>,
         draw_params: &DrawParams,
     ) where
         E: Element,
@@ -88,7 +76,7 @@ impl GeometryColorSpriteWithNormalsPass {
         gl::draw(
             &self.program,
             (matrices, object_params),
-            [texture, normal_map],
+            [texture],
             draw_unit,
             draw_params,
         );

@@ -118,11 +118,6 @@ impl Rect {
         self
     }
 
-    pub fn half_texel_correction(mut self) -> Self {
-        self.size -= Vector2::new(1.0 / self.size.x, 1.0 / self.size.y);
-        self
-    }
-
     pub fn contains_point(self, p: Point2<f32>) -> bool {
         (self.x_left()..=self.x_right()).contains(&p.x)
             && (self.y_top()..=self.y_bottom()).contains(&p.y)

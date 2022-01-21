@@ -5,8 +5,7 @@ use crate::gl::{
 };
 
 use super::{
-    ColorSpriteVertex, ColorVertex, Geometry, GeometryBuffer, LineTag, Mesh, PrimitiveTag,
-    SpriteVertex, TriangleTag,
+    ColorVertex, Geometry, GeometryBuffer, LineTag, Mesh, PrimitiveTag, SpriteVertex, TriangleTag,
 };
 
 pub struct GeometryBatch<P, V>
@@ -22,7 +21,6 @@ pub type TriangleBatch<V> = GeometryBatch<TriangleTag, V>;
 pub type LineBatch<V> = GeometryBatch<LineTag, V>;
 
 pub type SpriteBatch = TriangleBatch<SpriteVertex>;
-pub type ColorSpriteBatch = TriangleBatch<ColorSpriteVertex>;
 pub type ColorTriangleBatch = TriangleBatch<ColorVertex>;
 pub type ColorLineBatch = LineBatch<ColorVertex>;
 

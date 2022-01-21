@@ -12,6 +12,19 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
+pub struct LightPipelineParams {
+    pub shadow_map_resolution: u32,
+    pub max_num_lights: u32,
+    pub indirect_light: IndirectLightPipelineParams,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndirectLightPipelineParams {
+    pub num_tracing_cones: u32,
+    pub num_tracing_steps: u32,
+}
+
+#[derive(Debug, Clone)]
 pub struct GlobalLightParams {
     pub ambient: Color3,
     pub gamma: f32,
@@ -79,7 +92,6 @@ impl UniformBlock for ObjectLightParams {}
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct ObjectLightParams {
-    pub ambient_scale: f32,
     pub occlusion: f32,
 }
 

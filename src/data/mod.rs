@@ -5,13 +5,13 @@ mod mesh;
 mod vertex;
 
 pub use batch::{
-    ColorLineBatch, ColorSpriteBatch, ColorTriangleBatch, GeometryBatch, InstanceBatch, LineBatch,
-    SpriteBatch, TriangleBatch,
+    ColorLineBatch, ColorTriangleBatch, GeometryBatch, InstanceBatch, LineBatch, SpriteBatch,
+    TriangleBatch,
 };
 pub use buffer::GeometryBuffer;
 pub use geometry::{
     quad_line_indices, quad_triangle_indices, ColorCircle, ColorLine, ColorRect, ColorRotatedRect,
-    ColorRotatedSprite, ColorSprite, Geometry, LineTag, PrimitiveTag, Sprite, TriangleTag,
+    Geometry, LineTag, PrimitiveTag, RotatedSprite, Sprite, TriangleTag,
 };
 pub use mesh::Mesh;
-pub use vertex::{ColorSpriteVertex, ColorVertex, SpriteVertex};
+pub use vertex::{ColorVertex, SpriteVertex};

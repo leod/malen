@@ -14,13 +14,6 @@ use crate::{
 pub struct SpriteVertex {
     pub position: Point3<f32>,
     pub tex_coords: Point2<f32>,
-}
-
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
-#[repr(C)]
-pub struct ColorSpriteVertex {
-    pub position: Point3<f32>,
-    pub tex_coords: Point2<f32>,
     pub color: Color4,
 }
 
@@ -32,12 +25,6 @@ pub struct ColorVertex {
 }
 
 impl Vertex for SpriteVertex {
-    fn attributes() -> Vec<Attribute> {
-        attributes!["a_": position, tex_coords]
-    }
-}
-
-impl Vertex for ColorSpriteVertex {
     fn attributes() -> Vec<Attribute> {
         attributes!["a_": position, tex_coords, color]
     }
