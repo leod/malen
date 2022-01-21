@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 use crate::{
+    al::{self, LoadSoundError},
     gl::{self, LoadTextureError, NewFramebufferError, NewTextureError},
     light::NewLightPipelineError,
     text::{LoadFontError, WriteTextError},
@@ -38,6 +39,9 @@ pub enum InitError {
     #[error("load font error: {0}")]
     LoadFont(#[from] LoadFontError),
 
+    #[error("load sound error: {0}")]
+    LoadSound(#[from] LoadSoundError),
+
     #[error("new framebuffer error: {0}")]
     NewFramebuffer(#[from] NewFramebufferError),
 
@@ -55,4 +59,7 @@ pub enum FrameError {
 
     #[error("new framebuffer error: {0}")]
     NewFramebuffer(#[from] NewFramebufferError),
+
+    #[error("audio error: {0}")]
+    Audio(#[from] al::PlayError),
 }

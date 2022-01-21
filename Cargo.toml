@@ -48,6 +48,9 @@ features = [
     "Response",
     "Blob",
     "ImageBitmapFormat",
+    "AudioContext",
+    "AudioBufferSourceNode",
+    "AudioBuffer",
 ]
 
 [workspace]

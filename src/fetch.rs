@@ -25,15 +25,12 @@ pub async fn fetch(path: &str) -> Result<Response, FetchError> {
     opts.method("GET");
     opts.mode(RequestMode::SameOrigin);
 
-    let request =
-        Request::new_with_str_and_init(path, &opts).map_err(FetchError::NewRequest)?;
+    let request = Request::new_with_str_and_init(path, &opts).map_err(FetchError::NewRequest)?;
 
     let response: Response = {
         let window = web_sys::window().unwrap();
         let promise = window.fetch_with_request(&request);
-        let value = JsFuture::from(promise)
-            .await
-            .map_err(FetchError::Fetch)?;
+        let value = JsFuture::from(promise).await.map_err(FetchError::Fetch)?;
         assert!(value.is_instance_of::<Response>());
         value.dyn_into().unwrap()
     };
@@ -45,9 +42,7 @@ pub async fn fetch_array_buffer(path: &str) -> Result<ArrayBuffer, FetchError> {
     let response = fetch(path).await?;
 
     let array_buffer: ArrayBuffer = {
-        let promise = response
-            .array_buffer()
-            .map_err(FetchError::GetResult)?;
+        let promise = response.array_buffer().map_err(FetchError::GetResult)?;
         let value = JsFuture::from(promise)
             .await
             .map_err(FetchError::AwaitResult)?;
