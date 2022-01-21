@@ -4,9 +4,9 @@ use nalgebra::{Point2, Vector2};
 use thiserror::Error;
 
 use glow::HasContext;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{ImageBitmap, ImageBitmapFormat};
+use web_sys::ImageBitmap;
 
 use crate::FetchError;
 
@@ -29,20 +29,20 @@ pub enum LoadTextureError {
     #[error("fetch error: {0}")]
     Fetch(#[from] FetchError),
 
-    #[error("failed to create image bitmap")]
-    CreateImageBitmap,
+    #[error("failed to create image bitmap: {0:?}")]
+    CreateImageBitmap(JsValue),
 
-    #[error("failed to await image bitmap")]
-    AwaitCreateImageBitmap,
+    #[error("failed to await image bitmap: {0:?}")]
+    AwaitCreateImageBitmap(JsValue),
 
-    #[error("failed to retrieve image bitmap length")]
-    MappedDataLength,
+    #[error("failed to retrieve image bitmap length: {0:?}")]
+    MappedDataLength(JsValue),
 
-    #[error("failed to map image bitmap data")]
-    MapData,
+    #[error("failed to map image bitmap data: {0:?}")]
+    MapData(JsValue),
 
-    #[error("failed to map image bitmap data")]
-    AwaitMapData,
+    #[error("failed to map image bitmap data: {0:?}")]
+    AwaitMapData(JsValue),
 }
 
 #[derive(Debug, Clone)]
@@ -194,10 +194,10 @@ impl Texture {
             let promise = web_sys::window()
                 .unwrap()
                 .create_image_bitmap_with_blob(&blob)
-                .map_err(|_| LoadTextureError::CreateImageBitmap)?;
+                .map_err(LoadTextureError::CreateImageBitmap)?;
             let value = JsFuture::from(promise)
                 .await
-                .map_err(|_| LoadTextureError::AwaitCreateImageBitmap)?;
+                .map_err(LoadTextureError::AwaitCreateImageBitmap)?;
             assert!(value.is_instance_of::<ImageBitmap>());
             value.dyn_into().unwrap()
         };
@@ -215,10 +215,10 @@ impl Texture {
             let promise = web_sys::window()
                 .unwrap()
                 .create_image_bitmap_with_u8_array(data)
-                .map_err(|_| LoadTextureError::CreateImageBitmap)?;
+                .map_err(LoadTextureError::CreateImageBitmap)?;
             let value = JsFuture::from(promise)
                 .await
-                .map_err(|_| LoadTextureError::AwaitCreateImageBitmap)?;
+                .map_err(LoadTextureError::AwaitCreateImageBitmap)?;
             assert!(value.is_instance_of::<ImageBitmap>());
             value.dyn_into().unwrap()
         };
