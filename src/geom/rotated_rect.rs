@@ -33,8 +33,8 @@ impl RotatedRect {
         let cos = self.angle.cos();
         let sin = self.angle.sin();
 
-        let dx = Vector2::new(cos * off_x, sin * off_x);
-        let dy = Vector2::new(-sin * off_y, cos * off_y);
+        let dx = off_x * Vector2::new(cos, sin);
+        let dy = off_y * Vector2::new(-sin, cos);
 
         (dx, dy)
     }

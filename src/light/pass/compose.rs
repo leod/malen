@@ -33,7 +33,7 @@ out vec4 f_color;
 void main() {
     vec4 albedo = texture(screen_albedo, v_tex_coords);
     vec3 light = texture(screen_light, v_tex_coords).rgb;
-    vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + params.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
     f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
 }
