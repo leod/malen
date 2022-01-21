@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 
 use malen::{
-    al::{Sound, self},
+    al::{self, Sound},
     particles::{Particle, Particles},
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -32,7 +32,8 @@ impl Game {
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 
-        let shoot_sound = Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
+        let shoot_sound =
+            Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));

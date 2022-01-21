@@ -3,14 +3,13 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 use nalgebra::Point2;
 use web_sys::{FocusEvent, HtmlCanvasElement, KeyboardEvent, MouseEvent};
 
-use crate::{error::InitError, al};
+use crate::error::InitError;
 
 use super::{Button, Event, EventListener, Key};
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 struct SharedState {
     events: VecDeque<Event>,
-    al: Option<Rc<al::Context>>,
 }
 
 pub struct EventHandlers {
@@ -28,10 +27,7 @@ pub struct EventHandlers {
 
 impl EventHandlers {
     pub fn new(canvas: HtmlCanvasElement) -> Result<Self, InitError> {
-        let state = Rc::new(RefCell::new(SharedState {
-            events: VecDeque::new(),
-            al: None,
-        }));
+        let state = Rc::new(RefCell::new(SharedState::default()));
 
         let on_focus = EventListener::new_consuming(&canvas, "focus", {
             let state = state.clone();
@@ -60,11 +56,6 @@ impl EventHandlers {
         let on_key_down = EventListener::new_consuming(&canvas, "keydown", {
             let state = state.clone();
             move |event: KeyboardEvent| {
-                if let Some(al) = state.borrow().al.as_ref() {
-                    al.context.resume().unwrap();
-                    log::info!("done");
-                }
-
                 if event.repeat() {
                     return;
                 }
@@ -140,9 +131,5 @@ impl EventHandlers {
 
     pub fn pop_event(&mut self) -> Option<Event> {
         self.state.borrow_mut().events.pop_front()
-    }
-
-    pub fn set_al(&self, al: Rc<al::Context>) {
-        self.state.borrow_mut().al = Some(al);
     }
 }

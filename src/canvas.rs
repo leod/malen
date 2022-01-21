@@ -6,7 +6,6 @@ use web_sys::{HtmlCanvasElement, WebGl2RenderingContext, WebGlContextAttributes}
 use glow::HasContext;
 use nalgebra::{Point2, Vector2};
 
-use crate::al;
 use crate::input::EventHandlers;
 use crate::{error::InitError, geom::Screen, gl, util, Color4, Event};
 
@@ -128,10 +127,6 @@ impl Canvas {
 
     pub fn physical_size(&self) -> Vector2<u32> {
         Vector2::new(self.element.width(), self.element.height())
-    }
-
-    pub(crate) fn set_al(&self, al: Rc<al::Context>) {
-        //self.event_handlers.set_al(al);
     }
 
     pub fn screen(&self) -> Screen {
