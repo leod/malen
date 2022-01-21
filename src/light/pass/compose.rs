@@ -3,9 +3,10 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
-    data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
+    data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
+    Color4,
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
@@ -41,18 +42,18 @@ void main() {
 
 impl ComposePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let screen_rect = SpriteBatch::from_geometry(
+        let screen_rect = Mesh::from_geometry(
             gl.clone(),
             Sprite {
                 rect: Rect {
                     center: Point2::origin(),
                     size: Vector2::new(2.0, 2.0),
                 },
-                z: 0.0,
+                depth: 0.0,
                 tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
             },
-        )?
-        .into_mesh();
+        )?;
 
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,

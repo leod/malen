@@ -33,7 +33,7 @@ pub use color::{Color3, Color4};
 pub use config::Config;
 pub use context::Context;
 pub use error::{FrameError, InitError};
-pub use input::{Event, InputState, Key};
+pub use input::{Button, Event, InputState, Key};
 pub use main_loop::main_loop;
 #[cfg(feature = "coarse-prof")]
 pub use profile::{Profile, ProfileParams};

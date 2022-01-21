@@ -2,7 +2,7 @@ use nalgebra::{Point2, Vector2};
 use slab::Slab;
 
 use crate::{
-    data::{ColorRotatedSprite, ColorSpriteVertex, Geometry, TriangleTag},
+    data::{Geometry, RotatedSprite, SpriteVertex, TriangleTag},
     geom::Rect,
     Color4,
 };
@@ -11,7 +11,9 @@ use crate::{
 pub struct Particle {
     pub pos: Point2<f32>,
     pub angle: f32,
+    pub depth: f32,
     pub vel: Vector2<f32>,
+    pub rot: f32,
     pub size: Vector2<f32>,
     pub color: Color4,
     pub slowdown: f32,
@@ -59,6 +61,7 @@ impl Particles {
                 (1.0 - particle.age_secs / particle.max_age_secs).powf(particle.slowdown);
 
             particle.pos += dt_secs * speed_factor * particle.vel;
+            particle.angle += dt_secs * speed_factor * particle.rot;
             particle.age_secs += dt_secs;
         }
 
@@ -68,17 +71,17 @@ impl Particles {
 }
 
 impl<'a> Geometry<TriangleTag> for &'a Particles {
-    type Vertex = ColorSpriteVertex;
+    type Vertex = SpriteVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         for (_, particle) in self.particles.iter() {
-            ColorRotatedSprite {
+            RotatedSprite {
                 rect: Rect {
                     center: particle.pos,
                     size: particle.size,
                 }
                 .rotate(particle.angle - std::f32::consts::PI / 2.0),
-                z: 0.0,
+                depth: particle.depth,
                 tex_rect: Rect::from_top_left(Point2::origin(), self.texture_size),
                 color: Color4::new(
                     particle.color.r,

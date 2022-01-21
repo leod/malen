@@ -71,6 +71,7 @@ impl Game {
                             self.profile.draw_timer().borrow().timing_info()
                         );
                         self.show_profile = !self.show_profile;
+                        coarse_prof::reset();
                     }
                     Key::U => {
                         self.show_textures = !self.show_textures;

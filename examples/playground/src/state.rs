@@ -4,7 +4,7 @@ use rand::{prelude::SliceRandom, Rng};
 use malen::{
     geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
     particles::{Particle, Particles},
-    Color3, InputState, Key,
+    Button, Color3, InputState, Key,
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
@@ -21,7 +21,6 @@ pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
     pub lamp_index: Option<usize>,
-    pub use_texture: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -120,6 +119,10 @@ impl Lamp {
             radius: LAMP_RADIUS,
         }
     }
+
+    pub fn shape(&self) -> Shape {
+        Shape::Circle(self.circle())
+    }
 }
 
 impl Laser {
@@ -213,6 +216,7 @@ impl State {
             .map(Wall::shape)
             .chain(self.balls.iter().map(Ball::shape))
             .chain(self.enemies.iter().map(Enemy::shape))
+            .chain(self.lamps.iter().map(Lamp::shape))
     }
 
     pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
@@ -245,8 +249,6 @@ impl State {
             center,
             size,
             lamp_index: None,
-            //use_texture: rng.gen(),
-            use_texture: false,
         };
 
         if self.shape_overlap(&wall.shape()).is_none() {
@@ -312,12 +314,15 @@ impl State {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
             let speed = 1.5 * rng.gen_range(10.0, 100.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let rot = 0.0; //std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = rng.gen_range(0.7, 1.3);
 
             let particle = Particle {
                 pos,
                 angle,
                 vel,
+                rot,
+                depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8)
                     .to_linear()
@@ -383,7 +388,7 @@ impl State {
         let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
 
-        if input_state.key(Key::Space) {
+        if input_state.button(Button::Primary) {
             let mut time_budget = dt_secs;
 
             while self.player.shot_cooldown_secs < time_budget {

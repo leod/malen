@@ -28,7 +28,7 @@ void main() {
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
-    v_color = a_color;
+    v_color = vec4(pow(a_color.rgb, vec3(2.2)), a_color.a);
 }
 "#;
 
@@ -39,7 +39,7 @@ layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
 
 void main() {
-    f_albedo = vec4(v_color.rgb, 1.0);
+    f_albedo = v_color;
     f_normal = vec4(0.5, 0.5, 1.0, 1.0);
     f_occlusion.a = object_params.occlusion;
 }
