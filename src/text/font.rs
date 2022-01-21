@@ -13,7 +13,7 @@ use crate::{
     geom::Rect,
     gl::{self, Blend, DrawParams, NewTextureError, Texture, Uniform},
     pass::{MatricesBlock, SpritePass},
-    util, Color4, Context,
+    util, Color4, Context, FetchError,
 };
 
 #[derive(Error, Debug)]
@@ -24,8 +24,8 @@ pub enum LoadFontError {
     #[error("fontdue error: {0}")]
     Fontdue(&'static str),
 
-    #[error("io error: {0}")]
-    IO(#[from] io::Error),
+    #[error("fetch error: {0}")]
+    Fetch(#[from] FetchError),
 }
 
 #[derive(Error, Debug)]
@@ -89,20 +89,12 @@ impl TextBatch {
 }
 
 impl Font {
-    pub async fn load(
-        context: &Context,
-        path: impl AsRef<Path>,
-        scale: f32,
-    ) -> Result<Self, LoadFontError> {
-        let data = platter::load_file(path).await?;
-        Self::load_from_memory(context, &data, scale)
+    pub async fn load(context: &Context, path: &str, scale: f32) -> Result<Self, LoadFontError> {
+        let data = crate::fetch_data(path).await?;
+        Self::from_data(context, &data, scale)
     }
 
-    pub fn load_from_memory(
-        context: &Context,
-        data: &[u8],
-        scale: f32,
-    ) -> Result<Self, LoadFontError> {
+    pub fn from_data(context: &Context, data: &[u8], scale: f32) -> Result<Self, LoadFontError> {
         let settings = FontSettings {
             scale,
             ..Default::default()

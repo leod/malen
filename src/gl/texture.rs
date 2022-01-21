@@ -1,8 +1,14 @@
-use std::{io, path::Path, rc::Rc};
+use std::rc::Rc;
 
-use glow::HasContext;
 use nalgebra::{Point2, Vector2};
 use thiserror::Error;
+
+use glow::HasContext;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{ImageBitmap, ImageBitmapFormat};
+
+use crate::FetchError;
 
 use super::Context;
 
@@ -17,14 +23,26 @@ pub enum NewTextureError {
 
 #[derive(Error, Debug)]
 pub enum LoadTextureError {
-    #[error("texture error: {0}")]
+    #[error("new texture error: {0}")]
     NewTexture(#[from] NewTextureError),
 
-    #[error("image error: {0}")]
-    Image(#[from] image::ImageError),
+    #[error("fetch error: {0}")]
+    Fetch(#[from] FetchError),
 
-    #[error("io error: {0}")]
-    IO(#[from] io::Error),
+    #[error("failed to create image bitmap")]
+    CreateImageBitmap,
+
+    #[error("failed to await image bitmap")]
+    AwaitCreateImageBitmap,
+
+    #[error("failed to retrieve image bitmap length")]
+    MappedDataLength,
+
+    #[error("failed to map image bitmap data")]
+    MapData,
+
+    #[error("failed to map image bitmap data")]
+    AwaitMapData,
 }
 
 #[derive(Debug, Clone)]
@@ -86,11 +104,6 @@ impl Texture {
         size: Vector2<u32>,
         params: TextureParams,
     ) -> Result<Self, NewTextureError> {
-        /*assert!(
-            !params.min_filter.uses_mipmap(),
-            "Empty textures do not have a mipmap"
-        );*/
-
         let texture = Self::new_impl(gl.clone(), size, params.clone())?;
 
         unsafe {
@@ -142,29 +155,75 @@ impl Texture {
         Ok(texture)
     }
 
-    pub async fn load(
+    pub async fn from_image_bitmap(
         gl: Rc<Context>,
-        path: impl AsRef<Path>,
+        image_bitmap: ImageBitmap,
         params: TextureParams,
     ) -> Result<Self, LoadTextureError> {
-        let data = platter::load_file(path).await?;
-        Self::load_from_memory(gl, &data, params)
+        assert!(params.value_type == TextureValueType::RgbaU8);
+
+        let size = Vector2::new(image_bitmap.width(), image_bitmap.height());
+        let texture = Self::new_impl(gl.clone(), size, params.clone())?;
+
+        unsafe {
+            // FIXME: Not sure if ImageBitmap applies color space conversion here.
+            gl.tex_image_2d_with_image_bitmap(
+                glow::TEXTURE_2D,
+                0,
+                params.value_type.internal_format_gl(),
+                params.value_type.format_gl(),
+                params.value_type.type_gl(),
+                &image_bitmap,
+            );
+        }
+
+        if texture.params.min_filter.uses_mipmap() {
+            texture.generate_mipmap();
+        }
+
+        Ok(texture)
     }
 
-    pub fn load_from_memory(
+    pub async fn load(
         gl: Rc<Context>,
-        data: &[u8],
+        path: &str,
         params: TextureParams,
     ) -> Result<Self, LoadTextureError> {
-        let image = image::load_from_memory(data)?.to_rgba8();
-        let size = Vector2::new(image.width(), image.height());
+        let blob = crate::fetch_blob(path).await?;
+        let image_bitmap: ImageBitmap = {
+            let promise = web_sys::window()
+                .unwrap()
+                .create_image_bitmap_with_blob(&blob)
+                .map_err(|_| LoadTextureError::CreateImageBitmap)?;
+            let value = JsFuture::from(promise)
+                .await
+                .map_err(|_| LoadTextureError::AwaitCreateImageBitmap)?;
+            assert!(value.is_instance_of::<ImageBitmap>());
+            value.dyn_into().unwrap()
+        };
 
-        Ok(Self::from_rgba(
-            gl,
-            image.into_raw().as_slice(),
-            size,
-            params,
-        )?)
+        Self::from_image_bitmap(gl, image_bitmap, params).await
+    }
+
+    pub async fn from_data(
+        gl: Rc<Context>,
+        data: &mut [u8],
+        params: TextureParams,
+    ) -> Result<Self, LoadTextureError> {
+        let image_bitmap: ImageBitmap = {
+            // TODO: Why does this need &mut [u8]?
+            let promise = web_sys::window()
+                .unwrap()
+                .create_image_bitmap_with_u8_array(data)
+                .map_err(|_| LoadTextureError::CreateImageBitmap)?;
+            let value = JsFuture::from(promise)
+                .await
+                .map_err(|_| LoadTextureError::AwaitCreateImageBitmap)?;
+            assert!(value.is_instance_of::<ImageBitmap>());
+            value.dyn_into().unwrap()
+        };
+
+        Self::from_image_bitmap(gl, image_bitmap, params).await
     }
 
     pub fn gl(&self) -> Rc<Context> {

@@ -324,10 +324,7 @@ impl State {
                 rot,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
-                color: Color3::new(1.0, 0.8, 0.8)
-                    .to_linear()
-                    .scale(0.7)
-                    .to_color4(),
+                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
                 max_age_secs,
