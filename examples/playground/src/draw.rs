@@ -174,7 +174,7 @@ impl Draw {
     fn render_floor(&mut self, state: &State) {
         self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.9, 0.9, 1.0, 1.0),
+            color: Color4::new(0.95, 0.95, 1.0, 1.0),
             z: 0.8,
         });
     }
@@ -183,11 +183,11 @@ impl Draw {
         self.reflector_color_batch.push(ColorRect {
             rect: wall.rect(),
             z: 0.2,
-            color: Color4::new(0.2, 0.2, 0.2, 1.0),
+            color: Color4::new(0.48, 0.48, 0.48, 1.0),
         });
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
-            ignore_light_index1: None, //wall.lamp_index.map(|index| index as u32),
+            ignore_light_index1: None,
             ignore_light_index2: None,
         });
         self.outline_batch.push(ColorRect {
@@ -198,7 +198,7 @@ impl Draw {
     }
 
     fn render_enemy(&mut self, enemy: &Enemy) {
-        let color = Color3::from_u8(240, 101, 67).to_linear();
+        let color = Color3::from_u8(240, 101, 67);
         /*self.circle_instances.push(ColorInstance {
             position: enemy.pos,
             angle: enemy.angle,
@@ -238,7 +238,7 @@ impl Draw {
     }
 
     fn render_ball(&mut self, ball: &Ball) {
-        let color = Color3::from_u8(134, 187, 189).to_linear();
+        let color = Color3::from_u8(134, 187, 189);
         self.reflector_color_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
@@ -263,7 +263,7 @@ impl Draw {
     }
 
     fn render_lamp(&mut self, lamp: &Lamp) {
-        let color = Color3::from_u8(254, 196, 127).to_linear();
+        let color = Color3::from_u8(254, 196, 127);
         self.reflector_color_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
@@ -277,12 +277,12 @@ impl Draw {
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
             start: 0.0,
-            color: color.scale(0.7),
+            color: color.to_linear().scale(0.7),
         });
     }
 
     fn render_laser(&mut self, laser: &Laser) {
-        let color = Color3::from_u8(200, 70, 30).to_linear();
+        let color = Color3::from_u8(200, 70, 30);
         self.reflector_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
@@ -291,12 +291,12 @@ impl Draw {
         self.source_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
-            color: color.scale(0.5).to_color4(),
+            color: color.to_linear().scale(0.5).to_color4(),
         });
     }
 
     fn render_player(&mut self, player: &Player) {
-        let color = Color3::from_u8(255, 209, 102).to_linear();
+        let color = Color3::from_u8(255, 209, 102);
         self.reflector_color_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             depth: 0.4,
