@@ -119,6 +119,10 @@ impl Lamp {
             radius: LAMP_RADIUS,
         }
     }
+
+    pub fn shape(&self) -> Shape {
+        Shape::Circle(self.circle())
+    }
 }
 
 impl Laser {
@@ -212,6 +216,7 @@ impl State {
             .map(Wall::shape)
             .chain(self.balls.iter().map(Ball::shape))
             .chain(self.enemies.iter().map(Enemy::shape))
+            .chain(self.lamps.iter().map(Lamp::shape))
     }
 
     pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
