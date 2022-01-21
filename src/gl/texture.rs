@@ -41,7 +41,7 @@ pub enum LoadTextureError {
     #[error("failed to map image bitmap data: {0:?}")]
     MapData(JsValue),
 
-    #[error("failed to map image bitmap data: {0:?}")]
+    #[error("failed to await image bitmap data: {0:?}")]
     AwaitMapData(JsValue),
 }
 

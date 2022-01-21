@@ -14,6 +14,7 @@ mod profile;
 
 pub(crate) mod util;
 
+pub mod al;
 pub mod data;
 pub mod geom;
 pub mod gl;
