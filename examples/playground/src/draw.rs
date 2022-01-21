@@ -12,6 +12,7 @@ use malen::{
         GlobalLightParams, IndirectLightPipelineParams, Light, LightPipeline, LightPipelineParams,
         ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
+    particles::Particles,
     pass::{ColorInstance, MatricesBlock},
     text::{Font, TextBatch},
     Color3, Color4, Context, FrameError, InitError,
@@ -122,7 +123,12 @@ impl Draw {
         })
     }
 
-    pub fn render(&mut self, screen: Screen, state: &State) -> Result<(), FrameError> {
+    pub fn render(
+        &mut self,
+        screen: Screen,
+        state: &State,
+        smoke: &Particles,
+    ) -> Result<(), FrameError> {
         profile!("Draw::render");
 
         self.camera_matrices.set(MatricesBlock {
@@ -162,7 +168,7 @@ impl Draw {
         }
         self.render_player(&state.player);
 
-        self.smoke_batch.push(&state.smoke);
+        self.smoke_batch.push(smoke);
 
         Ok(())
     }
