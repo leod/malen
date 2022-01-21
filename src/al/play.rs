@@ -24,7 +24,9 @@ pub fn play(sound: &Sound) -> Result<SoundSourceNode, PlayError> {
         .create_buffer_source()
         .map_err(PlayError::CreateBufferSource)?;
     buffer_source.set_buffer(Some(sound.buffer()));
-    buffer_source.connect_with_audio_node(&al.destination()).map_err(PlayError::Connect)?;
+    buffer_source
+        .connect_with_audio_node(&al.destination())
+        .map_err(PlayError::Connect)?;
     buffer_source.start().map_err(PlayError::Start)?;
 
     Ok(buffer_source)

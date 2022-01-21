@@ -4,6 +4,7 @@ use nalgebra::{Matrix3, Point2, Vector2};
 use web_sys::HtmlCanvasElement;
 
 use crate::{
+    al,
     data::{Sprite, SpriteBatch},
     error::InitError,
     geom::{Rect, Screen},
@@ -11,7 +12,7 @@ use crate::{
     input::InputState,
     pass::{ColorPass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
-    Canvas, Color4, Config, Event, FrameError, al,
+    Canvas, Color4, Config, Event, FrameError,
 };
 
 pub struct Context {
@@ -54,8 +55,6 @@ impl Context {
         let color_pass = Rc::new(ColorPass::new(canvas.gl())?);
         let instanced_color_pass = Rc::new(InstancedColorPass::new(canvas.gl())?);
         let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
-
-        canvas.set_al(al.clone());
 
         Ok(Context {
             canvas: Rc::new(RefCell::new(canvas)),
