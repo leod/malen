@@ -309,12 +309,14 @@ impl State {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
             let speed = 1.5 * rng.gen_range(10.0, 100.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let rot = 0.0; //std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = rng.gen_range(0.7, 1.3);
 
             let particle = Particle {
                 pos,
                 angle,
                 vel,
+                rot,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8)
