@@ -143,6 +143,8 @@ where
 
 pub fn clear_color_and_depth(gl: &Context, color: Color4, depth: f32) {
     unsafe {
+        gl.color_mask(true, true, true, true);
+        gl.depth_mask(true);
         gl.clear_color(color.r, color.g, color.b, color.a);
         gl.clear_depth_f32(depth);
         gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
@@ -151,6 +153,7 @@ pub fn clear_color_and_depth(gl: &Context, color: Color4, depth: f32) {
 
 pub fn clear_color(gl: &Context, color: Color4) {
     unsafe {
+        gl.color_mask(true, true, true, true);
         gl.clear_color(color.r, color.g, color.b, color.a);
         gl.clear(glow::COLOR_BUFFER_BIT);
     }
@@ -158,6 +161,7 @@ pub fn clear_color(gl: &Context, color: Color4) {
 
 pub fn clear_depth(gl: &Context, depth: f32) {
     unsafe {
+        gl.depth_mask(true);
         gl.clear_depth_f32(depth);
         gl.clear(glow::DEPTH_BUFFER_BIT);
     }

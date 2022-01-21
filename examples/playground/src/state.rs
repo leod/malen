@@ -315,6 +315,7 @@ impl State {
                 pos,
                 angle,
                 vel,
+                depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8)
                     .to_linear()
