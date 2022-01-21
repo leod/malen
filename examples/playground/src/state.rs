@@ -392,8 +392,12 @@ impl State {
             let mut time_budget = dt_secs;
 
             while self.player.shot_cooldown_secs < time_budget {
-                let start_pos = self.player.pos + self.player.dir * PLAYER_SIZE * 0.5;
-                let vel = self.player.dir * LASER_SPEED;
+                let mut angle = self.player.dir.y.atan2(self.player.dir.x);
+                angle += 0.1 * rand::thread_rng().gen_range(-1.0, 1.0);
+                let dir = Vector2::new(angle.cos(), angle.sin());
+
+                let start_pos = self.player.pos + dir * PLAYER_SIZE * 0.5;
+                let vel = dir * LASER_SPEED;
 
                 self.lasers.push(Laser {
                     pos: start_pos + (dt_secs - time_budget) * vel,

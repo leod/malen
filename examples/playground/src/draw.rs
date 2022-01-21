@@ -65,7 +65,7 @@ impl Draw {
                 max_num_lights: 300,
                 indirect_light: IndirectLightPipelineParams {
                     num_tracing_cones: 8,
-                    num_tracing_steps: 10,
+                    num_tracing_steps: 8,
                 },
             },
         )?;
