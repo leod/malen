@@ -84,7 +84,7 @@ impl<'a> Geometry<TriangleTag> for &'a Particles {
                     particle.color.r,
                     particle.color.g,
                     particle.color.b,
-                    (1.0 - particle.age_secs / particle.max_age_secs).powf(4.0),
+                    (1.0 - particle.age_secs / particle.max_age_secs).powf(2.0),
                 ),
             }
             .write(elements, vertices);

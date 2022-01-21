@@ -7,6 +7,7 @@ pub mod geometry_color_sprite;
 pub mod geometry_color_sprite_with_normals;
 pub mod screen_light;
 pub mod shaded_color;
+pub mod shaded_color_sprite;
 pub mod shaded_sprite;
 pub mod shadow_map;
 

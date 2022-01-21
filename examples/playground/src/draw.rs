@@ -7,7 +7,10 @@ use malen::{
         ColorVertex, InstanceBatch, Mesh, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
-    gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
+    gl::{
+        Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DepthTest, DrawParams, Texture,
+        TextureParams, Uniform,
+    },
     light::{
         GlobalLightParams, IndirectLightPipelineParams, Light, LightPipeline, LightPipelineParams,
         ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -374,7 +377,22 @@ impl Draw {
             if indirect_light {
                 phase
                     .indirect_light_phase()
-                    .draw_color_reflectors(self.reflecting_color_batch.draw_unit())
+                    .draw_color_reflectors(
+                        self.reflecting_color_batch.draw_unit(),
+                        &DrawParams::default(),
+                    )
+                    .draw_color_sprite_reflectors(
+                        &self.smoke_texture,
+                        self.smoke_batch.draw_unit(),
+                        &DrawParams {
+                            blend: Some(Blend {
+                                equation: BlendEquation::same(BlendOp::Add),
+                                func: BlendFunc::same(BlendFactor::SrcAlpha, BlendFactor::One),
+                                ..Blend::default()
+                            }),
+                            ..DrawParams::default()
+                        },
+                    )
                     .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
                     .prepare_cone_tracing()
                     .compose();

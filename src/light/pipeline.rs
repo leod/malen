@@ -24,7 +24,8 @@ use super::{
         geometry_color::GeometryColorPass, geometry_color_sprite::GeometryColorSpritePass,
         geometry_color_sprite_with_normals::GeometryColorSpriteWithNormalsPass,
         screen_light::ScreenLightPass, shaded_color::ShadedColorPass,
-        shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
+        shaded_color_sprite::ShadedColorSpritePass, shaded_sprite::ShadedSpritePass,
+        shadow_map::ShadowMapPass,
     },
     GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
 };
@@ -60,8 +61,9 @@ pub struct LightPipeline {
     geometry_color_sprite_normal_pass: GeometryColorSpriteWithNormalsPass,
     shadow_map_pass: ShadowMapPass,
     screen_light_pass: ScreenLightPass,
-    shaded_sprite_pass: ShadedSpritePass,
     shaded_color_pass: ShadedColorPass,
+    shaded_sprite_pass: ShadedSpritePass,
+    shaded_color_sprite_pass: ShadedColorSpritePass,
     compose_pass: ComposePass,
     compose_with_indirect_pass: ComposeWithIndirectPass,
 }
@@ -104,8 +106,9 @@ impl LightPipeline {
             GeometryColorSpriteWithNormalsPass::new(context.gl())?;
         let shadow_map_pass = ShadowMapPass::new(context.gl(), params.max_num_lights)?;
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
-        let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
+        let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
+        let shaded_color_sprite_pass = ShadedColorSpritePass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
         let compose_with_indirect_pass =
             ComposeWithIndirectPass::new(context.gl(), params.indirect_light.clone())?;
@@ -125,8 +128,9 @@ impl LightPipeline {
             geometry_color_sprite_normal_pass,
             shadow_map_pass,
             screen_light_pass,
-            shaded_sprite_pass,
             shaded_color_pass,
+            shaded_sprite_pass,
+            shaded_color_sprite_pass,
             compose_pass,
             compose_with_indirect_pass,
         })
@@ -387,31 +391,25 @@ impl<'a> BuiltScreenLightPhase<'a> {
 }
 
 impl<'a> IndirectLightPhase<'a> {
-    fn draw_params() -> DrawParams {
+    fn draw_params(draw_params: &DrawParams) -> DrawParams {
         DrawParams {
             color_mask: (true, true, true, false),
-            ..DrawParams::default()
+            ..draw_params.clone()
         }
     }
 
-    pub fn draw_color_reflectors(self, draw_unit: DrawUnit<ColorVertex>) -> Self {
+    pub fn draw_color_reflectors(
+        self,
+        draw_unit: DrawUnit<ColorVertex>,
+        draw_params: &DrawParams,
+    ) -> Self {
         gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
             self.pipeline.shaded_color_pass.draw(
                 self.input.matrices,
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
-                &Self::draw_params(),
+                &Self::draw_params(draw_params),
             );
-        });
-
-        self
-    }
-
-    pub fn draw_color_sources(self, draw_unit: DrawUnit<ColorVertex>) -> Self {
-        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
-            self.pipeline
-                .color_pass
-                .draw(self.input.matrices, draw_unit, &Self::draw_params());
         });
 
         self
@@ -421,6 +419,7 @@ impl<'a> IndirectLightPhase<'a> {
         self,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex>,
+        draw_params: &DrawParams,
     ) -> Self {
         gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
             self.pipeline.shaded_sprite_pass.draw(
@@ -428,8 +427,39 @@ impl<'a> IndirectLightPhase<'a> {
                 texture,
                 &self.pipeline.screen_light.textures()[0],
                 draw_unit,
-                &Self::draw_params(),
+                &Self::draw_params(draw_params),
             )
+        });
+
+        self
+    }
+
+    pub fn draw_color_sprite_reflectors(
+        self,
+        texture: &Texture,
+        draw_unit: DrawUnit<ColorSpriteVertex>,
+        draw_params: &DrawParams,
+    ) -> Self {
+        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
+            self.pipeline.shaded_color_sprite_pass.draw(
+                self.input.matrices,
+                texture,
+                &self.pipeline.screen_light.textures()[0],
+                draw_unit,
+                &Self::draw_params(draw_params),
+            )
+        });
+
+        self
+    }
+
+    pub fn draw_color_sources(self, draw_unit: DrawUnit<ColorVertex>) -> Self {
+        gl::with_framebuffer(&self.pipeline.screen_reflectors, || {
+            self.pipeline.color_pass.draw(
+                self.input.matrices,
+                draw_unit,
+                &Self::draw_params(&DrawParams::default()),
+            );
         });
 
         self
@@ -512,7 +542,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
         canvas.borrow().gl(),
         size,
         TextureParams {
-            value_type: TextureValueType::RgbaU8,
+            value_type: TextureValueType::RgbaF32, // TODO: Can use F16
             min_filter: TextureMinFilter::LinearMipmapLinear,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::ClampToEdge,
