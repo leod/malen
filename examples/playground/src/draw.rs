@@ -7,10 +7,7 @@ use malen::{
         InstanceBatch, Mesh, SpriteBatch, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
-    gl::{
-        Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DepthTest, DrawParams, Texture,
-        TextureParams, Uniform,
-    },
+    gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
         GlobalLightParams, IndirectLightPipelineParams, Light, LightPipeline, LightPipelineParams,
         ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -29,17 +26,15 @@ pub struct Draw {
 
     light_pipeline: LightPipeline,
 
-    floor_light_params: Uniform<ObjectLightParams>,
-    color_light_params: Uniform<ObjectLightParams>,
-    reflecting_color_light_params: Uniform<ObjectLightParams>,
-    wall_light_params: Uniform<ObjectLightParams>,
+    translucent_light_params: Uniform<ObjectLightParams>,
+    reflector_light_params: Uniform<ObjectLightParams>,
     camera_matrices: Uniform<MatricesBlock>,
     screen_matrices: Uniform<MatricesBlock>,
 
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
-    color_batch: ColorTriangleBatch,
-    reflecting_color_batch: ColorTriangleBatch,
-    indirect_color_triangle_batch: ColorTriangleBatch,
+    translucent_color_batch: ColorTriangleBatch,
+    reflector_color_batch: ColorTriangleBatch,
+    source_color_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
     outline_batch: ColorLineBatch,
     smoke_batch: SpriteBatch,
@@ -75,34 +70,10 @@ impl Draw {
             },
         )?;
 
-        let floor_light_params = Uniform::new(
-            context.gl(),
-            ObjectLightParams {
-                ambient_scale: 1.0,
-                occlusion: 0.0,
-            },
-        )?;
-        let color_light_params = Uniform::new(
-            context.gl(),
-            ObjectLightParams {
-                ambient_scale: 0.95,
-                occlusion: 0.0,
-            },
-        )?;
-        let reflecting_color_light_params = Uniform::new(
-            context.gl(),
-            ObjectLightParams {
-                ambient_scale: 0.95,
-                occlusion: 1.0,
-            },
-        )?;
-        let wall_light_params = Uniform::new(
-            context.gl(),
-            ObjectLightParams {
-                ambient_scale: 0.3,
-                occlusion: 1.0,
-            },
-        )?;
+        let translucent_light_params =
+            Uniform::new(context.gl(), ObjectLightParams { occlusion: 0.0 })?;
+        let reflector_light_params =
+            Uniform::new(context.gl(), ObjectLightParams { occlusion: 1.0 })?;
         let camera_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
         let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
 
@@ -121,9 +92,9 @@ impl Draw {
         )?;
 
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
-        let color_batch = ColorTriangleBatch::new(context.gl())?;
-        let reflecting_color_batch = ColorTriangleBatch::new(context.gl())?;
-        let indirect_color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
+        let translucent_color_batch = ColorTriangleBatch::new(context.gl())?;
+        let reflector_color_batch = ColorTriangleBatch::new(context.gl())?;
+        let source_color_batch = ColorTriangleBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
         let outline_batch = ColorLineBatch::new(context.gl())?;
         let smoke_batch = SpriteBatch::new(context.gl())?;
@@ -135,16 +106,14 @@ impl Draw {
             smoke_texture,
             smoke_normal_texture,
             light_pipeline,
-            floor_light_params,
-            color_light_params,
-            reflecting_color_light_params,
-            wall_light_params,
+            translucent_light_params,
+            reflector_light_params,
             camera_matrices,
             screen_matrices,
             circle_instances,
-            color_batch,
-            reflecting_color_batch,
-            indirect_color_triangle_batch,
+            translucent_color_batch,
+            reflector_color_batch,
+            source_color_batch,
             occluder_batch,
             outline_batch,
             smoke_batch,
@@ -166,9 +135,9 @@ impl Draw {
         });
 
         self.circle_instances.clear();
-        self.color_batch.clear();
-        self.reflecting_color_batch.clear();
-        self.indirect_color_triangle_batch.clear();
+        self.translucent_color_batch.clear();
+        self.reflector_color_batch.clear();
+        self.source_color_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.smoke_batch.clear();
@@ -203,7 +172,7 @@ impl Draw {
     }
 
     fn render_floor(&mut self, state: &State) {
-        self.color_batch.push(ColorRect {
+        self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
             color: Color4::new(0.9, 0.9, 1.0, 1.0),
             z: 0.8,
@@ -211,22 +180,11 @@ impl Draw {
     }
 
     fn render_wall(&mut self, wall: &Wall) {
-        if wall.use_texture {
-            /*let tex_size =
-                (wall.rect().size / 50.0).component_mul(&self.wall_texture.size().cast::<f32>());
-
-            self.wall_batch.push(Sprite {
-                rect: wall.rect(),
-                z: 0.2,
-                tex_rect: Rect::from_top_left(Point2::origin(), tex_size),
-            });*/
-        } else {
-            self.reflecting_color_batch.push(ColorRect {
-                rect: wall.rect(),
-                z: 0.2,
-                color: Color4::new(0.2, 0.2, 0.2, 1.0),
-            })
-        }
+        self.reflector_color_batch.push(ColorRect {
+            rect: wall.rect(),
+            z: 0.2,
+            color: Color4::new(0.2, 0.2, 0.2, 1.0),
+        });
         self.occluder_batch.push(OccluderRect {
             rect: wall.rect(),
             ignore_light_index1: None, //wall.lamp_index.map(|index| index as u32),
@@ -248,7 +206,7 @@ impl Draw {
             z: 0.3,
             ..ColorInstance::default()
         });*/
-        self.reflecting_color_batch.push(ColorCircle {
+        self.reflector_color_batch.push(ColorCircle {
             circle: enemy.circle(),
             angle: enemy.angle,
             z: 0.3,
@@ -281,7 +239,7 @@ impl Draw {
 
     fn render_ball(&mut self, ball: &Ball) {
         let color = Color3::from_u8(134, 187, 189).to_linear();
-        self.reflecting_color_batch.push(ColorCircle {
+        self.reflector_color_batch.push(ColorCircle {
             circle: ball.circle(),
             angle: 0.0,
             z: 0.3,
@@ -306,7 +264,7 @@ impl Draw {
 
     fn render_lamp(&mut self, lamp: &Lamp) {
         let color = Color3::from_u8(254, 196, 127).to_linear();
-        self.reflecting_color_batch.push(ColorCircle {
+        self.reflector_color_batch.push(ColorCircle {
             circle: lamp.circle(),
             angle: 0.0,
             z: 0.1,
@@ -325,12 +283,12 @@ impl Draw {
 
     fn render_laser(&mut self, laser: &Laser) {
         let color = Color3::from_u8(200, 70, 30).to_linear();
-        self.reflecting_color_batch.push(ColorRotatedRect {
+        self.reflector_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
             color: color.to_color4(),
         });
-        self.indirect_color_triangle_batch.push(ColorRotatedRect {
+        self.source_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
             color: color.scale(0.5).to_color4(),
@@ -339,7 +297,7 @@ impl Draw {
 
     fn render_player(&mut self, player: &Player) {
         let color = Color3::from_u8(255, 209, 102).to_linear();
-        self.reflecting_color_batch.push(ColorRotatedRect {
+        self.reflector_color_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             depth: 0.4,
             color: color.to_color4(),
@@ -374,23 +332,23 @@ impl Draw {
                 .light_pipeline
                 .geometry_phase(&self.camera_matrices)?
                 .draw_colors(
-                    &self.color_light_params,
-                    self.color_batch.draw_unit(),
+                    &self.translucent_light_params,
+                    self.translucent_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: Some(DepthTest::default()),
                         ..DrawParams::default()
                     },
                 )
                 .draw_colors(
-                    &self.reflecting_color_light_params,
-                    self.reflecting_color_batch.draw_unit(),
+                    &self.reflector_light_params,
+                    self.reflector_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: Some(DepthTest::default()),
                         ..DrawParams::default()
                     },
                 )
                 .draw_sprites_with_normals(
-                    &self.color_light_params,
+                    &self.translucent_light_params,
                     &self.smoke_texture,
                     &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
@@ -410,22 +368,18 @@ impl Draw {
                 phase
                     .indirect_light_phase()
                     .draw_color_reflectors(
-                        self.reflecting_color_batch.draw_unit(),
+                        self.reflector_color_batch.draw_unit(),
                         &DrawParams::default(),
                     )
                     .draw_sprite_reflectors(
                         &self.smoke_texture,
                         self.smoke_batch.draw_unit(),
                         &DrawParams {
-                            blend: Some(Blend {
-                                equation: BlendEquation::same(BlendOp::Add),
-                                func: BlendFunc::same(BlendFactor::SrcAlpha, BlendFactor::One),
-                                ..Blend::default()
-                            }),
+                            blend: Some(Blend::default()),
                             ..DrawParams::default()
                         },
                     )
-                    .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
+                    .draw_color_sources(self.source_color_batch.draw_unit())
                     .prepare_cone_tracing()
                     .compose();
             } else {
@@ -434,7 +388,7 @@ impl Draw {
         } else {
             context.color_pass().draw(
                 &self.camera_matrices,
-                self.color_batch.draw_unit(),
+                self.translucent_color_batch.draw_unit(),
                 &DrawParams {
                     depth_test: Some(DepthTest::default()),
                     ..DrawParams::default()
@@ -442,7 +396,7 @@ impl Draw {
             );
             context.color_pass().draw(
                 &self.camera_matrices,
-                self.reflecting_color_batch.draw_unit(),
+                self.reflector_color_batch.draw_unit(),
                 &DrawParams {
                     depth_test: Some(DepthTest::default()),
                     ..DrawParams::default()
