@@ -25,21 +25,9 @@ use super::{
         geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, screen_light::ScreenLightPass,
         shaded_color::ShadedColorPass, shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
     },
-    GlobalLightParams, GlobalLightParamsBlock, Light, ObjectLightParams, OccluderBatch,
+    GlobalLightParams, GlobalLightParamsBlock, Light, LightPipelineParams, ObjectLightParams,
+    OccluderBatch,
 };
-
-#[derive(Debug, Clone)]
-pub struct LightPipelineParams {
-    pub shadow_map_resolution: u32,
-    pub max_num_lights: u32,
-    pub indirect_light: IndirectLightPipelineParams,
-}
-
-#[derive(Debug, Clone)]
-pub struct IndirectLightPipelineParams {
-    pub num_tracing_cones: u32,
-    pub num_tracing_steps: u32,
-}
 
 pub struct LightPipeline {
     canvas: Rc<RefCell<Canvas>>,
@@ -61,7 +49,6 @@ pub struct LightPipeline {
     screen_light_pass: ScreenLightPass,
     shaded_color_pass: ShadedColorPass,
     shaded_sprite_pass: ShadedSpritePass,
-    shaded_color_sprite_pass: ShadedSpritePass,
     compose_pass: ComposePass,
     compose_with_indirect_pass: ComposeWithIndirectPass,
 }
@@ -77,6 +64,10 @@ pub enum NewLightPipelineError {
     #[error("framebuffer error: {0}")]
     NewFramebuffer(#[from] NewFramebufferError),
 }
+
+const SCREEN_ALBEDO_LOCATION: usize = 0;
+const SCREEN_NORMALS_LOCATION: usize = 1;
+const SCREEN_OCCLUSION_LOCATION: usize = 2;
 
 impl LightPipeline {
     pub fn new(
@@ -105,7 +96,6 @@ impl LightPipeline {
         let screen_light_pass = ScreenLightPass::new(context.gl(), params.clone())?;
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
-        let shaded_color_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
         let compose_with_indirect_pass =
             ComposeWithIndirectPass::new(context.gl(), params.indirect_light.clone())?;
@@ -127,7 +117,6 @@ impl LightPipeline {
             screen_light_pass,
             shaded_color_pass,
             shaded_sprite_pass,
-            shaded_color_sprite_pass,
             compose_pass,
             compose_with_indirect_pass,
         })
@@ -142,15 +131,15 @@ impl LightPipeline {
     }
 
     pub fn screen_albedo(&self) -> &Texture {
-        &self.screen_geometry.textures()[0]
+        &self.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION]
     }
 
     pub fn screen_normals(&self) -> &Texture {
-        &self.screen_geometry.textures()[1]
+        &self.screen_geometry.textures()[SCREEN_NORMALS_LOCATION]
     }
 
     pub fn screen_occlusion(&self) -> &Texture {
-        &self.screen_geometry.textures()[2]
+        &self.screen_geometry.textures()[SCREEN_OCCLUSION_LOCATION]
     }
 
     pub fn screen_light(&self) -> &Texture {
@@ -180,36 +169,36 @@ impl LightPipeline {
 
         Ok(GeometryPhase {
             pipeline: self,
-            input: Input { matrices },
+            input: PhaseInput { matrices },
         })
     }
 }
 
-struct Input<'a> {
+struct PhaseInput<'a> {
     matrices: &'a Uniform<MatricesBlock>,
 }
 
 #[must_use]
 pub struct GeometryPhase<'a> {
     pipeline: &'a mut LightPipeline,
-    input: Input<'a>,
+    input: PhaseInput<'a>,
 }
 
 #[must_use]
 pub struct ShadowMapPhase<'a> {
     pipeline: &'a mut LightPipeline,
-    input: Input<'a>,
+    input: PhaseInput<'a>,
     lights: &'a [Light],
 }
 
 pub struct BuiltScreenLightPhase<'a> {
     pipeline: &'a mut LightPipeline,
-    input: Input<'a>,
+    input: PhaseInput<'a>,
 }
 
 pub struct IndirectLightPhase<'a> {
     pipeline: &'a mut LightPipeline,
-    input: Input<'a>,
+    input: PhaseInput<'a>,
 }
 
 pub struct ComposeWithIndirectPhase<'a> {
@@ -354,12 +343,13 @@ impl<'a> ShadowMapPhase<'a> {
                 Color4::new(0.0, 0.0, 0.0, 1.0),
             );
 
+            let draw_unit = self.pipeline.light_area_batch.draw_unit();
             self.pipeline.screen_light_pass.draw(
                 self.input.matrices,
                 &self.pipeline.global_light_params,
                 &self.pipeline.shadow_map.textures()[0],
-                &self.pipeline.screen_geometry.textures()[1],
-                self.pipeline.light_area_batch.draw_unit(),
+                &self.pipeline.screen_geometry.textures()[SCREEN_NORMALS_LOCATION],
+                draw_unit,
             );
         });
 
@@ -381,7 +371,7 @@ impl<'a> BuiltScreenLightPhase<'a> {
     pub fn compose(self) {
         self.pipeline.compose_pass.draw(
             &self.pipeline.global_light_params,
-            &self.pipeline.screen_geometry.textures()[0],
+            &self.pipeline.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION],
             &self.pipeline.screen_light.textures()[0],
         );
     }
@@ -456,9 +446,9 @@ impl<'a> ComposeWithIndirectPhase<'a> {
     pub fn compose(self) {
         self.pipeline.compose_with_indirect_pass.draw(
             &self.pipeline.global_light_params,
-            &self.pipeline.screen_geometry.textures()[0],
-            &self.pipeline.screen_geometry.textures()[1],
-            &self.pipeline.screen_geometry.textures()[2],
+            &self.pipeline.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION],
+            &self.pipeline.screen_geometry.textures()[SCREEN_NORMALS_LOCATION],
+            &self.pipeline.screen_geometry.textures()[SCREEN_OCCLUSION_LOCATION],
             &self.pipeline.screen_light.textures()[0],
         );
     }
@@ -539,6 +529,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
         },
     )?;
 
+    // Texture order corresponds to SCREEN_ALBEDO_LOCATION, etc.
     Framebuffer::from_textures(canvas.borrow().gl(), vec![albedo, normals, occluder, depth])
 }
 
