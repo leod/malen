@@ -327,12 +327,12 @@ impl Draw {
         let color = Color3::from_u8(200, 70, 30).to_linear();
         self.reflecting_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
-            z: 0.2,
+            depth: 0.2,
             color: color.to_color4(),
         });
         self.indirect_color_triangle_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
-            z: 0.2,
+            depth: 0.2,
             color: color.scale(0.5).to_color4(),
         });
     }
@@ -341,7 +341,7 @@ impl Draw {
         let color = Color3::from_u8(255, 209, 102).to_linear();
         self.reflecting_color_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
-            z: 0.4,
+            depth: 0.4,
             color: color.to_color4(),
         });
         self.occluder_batch.push(OccluderRotatedRect {
@@ -351,7 +351,7 @@ impl Draw {
         });
         self.outline_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
-            z: 0.4,
+            depth: 0.4,
             color: self.outline_color(),
         });
         self.lights.push(Light {

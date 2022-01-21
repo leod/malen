@@ -119,7 +119,7 @@ impl<'a> Render<'a> {
 
                 self.batch.line_batch.push(ColorLine {
                     line: Line(a_map, b_map),
-                    z: 0.0,
+                    depth: 0.0,
                     color: line_graph.color,
                 });
             }
@@ -190,7 +190,7 @@ impl<'a> Render<'a> {
             if is_x {
                 self.batch.line_batch.push(ColorLine {
                     line: Line(pos, pos + normal * self.style.tick_size),
-                    z: 0.0,
+                    depth: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
@@ -198,13 +198,13 @@ impl<'a> Render<'a> {
                         pos - Vector2::new(0.0, self.graph_size.y),
                         pos - Vector2::new(0.0, self.graph_size.y) - normal * self.style.tick_size,
                     ),
-                    z: 0.0,
+                    depth: 0.0,
                     color: self.style.axis_color,
                 });
             } else {
                 self.batch.line_batch.push(ColorLine {
                     line: Line(pos, pos + normal * self.style.tick_size),
-                    z: 0.0,
+                    depth: 0.0,
                     color: self.style.axis_color,
                 });
                 self.batch.line_batch.push(ColorLine {
@@ -212,7 +212,7 @@ impl<'a> Render<'a> {
                         pos + Vector2::new(self.graph_size.x, 0.0),
                         pos + Vector2::new(self.graph_size.x, 0.0) - normal * self.style.tick_size,
                     ),
-                    z: 0.0,
+                    depth: 0.0,
                     color: self.style.axis_color,
                 });
             }
@@ -254,7 +254,7 @@ impl<'a> Render<'a> {
         for line in self.plot.line_graphs.iter() {
             self.batch.line_batch.push(ColorLine {
                 line: Line(pos, pos + Vector2::new(self.style.legend_line_size, 0.0)),
-                z: 0.0,
+                depth: 0.0,
                 color: line.color,
             });
 

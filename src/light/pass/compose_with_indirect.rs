@@ -136,7 +136,7 @@ impl ComposeWithIndirectPass {
                     center: Point2::origin(),
                     size: Vector2::new(2.0, 2.0),
                 },
-                z: 0.0,
+                depth: 0.0,
                 tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
             },

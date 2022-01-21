@@ -51,6 +51,9 @@ void main() {
     vec4 albedo = texture(sprite, v_uv);
     f_albedo = v_color * vec4(pow(albedo.rgb, vec3(2.2)), albedo.a);
 
+    // If the sprite is rotated, we need to rotate the normals as well. Unfortunately, since we
+    // do object -> world transformation on CPU-side, we don't have angle information in the vertex
+    // data. "Luckily", we can derive the angle by using dFdx and dFdy.
     float angle = -myatan2(vec2(-dFdy(5.0 * v_uv.x), dFdx(5.0 * v_uv.x)));
     mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
     vec3 normal = texture(normal_map, v_uv).rgb * 2.0 - 1.0;

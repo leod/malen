@@ -25,14 +25,14 @@ pub trait Geometry<Tag: PrimitiveTag> {
 #[derive(Debug, Copy, Clone)]
 pub struct Sprite {
     pub rect: Rect,
-    pub z: f32,
+    pub depth: f32,
     pub tex_rect: Rect,
     pub color: Color4,
 }
 
 pub struct RotatedSprite {
     pub rect: RotatedRect,
-    pub z: f32,
+    pub depth: f32,
     pub tex_rect: Rect,
     pub color: Color4,
 }
@@ -47,14 +47,14 @@ pub struct ColorRect {
 #[derive(Debug, Copy, Clone)]
 pub struct ColorRotatedRect {
     pub rect: RotatedRect,
-    pub z: f32,
+    pub depth: f32,
     pub color: Color4,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct ColorLine {
     pub line: Line,
-    pub z: f32,
+    pub depth: f32,
     pub color: Color4,
 }
 
@@ -78,7 +78,7 @@ impl Geometry<TriangleTag> for Sprite {
 
         for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
             vertices.push(SpriteVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 tex_coords,
                 color: self.color,
             });
@@ -94,7 +94,7 @@ impl Geometry<TriangleTag> for RotatedSprite {
 
         for (p, tex_coords) in self.rect.corners().iter().zip(self.tex_rect.corners()) {
             vertices.push(SpriteVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 tex_coords,
                 color: self.color,
             });
@@ -140,7 +140,7 @@ impl Geometry<TriangleTag> for ColorRotatedRect {
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 color: self.color,
             });
         }
@@ -155,7 +155,7 @@ impl Geometry<LineTag> for ColorRotatedRect {
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 color: self.color,
             });
         }
@@ -170,11 +170,11 @@ impl Geometry<LineTag> for ColorLine {
         elements.push(vertices.len() as u32 + 1);
 
         vertices.push(ColorVertex {
-            position: Point3::new(self.line.0.x, self.line.0.y, self.z),
+            position: Point3::new(self.line.0.x, self.line.0.y, self.depth),
             color: self.color,
         });
         vertices.push(ColorVertex {
-            position: Point3::new(self.line.1.x, self.line.1.y, self.z),
+            position: Point3::new(self.line.1.x, self.line.1.y, self.depth),
             color: self.color,
         });
     }
@@ -231,7 +231,7 @@ impl Geometry<LineTag> for ColorCircle {
         for i in 0..points.len() {
             ColorLine {
                 line: Line(points[i], points[(i + 1) % points.len()]),
-                z: self.z,
+                depth: self.z,
                 color: self.color,
             }
             .write(elements, vertices);
