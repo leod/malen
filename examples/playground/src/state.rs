@@ -35,6 +35,7 @@ pub struct Player {
     pub vel: Vector2<f32>,
     pub dir: Vector2<f32>,
     pub shot_cooldown_secs: f32,
+    pub is_shooting: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -174,6 +175,7 @@ impl State {
                 vel: Vector2::zeros(),
                 dir: Vector2::zeros(),
                 shot_cooldown_secs: 0.0,
+                is_shooting: false,
             },
             view_offset: Vector2::zeros(),
             last_timestamp_secs: None,
@@ -365,7 +367,8 @@ impl State {
         let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
 
-        if input_state.button(Button::Primary) {
+        self.player.is_shooting = input_state.button(Button::Primary);
+        if self.player.is_shooting {
             let mut time_budget = dt_secs;
 
             while self.player.shot_cooldown_secs < time_budget {

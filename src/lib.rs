@@ -7,12 +7,12 @@ mod config;
 mod context;
 mod error;
 mod fetch;
-mod input;
 mod main_loop;
 #[cfg(feature = "coarse-prof")]
 mod profile;
 
 pub(crate) mod util;
+pub(crate) mod input;
 
 pub mod al;
 pub mod data;

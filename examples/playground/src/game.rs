@@ -1,8 +1,11 @@
 use coarse_prof::profile;
 
-use malen::particles::{Particle, Particles};
-use malen::text::Font;
-use malen::{Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams};
+use malen::{
+    al::{Sound, self},
+    particles::{Particle, Particles},
+    text::Font,
+    Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
+};
 use nalgebra::{Point2, Vector2};
 use rand::Rng;
 
@@ -12,6 +15,8 @@ use crate::state::{GameEvent, State};
 pub struct Game {
     context: Context,
     profile: Profile,
+
+    shoot_sound: Sound,
 
     state: State,
     smoke: Particles,
@@ -27,6 +32,8 @@ impl Game {
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 
+        let shoot_sound = Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
+
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
         let draw = Draw::new(&context, &state).await?;
@@ -34,6 +41,7 @@ impl Game {
         Ok(Game {
             context,
             profile,
+            shoot_sound,
             state,
             smoke,
             draw,
@@ -50,7 +58,7 @@ impl Game {
             self.handle_event(event);
         }
 
-        self.update(timestamp_secs);
+        self.update(timestamp_secs)?;
         self.render()?;
         self.draw()?;
 
@@ -97,17 +105,20 @@ impl Game {
         }
     }
 
-    fn handle_game_event(&mut self, game_event: GameEvent) {
+    fn handle_game_event(&mut self, game_event: GameEvent) -> Result<(), FrameError> {
         use GameEvent::*;
 
         match game_event {
             LaserHit { pos, dir } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
+                al::play(&self.shoot_sound)?;
             }
         }
+
+        Ok(())
     }
 
-    fn update(&mut self, timestamp_secs: f64) {
+    fn update(&mut self, timestamp_secs: f64) -> Result<(), FrameError> {
         profile!("Game::update");
 
         let (dt_secs, game_events) = self.state.update(
@@ -117,10 +128,12 @@ impl Game {
         );
 
         for game_event in game_events {
-            self.handle_game_event(game_event);
+            self.handle_game_event(game_event)?;
         }
 
         self.smoke.update(dt_secs);
+
+        Ok(())
     }
 
     fn render(&mut self) -> Result<(), FrameError> {
