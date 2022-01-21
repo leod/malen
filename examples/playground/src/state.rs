@@ -317,8 +317,11 @@ impl State {
                 pos,
                 angle,
                 vel,
-                size: Vector2::new(18.0, 18.0),
-                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
+                size: Vector2::new(20.0, 20.0),
+                color: Color3::new(1.0, 0.8, 0.8)
+                    .to_linear()
+                    .scale(0.7)
+                    .to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
                 max_age_secs,
