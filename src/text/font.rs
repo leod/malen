@@ -9,10 +9,10 @@ use thiserror::Error;
 
 use super::atlas::Atlas;
 use crate::{
-    data::{ColorSprite, ColorSpriteBatch},
+    data::{Sprite, SpriteBatch},
     geom::Rect,
     gl::{self, Blend, DrawParams, NewTextureError, Texture, Uniform},
-    pass::{ColorSpritePass, MatricesBlock},
+    pass::{MatricesBlock, SpritePass},
     util, Color4, Context,
 };
 
@@ -41,7 +41,7 @@ pub enum WriteTextError {
 }
 
 pub struct TextBatch {
-    atlas_batches: Vec<ColorSpriteBatch>,
+    atlas_batches: Vec<SpriteBatch>,
 }
 
 #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ pub struct Font {
     glyph_locs: HashMap<GlyphRasterConfig, GlyphLoc>,
     bitmap_buffer: Vec<u8>,
 
-    color_sprite_pass: Rc<ColorSpritePass>,
+    sprite_pass: Rc<SpritePass>,
 }
 
 const MAX_ATLAS_SIZE: u32 = 2048;
@@ -121,7 +121,7 @@ impl Font {
             atlases: vec![atlas],
             glyph_locs: HashMap::new(),
             bitmap_buffer: Vec::new(),
-            color_sprite_pass: context.color_sprite_pass(),
+            sprite_pass: context.sprite_pass(),
         })
     }
 
@@ -188,9 +188,7 @@ impl Font {
             )?;
 
             while batch.atlas_batches.len() < glyph_loc.atlas_index + 1 {
-                batch
-                    .atlas_batches
-                    .push(ColorSpriteBatch::new(self.gl.clone())?);
+                batch.atlas_batches.push(SpriteBatch::new(self.gl.clone())?);
             }
 
             let offset = Vector2::new(
@@ -207,7 +205,7 @@ impl Font {
                 size: Vector2::new(glyph_pos.width as f32, glyph_pos.height as f32) / dpr,
             };
 
-            batch.atlas_batches[glyph_loc.atlas_index].push(ColorSprite {
+            batch.atlas_batches[glyph_loc.atlas_index].push(Sprite {
                 rect,
                 z: text.z,
                 tex_rect: glyph_loc.tex_rect,
@@ -219,11 +217,8 @@ impl Font {
     }
 
     pub fn draw(&self, matrices: &Uniform<MatricesBlock>, batch: &mut TextBatch) {
-        //#[cfg(feature = "coarse-prof")]
-        //coarse_prof::profile!("Font::draw");
-
         for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
-            self.color_sprite_pass.draw(
+            self.sprite_pass.draw(
                 matrices,
                 atlas.texture(),
                 atlas_batch.draw_unit(),

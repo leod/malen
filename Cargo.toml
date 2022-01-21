@@ -19,6 +19,7 @@ platter = { git = "https://github.com/TannerRogalsky/platter.git", branch = "lea
 image = "0.23"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 rand = { version = "0.7", features = ["wasm-bindgen"] }
+slab = "0.4"
 
 # Downgrade nalgebra for VS Code
 #crevice = { version = "0.8", features = ["nalgebra"] }

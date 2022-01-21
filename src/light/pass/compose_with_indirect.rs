@@ -7,6 +7,7 @@ use crate::{
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
     light::IndirectLightPipelineParams,
+    Color4,
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
@@ -116,7 +117,7 @@ void main() {
     vec3 light = direct_light + indirect_light;
 
     vec4 albedo = texture(screen_albedo, v_tex_coords);
-    vec3 diffuse = vec3(albedo) * (light + albedo.a * params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + params.ambient);
 
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
     f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
@@ -137,6 +138,7 @@ impl ComposeWithIndirectPass {
                 },
                 z: 0.0,
                 tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
             },
         )?
         .into_mesh();
