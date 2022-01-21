@@ -4,7 +4,7 @@ use rand::{prelude::SliceRandom, Rng};
 use malen::{
     geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
     particles::{Particle, Particles},
-    Color3, InputState, Key,
+    Button, Color3, InputState, Key,
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
@@ -383,7 +383,7 @@ impl State {
         let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
 
-        if input_state.key(Key::Space) {
+        if input_state.button(Button::Primary) {
             let mut time_budget = dt_secs;
 
             while self.player.shot_cooldown_secs < time_budget {

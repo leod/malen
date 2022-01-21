@@ -29,7 +29,7 @@ where
         }
     }
 
-    pub fn new_consume<F>(element: &web_sys::EventTarget, kind: &'static str, mut f: F) -> Self
+    pub fn new_consuming<F>(element: &web_sys::EventTarget, kind: &'static str, mut f: F) -> Self
     where
         F: 'static + FnMut(T),
     {
