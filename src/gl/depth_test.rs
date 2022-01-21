@@ -29,6 +29,15 @@ impl Default for DepthTest {
     }
 }
 
+impl DepthTest {
+    pub fn read_only() -> Self {
+        Self {
+            write: false,
+            ..DepthTest::default()
+        }
+    }
+}
+
 impl Default for DepthFunc {
     fn default() -> Self {
         DepthFunc::Less

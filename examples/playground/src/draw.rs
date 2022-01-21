@@ -354,6 +354,7 @@ impl Draw {
                     self.smoke_batch.draw_unit(),
                     &DrawParams {
                         blend: Some(Blend::default()),
+                        depth_test: Some(DepthTest::read_only()),
                         ..DrawParams::default()
                     },
                 )

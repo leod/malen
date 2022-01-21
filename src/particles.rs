@@ -11,6 +11,7 @@ use crate::{
 pub struct Particle {
     pub pos: Point2<f32>,
     pub angle: f32,
+    pub depth: f32,
     pub vel: Vector2<f32>,
     pub size: Vector2<f32>,
     pub color: Color4,
@@ -78,7 +79,7 @@ impl<'a> Geometry<TriangleTag> for &'a Particles {
                     size: particle.size,
                 }
                 .rotate(particle.angle - std::f32::consts::PI / 2.0),
-                depth: 0.0,
+                depth: particle.depth,
                 tex_rect: Rect::from_top_left(Point2::origin(), self.texture_size),
                 color: Color4::new(
                     particle.color.r,
