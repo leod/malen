@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io, path::Path, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use fontdue::{
     layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle},

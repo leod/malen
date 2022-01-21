@@ -1,16 +1,21 @@
 use coarse_prof::profile;
 
+use malen::particles::{Particle, Particles};
 use malen::text::Font;
-use malen::{Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams};
+use malen::{Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams};
+use nalgebra::{Point2, Vector2};
+use rand::Rng;
 
 use crate::draw::Draw;
-use crate::state::State;
+use crate::state::{GameEvent, State};
 
 pub struct Game {
     context: Context,
-    state: State,
-    draw: Draw,
     profile: Profile,
+
+    state: State,
+    smoke: Particles,
+    draw: Draw,
 
     indirect_light: bool,
     show_profile: bool,
@@ -19,16 +24,19 @@ pub struct Game {
 
 impl Game {
     pub async fn new(context: Context) -> Result<Game, InitError> {
-        let state = State::new();
-        let draw = Draw::new(&context, &state).await?;
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 
+        let state = State::new();
+        let smoke = Particles::new(Vector2::new(512, 512));
+        let draw = Draw::new(&context, &state).await?;
+
         Ok(Game {
             context,
-            state,
-            draw,
             profile,
+            state,
+            smoke,
+            draw,
             indirect_light: true,
             show_profile: false,
             show_textures: false,
@@ -89,20 +97,37 @@ impl Game {
         }
     }
 
+    fn handle_game_event(&mut self, game_event: GameEvent) {
+        use GameEvent::*;
+
+        match game_event {
+            LaserHit { pos, dir } => {
+                self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
+            }
+        }
+    }
+
     fn update(&mut self, timestamp_secs: f64) {
         profile!("Game::update");
 
-        self.state.update(
+        let (dt_secs, game_events) = self.state.update(
             timestamp_secs,
             self.context.screen(),
             self.context.input_state(),
         );
+
+        for game_event in game_events {
+            self.handle_game_event(game_event);
+        }
+
+        self.smoke.update(dt_secs);
     }
 
     fn render(&mut self) -> Result<(), FrameError> {
         profile!("Game::render");
 
-        self.draw.render(self.context.screen(), &self.state)?;
+        self.draw
+            .render(self.context.screen(), &self.state, &self.smoke)?;
 
         Ok(())
     }
@@ -122,5 +147,32 @@ impl Game {
         }
 
         Ok(())
+    }
+
+    fn spawn_smoke(&mut self, pos: Point2<f32>, angle: f32, angle_size: f32, n: usize) {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..n {
+            let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
+            let speed = 1.5 * rng.gen_range(10.0, 100.0);
+            let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let rot = 0.0; //std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
+            let max_age_secs = rng.gen_range(0.7, 1.3);
+
+            let particle = Particle {
+                pos,
+                angle,
+                vel,
+                rot,
+                depth: 0.15,
+                size: Vector2::new(25.0, 25.0),
+                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
+                slowdown: 2.0,
+                age_secs: 0.0,
+                max_age_secs,
+            };
+
+            self.smoke.spawn(particle);
+        }
     }
 }
