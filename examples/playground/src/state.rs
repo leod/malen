@@ -21,7 +21,6 @@ pub struct Wall {
     pub center: Point2<f32>,
     pub size: Vector2<f32>,
     pub lamp_index: Option<usize>,
-    pub use_texture: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -245,8 +244,6 @@ impl State {
             center,
             size,
             lamp_index: None,
-            //use_texture: rng.gen(),
-            use_texture: false,
         };
 
         if self.shape_overlap(&wall.shape()).is_none() {
