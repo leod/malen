@@ -6,6 +6,7 @@ mod color;
 mod config;
 mod context;
 mod error;
+mod fetch;
 mod input;
 mod main_loop;
 #[cfg(feature = "coarse-prof")]
@@ -33,6 +34,7 @@ pub use color::{Color3, Color4};
 pub use config::Config;
 pub use context::Context;
 pub use error::{FrameError, InitError};
+pub use fetch::{fetch, fetch_array_buffer, fetch_blob, fetch_data, FetchError};
 pub use input::{Button, Event, InputState, Key};
 pub use main_loop::main_loop;
 #[cfg(feature = "coarse-prof")]
