@@ -95,11 +95,15 @@ impl Atlas {
 
         // Shift by half a pixel, so that the coords are in the center of
         // the texel.
-        let tex_top_left = pos.cast::<f32>() + Vector2::new(0.5, 0.5);
+        let mut tex_top_left = pos.cast::<f32>() + Vector2::new(0.5, 0.5);
 
         // I think we can think of the size as inclusive, so we need to
         // subtract one here.
-        let tex_size = size.cast::<f32>() - Vector2::new(1.0, 1.0);
+        let mut tex_size = size.cast::<f32>() - Vector2::new(1.0, 1.0);
+
+        // Fix up for OpenGL Y flip (necessary since we draw with positive Y down.)
+        tex_top_left.y = self.texture.size().y as f32 - tex_top_left.y;
+        tex_size.y = -tex_size.y;
 
         Some(Rect::from_top_left(tex_top_left, tex_size))
     }
