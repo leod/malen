@@ -13,6 +13,7 @@ pub struct Particle {
     pub angle: f32,
     pub depth: f32,
     pub vel: Vector2<f32>,
+    pub rot: f32,
     pub size: Vector2<f32>,
     pub color: Color4,
     pub slowdown: f32,
@@ -60,6 +61,7 @@ impl Particles {
                 (1.0 - particle.age_secs / particle.max_age_secs).powf(particle.slowdown);
 
             particle.pos += dt_secs * speed_factor * particle.vel;
+            particle.angle += dt_secs * speed_factor * particle.rot;
             particle.age_secs += dt_secs;
         }
 
