@@ -510,7 +510,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
         canvas.borrow().gl(),
         size,
         TextureParams {
-            value_type: TextureValueType::RgbaF32, // TODO: Can use F16
+            value_type: TextureValueType::RgbaU8,
             min_filter: TextureMinFilter::LinearMipmapLinear,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::ClampToEdge,
