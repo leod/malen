@@ -118,13 +118,7 @@ impl Geometry<LineTag> for OccluderRect {
     type Vertex = OccluderLineVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        for line in self
-            .rect
-            .edges()
-            .iter()
-            //.chain(self.rect.caps().iter())
-            .copied()
-        {
+        for line in self.rect.edges().iter().copied() {
             OccluderLine {
                 line,
                 ignore_light_index1: self.ignore_light_index1,
@@ -139,13 +133,7 @@ impl Geometry<LineTag> for OccluderRotatedRect {
     type Vertex = OccluderLineVertex;
 
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
-        for line in self
-            .rect
-            .edges()
-            .iter()
-            //.chain(self.rect.caps().iter())
-            .copied()
-        {
+        for line in self.rect.edges().iter().copied() {
             OccluderLine {
                 line,
                 ignore_light_index1: self.ignore_light_index1,
@@ -164,14 +152,6 @@ impl Geometry<LineTag> for OccluderCircle {
         let points = self
             .circle
             .points(self.angle, self.num_segments)
-            /*.chain(
-                /*Circle {
-                    center: self.circle.center,
-                    radius: self.circle.radius * 0.98,
-                }.points(0.0, self.num_segments)*/
-                self.circle
-                    .points(std::f32::consts::PI / 2.0, self.num_segments),
-            )*/
             .collect::<Vec<_>>();
 
         for i in 0..points.len() - 1 {

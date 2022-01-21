@@ -207,7 +207,7 @@ impl Font {
 
             batch.atlas_batches[glyph_loc.atlas_index].push(Sprite {
                 rect,
-                z: text.z,
+                depth: text.z,
                 tex_rect: glyph_loc.tex_rect,
                 color: text.color,
             });

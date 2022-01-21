@@ -140,7 +140,7 @@ impl Context {
         batch.clear();
         batch.push(Sprite {
             rect,
-            z: 0.0,
+            depth: 0.0,
             tex_rect: Rect::from_top_left(Point2::origin(), texture.size().cast::<f32>()),
             color: Color4::new(1.0, 1.0, 1.0, 1.0),
         });
