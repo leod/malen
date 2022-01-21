@@ -10,7 +10,7 @@ pub enum NewContextError {
 }
 
 pub struct Context {
-    pub(super) context: AudioContext,
+    pub(crate) context: AudioContext,
 }
 
 impl Context {

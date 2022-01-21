@@ -47,6 +47,9 @@ pub enum InitError {
 
     #[error("new light pipeline error: {0}")]
     NewLightPipeline(#[from] NewLightPipelineError),
+
+    #[error("new AL context error: {0}")]
+    NewAL(#[from] al::NewContextError)
 }
 
 #[derive(Error, Debug)]

@@ -11,12 +11,13 @@ use crate::{
     input::InputState,
     pass::{ColorPass, InstancedColorPass, MatricesBlock, SpritePass},
     plot::PlotPass,
-    Canvas, Color4, Config, Event, FrameError,
+    Canvas, Color4, Config, Event, FrameError, al,
 };
 
 pub struct Context {
     canvas: Rc<RefCell<Canvas>>,
     input_state: InputState,
+    al: Rc<al::Context>,
 
     sprite_pass: Rc<SpritePass>,
     color_pass: Rc<ColorPass>,
@@ -47,14 +48,19 @@ impl Context {
 
     fn from_canvas(canvas: Canvas, _: Config) -> Result<Self, InitError> {
         let input_state = InputState::default();
+        let al = Rc::new(al::Context::new()?);
+
         let sprite_pass = Rc::new(SpritePass::new(canvas.gl())?);
         let color_pass = Rc::new(ColorPass::new(canvas.gl())?);
         let instanced_color_pass = Rc::new(InstancedColorPass::new(canvas.gl())?);
         let plot_pass = Rc::new(PlotPass::new(color_pass.clone()));
 
+        canvas.set_al(al.clone());
+
         Ok(Context {
             canvas: Rc::new(RefCell::new(canvas)),
             input_state,
+            al,
             sprite_pass,
             color_pass,
             instanced_color_pass,
@@ -80,6 +86,10 @@ impl Context {
 
     pub fn gl(&self) -> Rc<gl::Context> {
         self.canvas.borrow().gl()
+    }
+
+    pub fn al(&self) -> Rc<al::Context> {
+        self.al.clone()
     }
 
     pub fn logical_size(&self) -> Vector2<f32> {
