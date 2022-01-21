@@ -3,15 +3,19 @@ use std::rc::Rc;
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
+    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
 };
 
-use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
+use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct SpritePass {
-    program: Program<MatricesBlock, SpriteVertex, 1>,
+pub struct GeometrySpritePass {
+    program: Program<(MatricesBlock, ObjectLightParams), SpriteVertex, 1>,
 }
 
-const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
+const UNIFORM_BLOCKS: [(&str, u32); 2] = [
+    ("matrices", MATRICES_BLOCK_BINDING),
+    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
+];
 
 const SAMPLERS: [&str; 1] = ["sprite"];
 
@@ -23,7 +27,6 @@ void main() {
     vec3 position = matrices.projection
         * matrices.view
         * vec3(a_position.xy, 1.0);
-
     gl_Position = vec4(position.xy, a_position.z, 1.0);
 
     v_uv = a_tex_coords / vec2(textureSize(sprite, 0));
@@ -35,14 +38,19 @@ void main() {
 const FRAGMENT_SOURCE: &str = r#"
 in vec2 v_uv;
 in vec4 v_color;
-out vec4 f_color;
+layout (location = 0) out vec4 f_albedo;
+layout (location = 1) out vec4 f_normal;
+layout (location = 2) out vec4 f_occlusion;
 
 void main() {
-    f_color = texture(sprite, v_uv) * v_color;
+    vec4 albedo = texture(sprite, v_uv);
+    f_albedo = v_color * vec4(pow(albedo.rgb, vec3(2.2)), albedo.a);
+    f_normal = vec4(0.0, 0.0, 1.0, object_params.ambient_scale);
+    f_occlusion.a = object_params.occlusion;
 }
 "#;
 
-impl SpritePass {
+impl GeometrySpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,
@@ -58,12 +66,19 @@ impl SpritePass {
     pub fn draw<E>(
         &self,
         matrices: &Uniform<MatricesBlock>,
+        object_params: &Uniform<ObjectLightParams>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
-        params: &DrawParams,
+        draw_params: &DrawParams,
     ) where
         E: Element,
     {
-        gl::draw(&self.program, matrices, [texture], draw_unit, params);
+        gl::draw(
+            &self.program,
+            (matrices, object_params),
+            [texture],
+            draw_unit,
+            draw_params,
+        );
     }
 }

@@ -3,7 +3,8 @@ use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
     geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
-    InputState, Key,
+    particles::{Particle, Particles},
+    Color3, InputState, Key,
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
@@ -11,9 +12,9 @@ pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 12.0;
 pub const PLAYER_SIZE: f32 = 35.0;
 pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.01;
-pub const LASER_LENGTH: f32 = 25.0;
-pub const LASER_WIDTH: f32 = 3.0;
-pub const LASER_SPEED: f32 = 700.0;
+pub const LASER_LENGTH: f32 = 7.0;
+pub const LASER_WIDTH: f32 = 2.0;
+pub const LASER_SPEED: f32 = 600.0;
 
 #[derive(Debug, Clone)]
 pub struct Wall {
@@ -65,6 +66,7 @@ pub struct State {
     pub lamps: Vec<Lamp>,
     pub lasers: Vec<Laser>,
     pub player: Player,
+    pub smoke: Particles,
     pub view_offset: Vector2<f32>,
     pub last_timestamp_secs: Option<f64>,
 }
@@ -167,6 +169,7 @@ impl State {
                 dir: Vector2::zeros(),
                 shot_cooldown_secs: 0.0,
             },
+            smoke: Particles::new(Vector2::new(512, 512)),
             view_offset: Vector2::zeros(),
             last_timestamp_secs: None,
         };
@@ -180,7 +183,7 @@ impl State {
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..200 {
+        for _ in 0..300 {
             state.add_lamp();
         }
 
@@ -192,7 +195,7 @@ impl State {
 
         Camera {
             center,
-            zoom: 2.5,
+            zoom: 3.0,
             angle: 0.0,
         }
     }
@@ -227,13 +230,14 @@ impl State {
         let mut rng = rand::thread_rng();
         let center = self.floor_rect().sample(&mut rng);
 
+        let one = 30.0;
         let size = match rng.gen_range(0, 3) {
             0 => {
-                let x = 50.0 * rng.gen_range(1, 10) as f32;
+                let x = one * rng.gen_range(1, 4) as f32;
                 Vector2::new(x, x)
             }
-            1 => Vector2::new(50.0, 50.0 * rng.gen_range(2, 20) as f32),
-            2 => Vector2::new(50.0 * rng.gen_range(2, 20) as f32, 50.0),
+            1 => Vector2::new(one, one * rng.gen_range(8, 30) as f32),
+            2 => Vector2::new(one * rng.gen_range(8, 30) as f32, one),
             _ => unreachable!(),
         };
 
@@ -300,6 +304,33 @@ impl State {
     }
 
     pub fn handle_key_pressed(&mut self, _: Key) {}
+
+    pub fn spawn_smoke(&mut self, pos: Point2<f32>, angle: f32, angle_size: f32, n: usize) {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..n {
+            let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
+            let speed = 1.5 * rng.gen_range(10.0, 100.0);
+            let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let max_age_secs = rng.gen_range(0.7, 1.3);
+
+            let particle = Particle {
+                pos,
+                angle,
+                vel,
+                size: Vector2::new(25.0, 25.0),
+                color: Color3::new(1.0, 0.8, 0.8)
+                    .to_linear()
+                    .scale(0.7)
+                    .to_color4(),
+                slowdown: 2.0,
+                age_secs: 0.0,
+                max_age_secs,
+            };
+
+            self.smoke.spawn(particle);
+        }
+    }
 
     pub fn update(&mut self, timestamp_secs: f64, screen: Screen, input_state: &InputState) {
         let dt_secs = self
@@ -389,15 +420,26 @@ impl State {
             enemy.angle += delta;
         }
 
+        self.smoke.update(dt_secs);
+
         for i in 0..self.lasers.len() {
             let vel = self.lasers[i].vel;
             self.lasers[i].pos += vel * dt_secs;
 
-            let overlap = self.shape_overlap(&self.lasers[i].shape()).is_some();
+            if let Some(overlap) = self.shape_overlap(&self.lasers[i].shape()) {
+                let angle = overlap.resolution().y.atan2(overlap.resolution().x);
+                self.spawn_smoke(
+                    self.lasers[i].line().1 + overlap.resolution(),
+                    angle,
+                    0.95 * std::f32::consts::PI,
+                    5,
+                );
+                self.lasers[i].dead = true;
+            }
+
             let out_of_bounds = !self.floor_rect().contains_point(self.lasers[i].line().0)
                 && !self.floor_rect().contains_point(self.lasers[i].line().0);
-
-            if overlap || out_of_bounds {
+            if out_of_bounds {
                 self.lasers[i].dead = true;
             }
         }

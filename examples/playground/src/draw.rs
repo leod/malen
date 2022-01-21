@@ -3,11 +3,14 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, Sprite, SpriteBatch, TriangleTag,
+        ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
+        InstanceBatch, Mesh, SpriteBatch, TriangleTag,
     },
     geom::{Circle, Rect, Screen},
-    gl::{Texture, TextureParams, Uniform},
+    gl::{
+        Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DepthTest, DrawParams, Texture,
+        TextureParams, Uniform,
+    },
     light::{
         GlobalLightParams, IndirectLightPipelineParams, Light, LightPipeline, LightPipelineParams,
         ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -21,10 +24,8 @@ use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 
 pub struct Draw {
     font: Font,
-    floor_texture: Texture,
-    floor_normal_map: Texture,
-    wall_texture: Texture,
-    wall_normal_map: Texture,
+    smoke_texture: Texture,
+    smoke_normal_texture: Texture,
 
     light_pipeline: LightPipeline,
 
@@ -35,13 +36,13 @@ pub struct Draw {
     camera_matrices: Uniform<MatricesBlock>,
     screen_matrices: Uniform<MatricesBlock>,
 
-    floor_batch: SpriteBatch,
-    wall_batch: SpriteBatch,
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     color_batch: ColorTriangleBatch,
     reflecting_color_batch: ColorTriangleBatch,
     indirect_color_triangle_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
+    outline_batch: ColorLineBatch,
+    smoke_batch: SpriteBatch,
     lights: Vec<Light>,
     text_batch: TextBatch,
 }
@@ -49,27 +50,15 @@ pub struct Draw {
 impl Draw {
     pub async fn new(context: &Context, _: &State) -> Result<Draw, InitError> {
         let font = Font::load(context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
-        let floor_texture = Texture::load(
+        let smoke_texture = Texture::load(
             context.gl(),
-            "resources/Ground_03.png",
+            "resources/smoke1.png",
             TextureParams::mipmapped(),
         )
         .await?;
-        let floor_normal_map = Texture::load(
+        let smoke_normal_texture = Texture::load(
             context.gl(),
-            "resources/Ground_03_Nrm.png",
-            TextureParams::mipmapped(),
-        )
-        .await?;
-        let wall_texture = Texture::load(
-            context.gl(),
-            "resources/boxesandcrates/1.png",
-            TextureParams::mipmapped(),
-        )
-        .await?;
-        let wall_normal_map = Texture::load(
-            context.gl(),
-            "resources/boxesandcrates/1_N.png",
+            "resources/smoke1_Nrm.png",
             TextureParams::mipmapped(),
         )
         .await?;
@@ -135,18 +124,16 @@ impl Draw {
         let color_batch = ColorTriangleBatch::new(context.gl())?;
         let reflecting_color_batch = ColorTriangleBatch::new(context.gl())?;
         let indirect_color_triangle_batch = ColorTriangleBatch::new(context.gl())?;
-        let floor_batch = SpriteBatch::new(context.gl())?;
-        let wall_batch = SpriteBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
+        let outline_batch = ColorLineBatch::new(context.gl())?;
+        let smoke_batch = SpriteBatch::new(context.gl())?;
         let lights = Vec::new();
         let text_batch = TextBatch::new(context.gl())?;
 
         Ok(Draw {
             font,
-            floor_texture,
-            floor_normal_map,
-            wall_texture,
-            wall_normal_map,
+            smoke_texture,
+            smoke_normal_texture,
             light_pipeline,
             floor_light_params,
             color_light_params,
@@ -154,13 +141,13 @@ impl Draw {
             wall_light_params,
             camera_matrices,
             screen_matrices,
-            floor_batch,
-            wall_batch,
             circle_instances,
             color_batch,
             reflecting_color_batch,
             indirect_color_triangle_batch,
             occluder_batch,
+            outline_batch,
+            smoke_batch,
             lights,
             text_batch,
         })
@@ -178,14 +165,14 @@ impl Draw {
             projection: screen.orthographic_projection(),
         });
 
-        self.floor_batch.clear();
-        self.wall_batch.clear();
         self.circle_instances.clear();
         self.color_batch.clear();
         self.reflecting_color_batch.clear();
         self.indirect_color_triangle_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
+        self.smoke_batch.clear();
+        self.outline_batch.clear();
         self.lights.clear();
 
         self.render_floor(state);
@@ -206,35 +193,33 @@ impl Draw {
         }
         self.render_player(&state.player);
 
+        self.smoke_batch.push(&state.smoke);
+
         Ok(())
+    }
+
+    fn outline_color(&self) -> Color4 {
+        Color4::new(1.0, 1.0, 1.0, 1.0)
     }
 
     fn render_floor(&mut self, state: &State) {
         self.color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.5, 0.5, 0.5, 1.0),
-            z: 0.8,
-        });
-        self.floor_batch.push(Sprite {
-            rect: state.floor_rect(),
-            tex_rect: Rect::from_top_left(
-                Point2::origin(),
-                self.floor_texture.size().cast::<f32>() * 20.0,
-            ),
+            color: Color4::new(0.9, 0.9, 1.0, 1.0),
             z: 0.8,
         });
     }
 
     fn render_wall(&mut self, wall: &Wall) {
         if wall.use_texture {
-            let tex_size =
+            /*let tex_size =
                 (wall.rect().size / 50.0).component_mul(&self.wall_texture.size().cast::<f32>());
 
             self.wall_batch.push(Sprite {
                 rect: wall.rect(),
                 z: 0.2,
                 tex_rect: Rect::from_top_left(Point2::origin(), tex_size),
-            });
+            });*/
         } else {
             self.reflecting_color_batch.push(ColorRect {
                 rect: wall.rect(),
@@ -246,6 +231,11 @@ impl Draw {
             rect: wall.rect(),
             ignore_light_index1: None, //wall.lamp_index.map(|index| index as u32),
             ignore_light_index2: None,
+        });
+        self.outline_batch.push(ColorRect {
+            rect: wall.rect(),
+            z: 0.4,
+            color: self.outline_color(),
         });
     }
 
@@ -272,6 +262,13 @@ impl Draw {
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
+        self.outline_batch.push(ColorCircle {
+            circle: enemy.circle(),
+            angle: enemy.angle,
+            z: 0.3,
+            num_segments: 16,
+            color: self.outline_color(),
+        });
         self.lights.push(Light {
             position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
             radius: 300.0,
@@ -290,6 +287,13 @@ impl Draw {
             z: 0.3,
             num_segments: 64,
             color: color.to_color4(),
+        });
+        self.outline_batch.push(ColorCircle {
+            circle: ball.circle(),
+            angle: 0.0,
+            z: 0.3,
+            num_segments: 64,
+            color: self.outline_color(),
         });
         self.occluder_batch.push(OccluderCircle {
             circle: ball.circle(),
@@ -310,7 +314,7 @@ impl Draw {
             color: color.to_color4(),
         });
         self.lights.push(Light {
-            position: Point3::new(lamp.pos.x, lamp.pos.y, 100.0),
+            position: Point3::new(lamp.pos.x, lamp.pos.y, 10.0),
             radius: 300.0,
             angle: lamp.light_angle,
             angle_size: std::f32::consts::PI * 2.0,
@@ -345,22 +349,19 @@ impl Draw {
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: Some(self.lights.len() as u32 + 1),
         });
+        self.outline_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            z: 0.4,
+            color: self.outline_color(),
+        });
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 600.0,
             angle: player.dir.y.atan2(player.dir.x),
-            angle_size: std::f32::consts::PI / 6.0,
+            angle_size: std::f32::consts::PI / 5.0,
             start: 18.0,
-            color: Color3::from_u8(255, 255, 255).to_linear(),
+            color: Color3::from_u8(200, 200, 200).to_linear(),
         });
-        /*self.lights.push(Light {
-            position: Point3::new(player.pos.x, player.pos.y, 50.0),
-            radius: 40.0,
-            angle: player.angle,
-            angle_size: std::f32::consts::PI * 2.0,
-            start: 0.0,
-            color: Color3::from_u8(150, 150, 150).to_linear(),
-        });*/
     }
 
     pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
@@ -372,22 +373,31 @@ impl Draw {
             let phase = self
                 .light_pipeline
                 .geometry_phase(&self.camera_matrices)?
-                .draw_colors(&self.color_light_params, self.color_batch.draw_unit())
+                .draw_colors(
+                    &self.color_light_params,
+                    self.color_batch.draw_unit(),
+                    &DrawParams {
+                        depth_test: Some(DepthTest::default()),
+                        ..DrawParams::default()
+                    },
+                )
                 .draw_colors(
                     &self.reflecting_color_light_params,
                     self.reflecting_color_batch.draw_unit(),
+                    &DrawParams {
+                        depth_test: Some(DepthTest::default()),
+                        ..DrawParams::default()
+                    },
                 )
-                /*.draw_sprites_with_normals(
-                    &self.floor_light_params,
-                    &self.floor_texture,
-                    &self.floor_normal_map,
-                    self.floor_batch.draw_unit(),
-                )*/
                 .draw_sprites_with_normals(
-                    &self.wall_light_params,
-                    &self.wall_texture,
-                    &self.wall_normal_map,
-                    self.wall_batch.draw_unit(),
+                    &self.color_light_params,
+                    &self.smoke_texture,
+                    &self.smoke_normal_texture,
+                    self.smoke_batch.draw_unit(),
+                    &DrawParams {
+                        blend: Some(Blend::default()),
+                        ..DrawParams::default()
+                    },
                 )
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
@@ -399,8 +409,22 @@ impl Draw {
             if indirect_light {
                 phase
                     .indirect_light_phase()
-                    .draw_color_reflectors(self.reflecting_color_batch.draw_unit())
-                    .draw_sprite_reflectors(&self.wall_texture, self.wall_batch.draw_unit())
+                    .draw_color_reflectors(
+                        self.reflecting_color_batch.draw_unit(),
+                        &DrawParams::default(),
+                    )
+                    .draw_sprite_reflectors(
+                        &self.smoke_texture,
+                        self.smoke_batch.draw_unit(),
+                        &DrawParams {
+                            blend: Some(Blend {
+                                equation: BlendEquation::same(BlendOp::Add),
+                                func: BlendFunc::same(BlendFactor::SrcAlpha, BlendFactor::One),
+                                ..Blend::default()
+                            }),
+                            ..DrawParams::default()
+                        },
+                    )
                     .draw_color_sources(self.indirect_color_triangle_batch.draw_unit())
                     .prepare_cone_tracing()
                     .compose();
@@ -408,33 +432,38 @@ impl Draw {
                 phase.compose();
             }
         } else {
-            /*context.sprite_pass().draw(
+            context.color_pass().draw(
                 &self.camera_matrices,
-                &self.floor_texture,
-                self.floor_batch.draw_unit(),
-                &malen::gl::DrawParams {
-                    depth_test: Some(malen::gl::DepthTest::default()),
-                    ..malen::gl::DrawParams::default()
-                },
-            );*/
-            context.sprite_pass().draw(
-                &self.camera_matrices,
-                &self.wall_texture,
-                self.wall_batch.draw_unit(),
-                &malen::gl::DrawParams {
-                    depth_test: Some(malen::gl::DepthTest::default()),
-                    ..malen::gl::DrawParams::default()
+                self.color_batch.draw_unit(),
+                &DrawParams {
+                    depth_test: Some(DepthTest::default()),
+                    ..DrawParams::default()
                 },
             );
             context.color_pass().draw(
                 &self.camera_matrices,
                 self.reflecting_color_batch.draw_unit(),
-                &malen::gl::DrawParams {
-                    depth_test: Some(malen::gl::DepthTest::default()),
-                    ..malen::gl::DrawParams::default()
+                &DrawParams {
+                    depth_test: Some(DepthTest::default()),
+                    ..DrawParams::default()
+                },
+            );
+            context.sprite_pass().draw(
+                &self.camera_matrices,
+                &self.smoke_texture,
+                self.smoke_batch.draw_unit(),
+                &DrawParams {
+                    blend: Some(Blend::default()),
+                    ..DrawParams::default()
                 },
             );
         }
+
+        /*context.color_pass().draw(
+            &self.camera_matrices,
+            self.outline_batch.draw_unit(),
+            &DrawParams::default(),
+        );*/
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
