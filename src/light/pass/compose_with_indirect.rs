@@ -3,7 +3,7 @@ use std::rc::Rc;
 use nalgebra::{Point2, Vector2};
 
 use crate::{
-    data::{Mesh, Sprite, SpriteBatch, SpriteVertex},
+    data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
     light::IndirectLightPipelineParams,
@@ -129,7 +129,7 @@ impl ComposeWithIndirectPass {
         gl: Rc<gl::Context>,
         params: IndirectLightPipelineParams,
     ) -> Result<Self, gl::Error> {
-        let screen_rect = SpriteBatch::from_geometry(
+        let screen_rect = Mesh::from_geometry(
             gl.clone(),
             Sprite {
                 rect: Rect {
@@ -140,8 +140,7 @@ impl ComposeWithIndirectPass {
                 tex_rect: Rect::from_top_left(Point2::origin(), Vector2::new(1.0, 1.0)),
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
             },
-        )?
-        .into_mesh();
+        )?;
 
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,
