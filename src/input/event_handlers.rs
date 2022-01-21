@@ -45,6 +45,10 @@ impl EventHandlers {
         let on_key_down = EventListener::new_consume(&canvas, "keydown", {
             let state = state.clone();
             move |event: KeyboardEvent| {
+                if event.repeat() {
+                    return;
+                }
+
                 if let Some(key) = Key::from_keyboard_event(&event) {
                     state.borrow_mut().events.push_back(Event::KeyPressed(key));
                 }
