@@ -53,6 +53,10 @@ features = [
     "AudioBuffer",
     "AudioNode",
     "AudioDestinationNode",
+    "AudioListener",
+    "PannerNode",
+    "PanningModelType",
+    "DistanceModelType",
 ]
 
 [workspace]

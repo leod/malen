@@ -6,7 +6,7 @@ use malen::{
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
-use nalgebra::{Point2, Vector2};
+use nalgebra::{Point2, Point3, Vector2};
 use rand::Rng;
 
 use crate::draw::Draw;
@@ -112,7 +112,7 @@ impl Game {
         match game_event {
             LaserHit { pos, dir } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
-                al::play(&self.shoot_sound)?;
+                al::play_spatial(&self.shoot_sound, Point3::new(pos.x, pos.y, 0.0))?;
             }
         }
 
@@ -131,6 +131,11 @@ impl Game {
         for game_event in game_events {
             self.handle_game_event(game_event)?;
         }
+        self.context.al().set_listener_pos(Point3::new(
+            self.state.player.pos.x,
+            self.state.player.pos.y,
+            0.0,
+        ));
 
         self.smoke.update(dt_secs);
 
