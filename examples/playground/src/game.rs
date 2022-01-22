@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 
 use malen::{
-    al::{self, Sound, SpatialPlayNode, SpatialPlayParams},
+    al::{self, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
     text::Font,
     web_sys::AudioNode,
@@ -53,7 +53,12 @@ impl Game {
         )
         .await?;
         let impulse = Sound::load(context.al(), "resources/impulse4.wav").await?;
-        let reverb: AudioNode = al::reverb(&impulse, context.al().destination())?.into();
+        let reverb: AudioNode = al::reverb(
+            &impulse,
+            context.al().destination(),
+            &ReverbParams::default(),
+        )?
+        .into();
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
@@ -163,15 +168,14 @@ impl Game {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
                 if self.hit_sound_cooldown_secs == 0.0 {
                     let hit_sound = match entity_type {
-                        EntityType::Ball | EntityType::Enemy => &self.hit2_sound,
-                        _ => &self.hit1_sound,
+                        EntityType::Ball | EntityType::Enemy => &self.hit1_sound,
+                        _ => &self.hit2_sound,
                     };
                     let gain = match entity_type {
-                        EntityType::Ball | EntityType::Enemy => 1.0,
-                        _ => 0.5,
+                        EntityType::Ball | EntityType::Enemy => 0.5,
+                        _ => 1.0,
                     };
                     al::play_spatial(
-                        &self.reverb,
                         hit_sound,
                         &SpatialPlayParams {
                             cone_inner_angle: 180.0,
@@ -181,6 +185,7 @@ impl Game {
                             gain,
                             ..SpatialPlayParams::default()
                         },
+                        &self.reverb,
                     )?;
                     self.hit_sound_cooldown_secs = 0.05;
                 }
@@ -210,13 +215,13 @@ impl Game {
             (true, node) => {
                 if node.map_or(true, |node| !node.source.loop_()) {
                     let node = al::play_spatial(
-                        &self.reverb,
                         &self.shoot_sound,
                         &SpatialPlayParams {
                             pos: player_pos,
                             gain: 0.5,
                             ..SpatialPlayParams::default()
                         },
+                        &self.reverb,
                     )?;
                     node.source.set_loop_start(0.05);
                     node.source.set_loop_end(0.11);
