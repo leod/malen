@@ -21,7 +21,7 @@ pub enum PlayError {
     Start(JsValue),
 }
 
-type SoundSourceNode = AudioBufferSourceNode;
+pub type SoundSourceNode = AudioBufferSourceNode;
 
 pub fn sound_source_node(sound: &Sound) -> Result<SoundSourceNode, PlayError> {
     let al = sound.al();
