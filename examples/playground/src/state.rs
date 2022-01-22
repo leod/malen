@@ -27,6 +27,9 @@ pub struct Enemy {
     pub pos: Point2<f32>,
     pub angle: f32,
     pub rot: f32,
+    pub bump_power: f32,
+    pub bump: f32,
+    pub dead: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -64,12 +67,15 @@ pub enum GameEvent {
         pos: Point2<f32>,
         dir: Vector2<f32>,
     },
+    EnemyDied {
+        pos: Point2<f32>,
+    },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum EntityType {
     Wall,
-    Enemy,
+    Enemy(usize),
     Ball,
     Lamp,
     Laser,
@@ -104,7 +110,7 @@ impl Enemy {
     pub fn circle(&self) -> Circle {
         Circle {
             center: self.pos,
-            radius: ENEMY_RADIUS,
+            radius: ENEMY_RADIUS * (1.0 + self.bump),
         }
     }
 
@@ -231,7 +237,12 @@ impl State {
             .iter()
             .map(|e| (EntityType::Wall, e.shape()))
             .chain(self.balls.iter().map(|e| (EntityType::Ball, e.shape())))
-            .chain(self.enemies.iter().map(|e| (EntityType::Enemy, e.shape())))
+            .chain(
+                self.enemies
+                    .iter()
+                    .enumerate()
+                    .map(|(i, e)| (EntityType::Enemy(i), e.shape())),
+            )
             .chain(self.lamps.iter().map(|e| (EntityType::Lamp, e.shape())))
     }
 
@@ -282,6 +293,9 @@ impl State {
             pos,
             angle: rng.gen::<f32>() * std::f32::consts::PI,
             rot: (0.05 + rng.gen::<f32>() * 0.15) * std::f32::consts::PI,
+            bump_power: 0.0,
+            bump: 0.0,
+            dead: false,
         };
 
         if self.shape_overlap(&enemy.shape()).is_none() {
@@ -370,7 +384,6 @@ impl State {
             .inverse_matrix(screen)
             .transform_point(&mouse_logical_pos);
 
-        // TODO: NAN
         let player_to_mouse = mouse_world_pos - self.player.pos;
         if player_to_mouse.norm() > 0.1 {
             let target_dir = player_to_mouse.normalize();
@@ -411,15 +424,23 @@ impl State {
         self.view_offset =
             target_offset - (target_offset - self.view_offset) * (-3.0 * dt_secs).exp();
 
+        let mut events = Vec::new();
+
         for (i, enemy) in self.enemies.iter_mut().enumerate() {
             let mut delta = enemy.rot * dt_secs;
             if i % 2 == 0 {
                 delta *= -1.0;
             }
             enemy.angle += delta;
-        }
+            enemy.bump += enemy.bump_power * dt_secs;
+            enemy.bump_power *= 0.95;
+            enemy.bump *= 0.8;
 
-        let mut events = Vec::new();
+            if enemy.bump > 0.9 {
+                enemy.dead = true;
+                events.push(GameEvent::EnemyDied { pos: enemy.pos });
+            }
+        }
 
         for i in 0..self.lasers.len() {
             let vel = self.lasers[i].vel;
@@ -432,6 +453,10 @@ impl State {
                     dir: overlap.resolution().normalize(),
                 });
                 self.lasers[i].dead = true;
+
+                if let EntityType::Enemy(j) = entity_type {
+                    self.enemies[j].bump_power += 1.0;
+                }
             }
 
             let out_of_bounds = !self.floor_rect().contains_point(self.lasers[i].line().0)
@@ -442,6 +467,7 @@ impl State {
         }
 
         self.lasers.retain(|laser| !laser.dead);
+        self.enemies.retain(|enemy| !enemy.dead);
 
         events
     }
