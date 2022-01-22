@@ -15,14 +15,8 @@ pub enum LoadSoundError {
     #[error("fetch error: {0}")]
     Fetch(#[from] FetchError),
 
-    #[error("failed to create buffer source: {0:?}")]
-    CreateBufferSource(JsValue),
-
-    #[error("failed to decode audio data: {0:?}")]
-    DecodeAudioData(JsValue),
-
-    #[error("failed to await audio data: {0:?}")]
-    AwaitDecodeAudioData(JsValue),
+    #[error("failed web audio call: {0:?}")]
+    WebAudio(JsValue),
 }
 
 pub struct Sound {
@@ -37,10 +31,10 @@ impl Sound {
             let promise = al
                 .context()
                 .decode_audio_data(&array_buffer)
-                .map_err(LoadSoundError::DecodeAudioData)?;
+                .map_err(LoadSoundError::WebAudio)?;
             let value = JsFuture::from(promise)
                 .await
-                .map_err(LoadSoundError::AwaitDecodeAudioData)?;
+                .map_err(LoadSoundError::WebAudio)?;
             assert!(value.is_instance_of::<AudioBuffer>());
             value.dyn_into().unwrap()
         };
