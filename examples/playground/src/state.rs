@@ -364,6 +364,7 @@ impl State {
             .inverse_matrix(screen)
             .transform_point(&mouse_logical_pos);
 
+        // TODO: NAN
         let target_dir = (mouse_world_pos - self.player.pos).normalize();
         self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
 
