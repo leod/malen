@@ -59,7 +59,21 @@ pub struct Laser {
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
-    LaserHit { pos: Point2<f32>, dir: Vector2<f32> },
+    LaserHit {
+        entity_type: EntityType,
+        pos: Point2<f32>,
+        dir: Vector2<f32>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EntityType {
+    Wall,
+    Enemy,
+    Ball,
+    Lamp,
+    Laser,
+    Player,
 }
 
 #[derive(Debug, Clone)]
@@ -212,19 +226,21 @@ impl State {
         }
     }
 
-    pub fn shapes(&self) -> impl Iterator<Item = Shape> + '_ {
+    pub fn shapes(&self) -> impl Iterator<Item = (EntityType, Shape)> + '_ {
         self.walls
             .iter()
-            .map(Wall::shape)
-            .chain(self.balls.iter().map(Ball::shape))
-            .chain(self.enemies.iter().map(Enemy::shape))
-            .chain(self.lamps.iter().map(Lamp::shape))
+            .map(|e| (EntityType::Wall, e.shape()))
+            .chain(self.balls.iter().map(|e| (EntityType::Ball, e.shape())))
+            .chain(self.enemies.iter().map(|e| (EntityType::Enemy, e.shape())))
+            .chain(self.lamps.iter().map(|e| (EntityType::Lamp, e.shape())))
     }
 
-    pub fn shape_overlap(&self, shape: &Shape) -> Option<Overlap> {
+    pub fn shape_overlap(&self, shape: &Shape) -> Option<(EntityType, Overlap)> {
         self.shapes()
-            .filter_map(|map_shape| shape_shape_overlap(shape, &map_shape))
-            .max_by(|o1, o2| {
+            .filter_map(|(entity_type, map_shape)| {
+                shape_shape_overlap(shape, &map_shape).and_then(|o| Some((entity_type, o)))
+            })
+            .max_by(|(_, o1), (_, o2)| {
                 o1.resolution()
                     .norm_squared()
                     .partial_cmp(&o2.resolution().norm_squared())
@@ -341,7 +357,7 @@ impl State {
         self.player.pos += delta;
 
         let mut player = self.player.clone();
-        for shape in self.shapes() {
+        for (_, shape) in self.shapes() {
             if let Some(overlap) = shape_shape_overlap(&player.shape(), &shape) {
                 player.pos += overlap.resolution();
             }
@@ -406,8 +422,9 @@ impl State {
             let vel = self.lasers[i].vel;
             self.lasers[i].pos += vel * dt_secs;
 
-            if let Some(overlap) = self.shape_overlap(&self.lasers[i].shape()) {
+            if let Some((entity_type, overlap)) = self.shape_overlap(&self.lasers[i].shape()) {
                 events.push(GameEvent::LaserHit {
+                    entity_type,
                     pos: self.lasers[i].line().1 + overlap.resolution(),
                     dir: overlap.resolution().normalize(),
                 });
