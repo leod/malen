@@ -21,11 +21,11 @@ use malen::{
 use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 
 pub struct Draw {
-    font: Font,
+    pub font: Font,
     smoke_texture: Texture,
     smoke_normal_texture: Texture,
 
-    light_pipeline: LightPipeline,
+    pub light_pipeline: LightPipeline,
 
     translucent_light_params: Uniform<ObjectLightParams>,
     reflector_light_params: Uniform<ObjectLightParams>,
@@ -40,7 +40,7 @@ pub struct Draw {
     outline_batch: ColorLineBatch,
     smoke_batch: SpriteBatch,
     lights: Vec<Light>,
-    text_batch: TextBatch,
+    pub text_batch: TextBatch,
 }
 
 impl Draw {
@@ -150,6 +150,7 @@ impl Draw {
         self.outline_batch.clear();
         self.lights.clear();
 
+        self.render_player(&state.player);
         self.render_floor(state);
         for wall in &state.walls {
             self.render_wall(wall);
@@ -166,7 +167,6 @@ impl Draw {
         for laser in &state.lasers {
             self.render_laser(laser);
         }
-        self.render_player(&state.player);
 
         self.smoke_batch.push(smoke);
 
@@ -175,6 +175,33 @@ impl Draw {
 
     fn outline_color(&self) -> Color4 {
         Color4::new(1.0, 1.0, 1.0, 1.0)
+    }
+
+    fn render_player(&mut self, player: &Player) {
+        let color = Color3::from_u8(255, 209, 102);
+        self.reflector_color_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            depth: 0.4,
+            color: color.to_color4(),
+        });
+        self.occluder_batch.push(OccluderRotatedRect {
+            rect: player.rotated_rect(),
+            ignore_light_index1: Some(self.lights.len() as u32),
+            ignore_light_index2: Some(self.lights.len() as u32 + 1),
+        });
+        self.outline_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            depth: 0.4,
+            color: self.outline_color(),
+        });
+        self.lights.push(Light {
+            position: Point3::new(player.pos.x, player.pos.y, 50.0),
+            radius: 600.0,
+            angle: player.dir.y.atan2(player.dir.x),
+            angle_size: std::f32::consts::PI / 5.0,
+            start: 18.0,
+            color: Color3::from_u8(200, 200, 200).to_linear(),
+        });
     }
 
     fn render_floor(&mut self, state: &State) {
@@ -298,33 +325,6 @@ impl Draw {
             rect: laser.rotated_rect(),
             depth: 0.2,
             color: color.to_linear().scale(0.5).to_color4(),
-        });
-    }
-
-    fn render_player(&mut self, player: &Player) {
-        let color = Color3::from_u8(255, 209, 102);
-        self.reflector_color_batch.push(ColorRotatedRect {
-            rect: player.rotated_rect(),
-            depth: 0.4,
-            color: color.to_color4(),
-        });
-        self.occluder_batch.push(OccluderRotatedRect {
-            rect: player.rotated_rect(),
-            ignore_light_index1: Some(self.lights.len() as u32),
-            ignore_light_index2: Some(self.lights.len() as u32 + 1),
-        });
-        self.outline_batch.push(ColorRotatedRect {
-            rect: player.rotated_rect(),
-            depth: 0.4,
-            color: self.outline_color(),
-        });
-        self.lights.push(Light {
-            position: Point3::new(player.pos.x, player.pos.y, 50.0),
-            radius: 600.0,
-            angle: player.dir.y.atan2(player.dir.x),
-            angle_size: std::f32::consts::PI / 5.0,
-            start: 18.0,
-            color: Color3::from_u8(200, 200, 200).to_linear(),
         });
     }
 

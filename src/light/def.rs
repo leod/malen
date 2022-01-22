@@ -1,7 +1,6 @@
 use nalgebra::{Point3, Vector2, Vector3};
 
-use bytemuck::Zeroable;
-use bytemuck_derive::{Pod, Zeroable};
+use bytemuck::{Pod, Zeroable};
 use crevice::{glsl::GlslStruct, std140::AsStd140};
 
 use crate::{

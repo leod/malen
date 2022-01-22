@@ -61,6 +61,7 @@ pub enum TextureValueType {
     RgbaF32,
     RgF16,
     Depth,
+    // TODO: Texture value type is incomplete
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

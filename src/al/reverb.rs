@@ -39,6 +39,8 @@ pub fn reverb(
     dest: &AudioNode,
     params: &ReverbParams,
 ) -> Result<AudioNode, PlayError> {
+    // Inspired by <https://blog.gskinner.com/archives/2019/02/reverb-web-audio-api.html>.
+
     let al = impulse.al();
 
     let input = al.context().create_gain().map_err(PlayError::WebAudio)?;
