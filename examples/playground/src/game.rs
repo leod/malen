@@ -18,12 +18,14 @@ pub struct Game {
 
     shoot_sound: Sound,
     hit_sound: Sound,
-    hit_sound_cooldown_secs: f32,
-    shoot_node: Option<SpatialPlayNode>,
 
     state: State,
     smoke: Particles,
     draw: Draw,
+
+    last_timestamp_secs: Option<f64>,
+    hit_sound_cooldown_secs: f32,
+    shoot_node: Option<SpatialPlayNode>,
 
     indirect_light: bool,
     show_profile: bool,
@@ -52,11 +54,12 @@ impl Game {
             profile,
             shoot_sound,
             hit_sound,
-            hit_sound_cooldown_secs: 0.0,
-            shoot_node: None,
             state,
             smoke,
             draw,
+            last_timestamp_secs: None,
+            hit_sound_cooldown_secs: 0.0,
+            shoot_node: None,
             indirect_light: true,
             show_profile: false,
             show_textures: false,
@@ -70,7 +73,24 @@ impl Game {
             self.handle_event(event);
         }
 
-        self.update(timestamp_secs)?;
+        let max_update_secs = 1.0 / 60.0;
+        let max_dt_secs = 10.0 * max_update_secs;
+
+        let mut dt_secs = self
+            .last_timestamp_secs
+            .map_or(0.0, |last_timestamp_secs| {
+                (timestamp_secs - last_timestamp_secs) as f32
+            })
+            .max(0.0)
+            .min(max_dt_secs) as f32;
+
+        while dt_secs >= 0.0 {
+            self.update(dt_secs.min(max_update_secs))?;
+            dt_secs -= max_update_secs;
+        }
+
+        self.last_timestamp_secs = Some(timestamp_secs);
+
         self.render()?;
         self.draw()?;
 
@@ -143,14 +163,12 @@ impl Game {
         Ok(())
     }
 
-    fn update(&mut self, timestamp_secs: f64) -> Result<(), FrameError> {
+    fn update(&mut self, dt_secs: f32) -> Result<(), FrameError> {
         profile!("Game::update");
 
-        let (dt_secs, game_events) = self.state.update(
-            timestamp_secs,
-            self.context.screen(),
-            self.context.input_state(),
-        );
+        let game_events =
+            self.state
+                .update(dt_secs, self.context.screen(), self.context.input_state());
 
         for game_event in game_events {
             self.handle_game_event(game_event)?;
