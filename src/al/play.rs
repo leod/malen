@@ -34,8 +34,8 @@ pub struct SpatialPlayParams {
     pub max_distance: f32,
     pub ref_distance: f32,
     pub rolloff_factor: f32,
+    pub orientation: Vector3<f32>,
     pub pos: Point3<f32>,
-    pub vel: Vector3<f32>,
     pub gain: f32,
 }
 
@@ -50,8 +50,8 @@ impl Default for SpatialPlayParams {
             max_distance: 1000.0,
             ref_distance: 1.0,
             rolloff_factor: 10.0,
+            orientation: Vector3::new(1.0, 0.0, 0.0),
             pos: Point3::origin(),
-            vel: Vector3::zeros(),
             gain: 1.0,
         }
     }
@@ -106,6 +106,11 @@ pub fn play_spatial(
     panner.set_max_distance(params.max_distance as f64);
     panner.set_ref_distance(params.ref_distance as f64);
     panner.set_rolloff_factor(params.rolloff_factor as f64);
+    panner.set_orientation(
+        params.orientation.x as f64,
+        params.orientation.y as f64,
+        params.orientation.z as f64,
+    );
     panner.set_position(
         params.pos.x as f64,
         params.pos.y as f64,

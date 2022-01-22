@@ -6,7 +6,7 @@ use malen::{
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
-use nalgebra::{Point2, Point3, Vector2};
+use nalgebra::{Point2, Point3, Vector2, Vector3};
 use rand::Rng;
 
 use crate::draw::Draw;
@@ -123,6 +123,9 @@ impl Game {
                 al::play_spatial(
                     &self.hit_sound,
                     &SpatialPlayParams {
+                        cone_inner_angle: 90.0,
+                        cone_outer_angle: 60.0,
+                        orientation: Vector3::new(dir.x, dir.y, 0.0),
                         pos: Point3::new(pos.x, pos.y, 0.0),
                         gain: 0.3,
                         ..SpatialPlayParams::default()
@@ -159,6 +162,7 @@ impl Game {
                     &self.shoot_sound,
                     &SpatialPlayParams {
                         pos: player_pos,
+                        gain: 0.5,
                         ..SpatialPlayParams::default()
                     },
                 )?;
