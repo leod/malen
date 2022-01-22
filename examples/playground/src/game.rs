@@ -18,6 +18,7 @@ pub struct Game {
 
     shoot_sound: Sound,
     hit_sound: Sound,
+    hit_sound_cooldown_secs: f32,
     shoot_node: Option<SpatialPlayNode>,
 
     state: State,
@@ -40,7 +41,7 @@ impl Game {
         )
         .await?;
         let hit_sound =
-            Sound::load(context.al(), "resources/168984__lavik89__digital-hit.wav").await?;
+            Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
@@ -51,6 +52,7 @@ impl Game {
             profile,
             shoot_sound,
             hit_sound,
+            hit_sound_cooldown_secs: 0.0,
             shoot_node: None,
             state,
             smoke,
@@ -123,17 +125,18 @@ impl Game {
         match game_event {
             LaserHit { pos, dir } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
-                al::play_spatial(
-                    &self.hit_sound,
-                    &SpatialPlayParams {
-                        cone_inner_angle: 90.0,
-                        cone_outer_angle: 60.0,
-                        orientation: Vector3::new(dir.x, dir.y, 0.0),
-                        pos: Point3::new(pos.x, pos.y, 0.0),
-                        gain: 0.3,
-                        ..SpatialPlayParams::default()
-                    },
-                )?;
+                if self.hit_sound_cooldown_secs == 0.0 {
+                    al::play_spatial(
+                        &self.hit_sound,
+                        &SpatialPlayParams {
+                            orientation: Vector3::new(dir.x, dir.y, 0.0),
+                            pos: Point3::new(pos.x, pos.y, 0.0),
+                            gain: 0.5,
+                            ..SpatialPlayParams::default()
+                        },
+                    )?;
+                    self.hit_sound_cooldown_secs = 0.05;
+                }
             }
         }
 
@@ -182,6 +185,7 @@ impl Game {
         }
 
         self.smoke.update(dt_secs);
+        self.hit_sound_cooldown_secs = (self.hit_sound_cooldown_secs - dt_secs).max(0.0);
 
         Ok(())
     }
