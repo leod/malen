@@ -35,7 +35,7 @@ impl Sound {
         let buffer: AudioBuffer = {
             let array_buffer = crate::fetch_array_buffer(path).await?;
             let promise = al
-                .context
+                .context()
                 .decode_audio_data(&array_buffer)
                 .map_err(LoadSoundError::DecodeAudioData)?;
             let value = JsFuture::from(promise)

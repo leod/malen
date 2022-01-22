@@ -3,5 +3,5 @@ mod play;
 mod sound;
 
 pub use context::{Context, NewContextError};
-pub use play::{play, PlayError};
+pub use play::{play, play_spatial, PlayError};
 pub use sound::{LoadSoundError, Sound};
