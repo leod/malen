@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 
 use malen::{
-    al::{self, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
+    al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
     text::{Font, Text},
     web_sys::AudioNode,
@@ -20,7 +20,7 @@ pub struct Game {
     shoot_sound: Sound,
     hit1_sound: Sound,
     hit2_sound: Sound,
-    reverb: AudioNode,
+    reverb: ReverbNode,
 
     state: State,
     smoke: Particles,
@@ -53,12 +53,11 @@ impl Game {
         )
         .await?;
         let impulse = Sound::load(context.al(), "resources/impulse4.wav").await?;
-        let reverb: AudioNode = al::reverb(
+        let reverb = al::reverb(
             &impulse,
             context.al().destination(),
             &ReverbParams::default(),
-        )?
-        .into();
+        )?;
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
@@ -185,7 +184,7 @@ impl Game {
                             gain,
                             ..SpatialPlayParams::default()
                         },
-                        &self.reverb,
+                        self.reverb.input(),
                     )?;
                     self.hit_sound_cooldown_secs = 0.05;
                 }
@@ -206,8 +205,16 @@ impl Game {
             self.handle_game_event(game_event)?;
         }
 
+        self.update_audio(dt_secs)?;
+        self.smoke.update(dt_secs);
+
+        Ok(())
+    }
+
+    fn update_audio(&mut self, dt_secs: f32) -> Result<(), FrameError> {
         let player_pos = Point3::new(self.state.player.pos.x, self.state.player.pos.y, 0.0);
         self.context.al().set_listener_pos(player_pos);
+
         match (self.state.player.is_shooting, self.shoot_node.as_ref()) {
             (false, Some(node)) => {
                 node.set_loop(false);
@@ -221,7 +228,7 @@ impl Game {
                             gain: 0.4,
                             ..SpatialPlayParams::default()
                         },
-                        &self.reverb,
+                        self.reverb.input(),
                     )?;
                     node.source.set_loop_start(0.05);
                     node.source.set_loop_end(0.11);
@@ -231,11 +238,11 @@ impl Game {
             }
             _ => (),
         }
+
         if let Some(node) = self.shoot_node.as_ref() {
             node.set_pos(player_pos);
         }
 
-        self.smoke.update(dt_secs);
         self.hit_sound_cooldown_secs = (self.hit_sound_cooldown_secs - dt_secs).max(0.0);
 
         Ok(())
@@ -247,20 +254,42 @@ impl Game {
         self.draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
 
-        /*let dists = self.draw.light_pipeline.shadow_map_framebuffer().read_pixel_row_f16(0, 0);
+        let dists = self
+            .draw
+            .light_pipeline
+            .shadow_map_framebuffer()
+            .read_pixel_row_f16(0, 0);
         let avg_dist: f32 = dists.iter().copied().map(f32::from).sum::<f32>() / dists.len() as f32;
-        let max_dist: f32 = dists.iter().copied().map(f32::from).max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
-
+        let max_dist: f32 = dists
+            .iter()
+            .copied()
+            .map(f32::from)
+            .max_by(|x, y| x.partial_cmp(y).unwrap())
+            .unwrap();
+        //let closed_perc: f32 = dists
+        self.reverb.linear_ramp_to_params(
+            &ReverbParams {
+                pre_delay_secs: 0.2 * avg_dist.powf(2.0),
+                convolver_gain: 0.1 + 0.2 * avg_dist.powf(2.0),
+                ..ReverbParams::default()
+            },
+            0.05,
+        )?;
         self.draw.font.write(
             Text {
                 pos: Point2::new(10.0, 10.0),
                 size: 20.0,
                 z: 0.0,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
-                text: &format!("avg_dist: {:.4}\nmax_dist: {:.4}", avg_dist, max_dist),
+                text: &format!(
+                    "avg_dist: {:.4}\navg_dist_sq: {:.4}\nmax_dist: {:.4}",
+                    avg_dist,
+                    avg_dist.powf(2.0),
+                    max_dist
+                ),
             },
             &mut self.draw.text_batch,
-        )?;*/
+        )?;
 
         Ok(())
     }
