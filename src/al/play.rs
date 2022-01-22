@@ -8,20 +8,8 @@ use super::Sound;
 
 #[derive(Debug, Error)]
 pub enum PlayError {
-    #[error("failed to create buffer source: {0:?}")]
-    CreateBufferSource(JsValue),
-
-    #[error("failed to create panner: {0:?}")]
-    CreatePanner(JsValue),
-
-    #[error("failed to create gain: {0:?}")]
-    CreateGain(JsValue),
-
-    #[error("failed to connect: {0:?}")]
-    Connect(JsValue),
-
-    #[error("failed to start playing: {0:?}")]
-    Start(JsValue),
+    #[error("failed web audio call: {0:?}")]
+    WebAudio(JsValue),
 }
 
 #[derive(Debug, Clone)]
@@ -69,7 +57,7 @@ pub fn play_node(sound: &Sound) -> Result<PlayNode, PlayError> {
     let source = al
         .context()
         .create_buffer_source()
-        .map_err(PlayError::CreateBufferSource)?;
+        .map_err(PlayError::WebAudio)?;
     source.set_buffer(Some(sound.buffer()));
 
     Ok(source)
@@ -81,8 +69,8 @@ pub fn play(sound: &Sound) -> Result<PlayNode, PlayError> {
 
     source
         .connect_with_audio_node(al.destination())
-        .map_err(PlayError::Connect)?;
-    source.start().map_err(PlayError::Start)?;
+        .map_err(PlayError::WebAudio)?;
+    source.start().map_err(PlayError::WebAudio)?;
 
     Ok(source)
 }
@@ -94,10 +82,7 @@ pub fn play_spatial(
     let al = sound.al();
     let source = play_node(sound)?;
 
-    let panner = al
-        .context()
-        .create_panner()
-        .map_err(PlayError::CreatePanner)?;
+    let panner = al.context().create_panner().map_err(PlayError::WebAudio)?;
     panner.set_cone_inner_angle(params.cone_inner_angle as f64);
     panner.set_cone_outer_angle(params.cone_outer_angle as f64);
     panner.set_cone_outer_gain(params.cone_outer_gain as f64);
@@ -117,18 +102,18 @@ pub fn play_spatial(
         params.pos.z as f64,
     );
 
-    let gain = al.context().create_gain().map_err(PlayError::CreateGain)?;
+    let gain = al.context().create_gain().map_err(PlayError::WebAudio)?;
     gain.gain().set_value(params.gain);
 
     source
         .connect_with_audio_node(&panner)
-        .map_err(PlayError::Connect)?;
+        .map_err(PlayError::WebAudio)?;
     panner
         .connect_with_audio_node(&gain)
-        .map_err(PlayError::Connect)?;
+        .map_err(PlayError::WebAudio)?;
     gain.connect_with_audio_node(al.destination())
-        .map_err(PlayError::Connect)?;
-    source.start().map_err(PlayError::Start)?;
+        .map_err(PlayError::WebAudio)?;
+    source.start().map_err(PlayError::WebAudio)?;
 
     Ok(SpatialPlayNode { source, panner })
 }

@@ -1,5 +1,6 @@
 mod context;
 mod play;
+mod reverb;
 mod sound;
 
 pub use context::{Context, NewContextError};

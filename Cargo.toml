@@ -60,6 +60,7 @@ features = [
     "PanningModelType",
     "DistanceModelType",
     "DynamicsCompressorNode",
+    "ConvolverNode",
 ]
 
 [workspace]

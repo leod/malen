@@ -6,14 +6,8 @@ use web_sys::{AudioContext, AudioNode, DynamicsCompressorNode};
 
 #[derive(Error, Debug)]
 pub enum NewContextError {
-    #[error("failed to create audio context: {0:?}")]
-    NewAudioContext(JsValue),
-
-    #[error("failed to create dynamics compressor: {0:?}")]
-    CreateDynamicsCompressor(JsValue),
-
-    #[error("failed to connect node: {0:?}")]
-    Connect(JsValue),
+    #[error("failed web audio call: {0:?}")]
+    WebAudio(JsValue),
 }
 
 pub struct Context {
@@ -23,15 +17,15 @@ pub struct Context {
 
 impl Context {
     pub fn new() -> Result<Self, NewContextError> {
-        let context = AudioContext::new().map_err(NewContextError::NewAudioContext)?;
+        let context = AudioContext::new().map_err(NewContextError::WebAudio)?;
 
         let compressor_node = context
             .create_dynamics_compressor()
-            .map_err(NewContextError::CreateDynamicsCompressor)?;
+            .map_err(NewContextError::WebAudio)?;
 
         compressor_node
             .connect_with_audio_node(&context.destination())
-            .map_err(NewContextError::Connect)?;
+            .map_err(NewContextError::WebAudio)?;
 
         Ok(Context {
             context,
