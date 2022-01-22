@@ -371,8 +371,11 @@ impl State {
             .transform_point(&mouse_logical_pos);
 
         // TODO: NAN
-        let target_dir = (mouse_world_pos - self.player.pos).normalize();
-        self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
+        let player_to_mouse = mouse_world_pos - self.player.pos;
+        if player_to_mouse.norm() > 0.1 {
+            let target_dir = player_to_mouse.normalize();
+            self.player.dir = target_dir - (target_dir - self.player.dir) * (-25.0 * dt_secs).exp();
+        }
 
         self.player.is_shooting = input_state.button(Button::Primary);
         if self.player.is_shooting {

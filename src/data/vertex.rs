@@ -1,7 +1,6 @@
 use nalgebra::{Point2, Point3};
 
-use bytemuck::Zeroable;
-use bytemuck_derive::{Pod, Zeroable};
+use bytemuck::{Pod, Zeroable};
 
 use crate::{
     attributes,

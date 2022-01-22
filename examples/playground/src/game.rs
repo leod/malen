@@ -3,7 +3,7 @@ use coarse_prof::profile;
 use malen::{
     al::{self, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
-    text::Font,
+    text::{Font, Text},
     web_sys::AudioNode,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
@@ -172,7 +172,7 @@ impl Game {
                         _ => &self.hit2_sound,
                     };
                     let gain = match entity_type {
-                        EntityType::Ball | EntityType::Enemy => 0.5,
+                        EntityType::Ball | EntityType::Enemy => 0.4,
                         _ => 1.0,
                     };
                     al::play_spatial(
@@ -218,7 +218,7 @@ impl Game {
                         &self.shoot_sound,
                         &SpatialPlayParams {
                             pos: player_pos,
-                            gain: 0.5,
+                            gain: 0.4,
                             ..SpatialPlayParams::default()
                         },
                         &self.reverb,
@@ -246,6 +246,21 @@ impl Game {
 
         self.draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
+
+        /*let dists = self.draw.light_pipeline.shadow_map_framebuffer().read_pixel_row_f16(0, 0);
+        let avg_dist: f32 = dists.iter().copied().map(f32::from).sum::<f32>() / dists.len() as f32;
+        let max_dist: f32 = dists.iter().copied().map(f32::from).max_by(|x, y| x.partial_cmp(y).unwrap()).unwrap();
+
+        self.draw.font.write(
+            Text {
+                pos: Point2::new(10.0, 10.0),
+                size: 20.0,
+                z: 0.0,
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                text: &format!("avg_dist: {:.4}\nmax_dist: {:.4}", avg_dist, max_dist),
+            },
+            &mut self.draw.text_batch,
+        )?;*/
 
         Ok(())
     }
