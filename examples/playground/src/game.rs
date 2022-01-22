@@ -266,15 +266,15 @@ impl Game {
             .map(f32::from)
             .max_by(|x, y| x.partial_cmp(y).unwrap())
             .unwrap();
-        //let closed_perc: f32 = dists
-        self.reverb.linear_ramp_to_params(
-            &ReverbParams {
-                pre_delay_secs: 0.2 * avg_dist.powf(2.0),
-                convolver_gain: 0.1 + 0.2 * avg_dist.powf(2.0),
-                ..ReverbParams::default()
-            },
-            0.05,
-        )?;
+        let closed_perc: f32 =
+            dists.iter().filter(|&&d| f32::from(d) < 0.7).count() as f32 / dists.len() as f32;
+        let reverb_params = ReverbParams {
+            pre_delay_secs: 0.2 * avg_dist.powf(2.0),
+            num_taps: ((closed_perc - 0.5).max(0.0) * 20.0) as usize + 1,
+            convolver_gain: 0.1 + 0.2 * avg_dist.powf(2.0),
+            ..ReverbParams::default()
+        };
+        self.reverb.linear_ramp_to_params(&reverb_params, 0.05)?;
         self.draw.font.write(
             Text {
                 pos: Point2::new(10.0, 10.0),
@@ -282,10 +282,12 @@ impl Game {
                 z: 0.0,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
                 text: &format!(
-                    "avg_dist: {:.4}\navg_dist_sq: {:.4}\nmax_dist: {:.4}",
+                    "avg_dist: {:.4}\navg_dist_sq: {:.4}\nmax_dist: {:.4}\nclosed_perc: {:.4}\nreverb_params: {:?}",
                     avg_dist,
                     avg_dist.powf(2.0),
-                    max_dist
+                    max_dist,
+                    closed_perc,
+                    reverb_params,
                 ),
             },
             &mut self.draw.text_batch,

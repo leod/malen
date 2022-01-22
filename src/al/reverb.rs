@@ -10,8 +10,10 @@ pub struct ReverbParams {
     pub pre_delay_secs: f32,
     pub reverb_time_secs: f32,
     pub num_taps: usize,
+    pub max_taps: usize,
     pub convolver_gain: f32,
-    pub taps_gain: f32,
+    pub tap_gain: f32,
+    pub post_taps_gain: f32,
 }
 
 impl Default for ReverbParams {
@@ -20,8 +22,10 @@ impl Default for ReverbParams {
             pre_delay_secs: 0.01,
             reverb_time_secs: 2.0,
             num_taps: 3,
+            max_taps: 10,
             convolver_gain: 0.2,
-            taps_gain: 0.4,
+            tap_gain: 0.7,
+            post_taps_gain: 0.3,
         }
     }
 }
@@ -60,7 +64,7 @@ pub fn reverb(
     let reverb = (|| {
         let input = al.context().create_gain()?;
         let pre_delay = al.context().create_delay()?;
-        let taps = (0..params.num_taps)
+        let taps = (0..params.max_taps)
             .map(|_| Ok((al.context().create_delay()?, al.context().create_gain()?)))
             .collect::<Result<Vec<_>, JsValue>>()?;
         let taps_gain = al.context().create_gain()?;
@@ -104,8 +108,6 @@ impl ReverbNode {
     }
 
     pub fn set_params(&self, params: &ReverbParams) -> Result<(), PlayError> {
-        assert!(self.taps.len() == params.num_taps);
-
         let set = |audio_param: AudioParam, value: f32| {
             audio_param.set_value(value);
             Ok(())
@@ -115,8 +117,6 @@ impl ReverbNode {
     }
 
     pub fn linear_ramp_to_params(&self, params: &ReverbParams, secs: f32) -> Result<(), PlayError> {
-        assert!(self.taps.len() == params.num_taps);
-
         let end_time = self.al.context().current_time() + secs as f64;
 
         let set = |audio_param: AudioParam, value: f32| {
@@ -133,7 +133,7 @@ impl ReverbNode {
         params: &ReverbParams,
         set: impl Fn(AudioParam, f32) -> Result<(), JsValue>,
     ) -> Result<(), JsValue> {
-        assert!(self.taps.len() == params.num_taps);
+        assert!(self.taps.len() == params.max_taps);
 
         set(self.pre_delay.delay_time(), params.pre_delay_secs)?;
         for (i, (tap_delay, tap_gain)) in self.taps.iter().enumerate() {
@@ -141,9 +141,15 @@ impl ReverbNode {
                 tap_delay.delay_time(),
                 0.001 + i as f32 * 0.5 * params.pre_delay_secs,
             )?;
-            set(tap_gain.gain(), params.taps_gain)?;
+
+            let gain = if i < params.num_taps {
+                params.tap_gain
+            } else {
+                0.0
+            };
+            set(tap_gain.gain(), gain)?;
         }
-        set(self.taps_gain.gain(), params.taps_gain)?;
+        set(self.taps_gain.gain(), params.post_taps_gain)?;
         set(self.convolver_gain.gain(), params.convolver_gain)?;
 
         Ok(())
