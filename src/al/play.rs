@@ -30,8 +30,8 @@ pub struct SpatialPlayParams {
 impl Default for SpatialPlayParams {
     fn default() -> Self {
         Self {
-            cone_inner_angle: 60.0,
-            cone_outer_angle: 180.0,
+            cone_inner_angle: 360.0,
+            cone_outer_angle: 360.0,
             cone_outer_gain: 0.3,
             panning_model: PanningModelType::Hrtf,
             distance_model: DistanceModelType::Linear,
@@ -76,9 +76,9 @@ pub fn play(sound: &Sound) -> Result<PlayNode, PlayError> {
 }
 
 pub fn play_spatial(
-    dest: &AudioNode,
     sound: &Sound,
     params: &SpatialPlayParams,
+    dest: &AudioNode,
 ) -> Result<SpatialPlayNode, PlayError> {
     let al = sound.al();
     let source = play_node(sound)?;
