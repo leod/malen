@@ -14,11 +14,11 @@ pub struct ReverbParams {
 impl Default for ReverbParams {
     fn default() -> Self {
         Self {
-            pre_delay_secs: 0.5,
+            pre_delay_secs: 0.1,
             reverb_time_secs: 2.0,
             num_taps: 2,
-            convolver_gain: 0.4,
-            taps_gain: 0.2,
+            convolver_gain: 0.2,
+            taps_gain: 0.7,
         }
     }
 }
@@ -44,7 +44,7 @@ pub fn reverb(
     let input = al.context().create_gain().map_err(PlayError::WebAudio)?;
     let pre_delay = al.context().create_delay().map_err(PlayError::WebAudio)?;
     let taps = (0..params.num_taps)
-        .map(|_| al.context().create_delay())
+        .map(|_| Ok((al.context().create_delay()?, al.context().create_gain()?)))
         .collect::<Result<Vec<_>, _>>()
         .map_err(PlayError::WebAudio)?;
     let taps_gain = al.context().create_gain().map_err(PlayError::WebAudio)?;
@@ -53,9 +53,11 @@ pub fn reverb(
     let output = al.context().create_gain().map_err(PlayError::WebAudio)?;
 
     pre_delay.delay_time().set_value(params.pre_delay_secs);
-    for (i, tap) in taps.iter().enumerate() {
-        tap.delay_time()
-            .set_value(0.001 + (i as f32 * 0.5 * params.pre_delay_secs));
+    for (i, (tap_delay, tap_gain)) in taps.iter().enumerate() {
+        tap_delay
+            .delay_time()
+            .set_value(0.001 + i as f32 * 0.5 * params.pre_delay_secs);
+        tap_gain.gain().set_value(params.taps_gain);
     }
     taps_gain.gain().set_value(params.taps_gain);
     convolver_gain.gain().set_value(params.convolver_gain);
@@ -68,17 +70,17 @@ pub fn reverb(
         .map_err(PlayError::WebAudio)?;
     if !taps.is_empty() {
         input
-            .connect_with_audio_node(&taps[0])
+            .connect_with_audio_node(&taps[0].0)
             .map_err(PlayError::WebAudio)?;
     }
-    for (tap1, tap2) in taps.iter().zip(taps.iter().skip(1)) {
-        tap1.connect_with_audio_node(tap2)
+    for ((tap1_delay, tap1_gain), (tap2_delay, _)) in taps.iter().zip(taps.iter().skip(1)) {
+        tap1_delay
+            .connect_with_audio_node(tap1_gain)
             .map_err(PlayError::WebAudio)?;
-        tap1.connect_with_audio_node(&taps_gain)
+        tap1_gain
+            .connect_with_audio_node(tap2_delay)
             .map_err(PlayError::WebAudio)?;
-    }
-    if !taps.is_empty() {
-        taps[taps.len() - 1]
+        tap1_gain
             .connect_with_audio_node(&taps_gain)
             .map_err(PlayError::WebAudio)?;
     }
