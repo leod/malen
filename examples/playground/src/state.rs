@@ -71,7 +71,6 @@ pub struct State {
     pub lasers: Vec<Laser>,
     pub player: Player,
     pub view_offset: Vector2<f32>,
-    pub last_timestamp_secs: Option<f64>,
 }
 
 impl Wall {
@@ -178,7 +177,6 @@ impl State {
                 is_shooting: false,
             },
             view_offset: Vector2::zeros(),
-            last_timestamp_secs: None,
         };
 
         for _ in 0..350 {
@@ -313,18 +311,10 @@ impl State {
 
     pub fn update(
         &mut self,
-        timestamp_secs: f64,
+        dt_secs: f32,
         screen: Screen,
         input_state: &InputState,
-    ) -> (f32, Vec<GameEvent>) {
-        let dt_secs = self
-            .last_timestamp_secs
-            .map_or(0.0, |last_timestamp_secs| {
-                timestamp_secs - last_timestamp_secs
-            })
-            .max(0.0) as f32;
-        self.last_timestamp_secs = Some(timestamp_secs);
-
+    ) -> Vec<GameEvent> {
         let mut player_dir = Vector2::zeros();
         if input_state.key(Key::W) {
             player_dir.y -= 1.0;
@@ -433,6 +423,6 @@ impl State {
 
         self.lasers.retain(|laser| !laser.dead);
 
-        (dt_secs, events)
+        events
     }
 }
