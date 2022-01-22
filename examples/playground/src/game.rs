@@ -10,15 +10,16 @@ use malen::{
 use nalgebra::{Point2, Point3, Vector2, Vector3};
 use rand::Rng;
 
-use crate::draw::Draw;
 use crate::state::{GameEvent, State};
+use crate::{draw::Draw, state::EntityType};
 
 pub struct Game {
     context: Context,
     profile: Profile,
 
     shoot_sound: Sound,
-    hit_sound: Sound,
+    hit1_sound: Sound,
+    hit2_sound: Sound,
     reverb: AudioNode,
 
     state: State,
@@ -44,9 +45,14 @@ impl Game {
             "resources/440143__dpren__scifi-gun-laser-automatic-fast_cut.wav",
         )
         .await?;
-        let hit_sound =
+        let hit1_sound =
             Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
-        let impulse = Sound::load(context.al(), "resources/impulse1.wav").await?;
+        let hit2_sound = Sound::load(
+            context.al(),
+            "resources/612877__sound-designer-from-turkey__laser-1.wav",
+        )
+        .await?;
+        let impulse = Sound::load(context.al(), "resources/impulse4.wav").await?;
         let reverb: AudioNode = al::reverb(&impulse, context.al().destination())?.into();
 
         let state = State::new();
@@ -57,7 +63,8 @@ impl Game {
             context,
             profile,
             shoot_sound,
-            hit_sound,
+            hit1_sound,
+            hit2_sound,
             reverb,
             state,
             smoke,
@@ -148,16 +155,30 @@ impl Game {
         use GameEvent::*;
 
         match game_event {
-            LaserHit { pos, dir } => {
+            LaserHit {
+                entity_type,
+                pos,
+                dir,
+            } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
                 if self.hit_sound_cooldown_secs == 0.0 {
+                    let hit_sound = match entity_type {
+                        EntityType::Ball | EntityType::Enemy => &self.hit2_sound,
+                        _ => &self.hit1_sound,
+                    };
+                    let gain = match entity_type {
+                        EntityType::Ball | EntityType::Enemy => 1.0,
+                        _ => 0.5,
+                    };
                     al::play_spatial(
                         &self.reverb,
-                        &self.hit_sound,
+                        hit_sound,
                         &SpatialPlayParams {
+                            cone_inner_angle: 180.0,
+                            cone_outer_angle: 90.0,
                             orientation: Vector3::new(dir.x, dir.y, 0.0),
                             pos: Point3::new(pos.x, pos.y, 0.0),
-                            gain: 0.5,
+                            gain,
                             ..SpatialPlayParams::default()
                         },
                     )?;

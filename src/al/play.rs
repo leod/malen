@@ -30,8 +30,8 @@ pub struct SpatialPlayParams {
 impl Default for SpatialPlayParams {
     fn default() -> Self {
         Self {
-            cone_inner_angle: 360.0,
-            cone_outer_angle: 360.0,
+            cone_inner_angle: 60.0,
+            cone_outer_angle: 180.0,
             cone_outer_gain: 0.3,
             panning_model: PanningModelType::Hrtf,
             distance_model: DistanceModelType::Linear,
