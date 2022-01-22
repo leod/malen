@@ -2,7 +2,7 @@ use nalgebra::{Point3, Vector3};
 use thiserror::Error;
 
 use wasm_bindgen::JsValue;
-use web_sys::{AudioBufferSourceNode, DistanceModelType, PannerNode, PanningModelType};
+use web_sys::{AudioBufferSourceNode, AudioNode, DistanceModelType, PannerNode, PanningModelType};
 
 use super::Sound;
 
@@ -76,6 +76,7 @@ pub fn play(sound: &Sound) -> Result<PlayNode, PlayError> {
 }
 
 pub fn play_spatial(
+    dest: &AudioNode,
     sound: &Sound,
     params: &SpatialPlayParams,
 ) -> Result<SpatialPlayNode, PlayError> {
@@ -111,7 +112,7 @@ pub fn play_spatial(
     panner
         .connect_with_audio_node(&gain)
         .map_err(PlayError::WebAudio)?;
-    gain.connect_with_audio_node(al.destination())
+    gain.connect_with_audio_node(dest)
         .map_err(PlayError::WebAudio)?;
     source.start().map_err(PlayError::WebAudio)?;
 

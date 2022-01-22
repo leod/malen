@@ -12,24 +12,23 @@ pub enum NewContextError {
 
 pub struct Context {
     context: AudioContext,
-    compressor_node: DynamicsCompressorNode,
+    compressor: DynamicsCompressorNode,
 }
 
 impl Context {
     pub fn new() -> Result<Self, NewContextError> {
         let context = AudioContext::new().map_err(NewContextError::WebAudio)?;
 
-        let compressor_node = context
+        let compressor = context
             .create_dynamics_compressor()
             .map_err(NewContextError::WebAudio)?;
-
-        compressor_node
+        compressor
             .connect_with_audio_node(&context.destination())
             .map_err(NewContextError::WebAudio)?;
 
         Ok(Context {
             context,
-            compressor_node,
+            compressor,
         })
     }
 
@@ -38,7 +37,7 @@ impl Context {
     }
 
     pub fn destination(&self) -> &AudioNode {
-        &self.compressor_node
+        &self.compressor
     }
 
     pub fn set_listener_pos(&self, p: Point3<f32>) {

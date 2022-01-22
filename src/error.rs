@@ -50,6 +50,9 @@ pub enum InitError {
 
     #[error("new AL context error: {0}")]
     NewAL(#[from] al::NewContextError),
+
+    #[error("audio error: {0}")]
+    Audio(#[from] al::PlayError),
 }
 
 #[derive(Error, Debug)]

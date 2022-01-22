@@ -4,6 +4,7 @@ use malen::{
     al::{self, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
     text::Font,
+    web_sys::AudioNode,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
 use nalgebra::{Point2, Point3, Vector2, Vector3};
@@ -18,6 +19,7 @@ pub struct Game {
 
     shoot_sound: Sound,
     hit_sound: Sound,
+    reverb: AudioNode,
 
     state: State,
     smoke: Particles,
@@ -44,6 +46,8 @@ impl Game {
         .await?;
         let hit_sound =
             Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
+        let impulse = Sound::load(context.al(), "resources/impulse1.wav").await?;
+        let reverb: AudioNode = al::reverb(&impulse, context.al().destination())?.into();
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
@@ -54,6 +58,7 @@ impl Game {
             profile,
             shoot_sound,
             hit_sound,
+            reverb,
             state,
             smoke,
             draw,
@@ -147,6 +152,7 @@ impl Game {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
                 if self.hit_sound_cooldown_secs == 0.0 {
                     al::play_spatial(
+                        &self.reverb,
                         &self.hit_sound,
                         &SpatialPlayParams {
                             orientation: Vector3::new(dir.x, dir.y, 0.0),
@@ -183,6 +189,7 @@ impl Game {
             (true, node) => {
                 if node.map_or(true, |node| !node.source.loop_()) {
                     let node = al::play_spatial(
+                        &self.reverb,
                         &self.shoot_sound,
                         &SpatialPlayParams {
                             pos: player_pos,

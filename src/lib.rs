@@ -28,6 +28,7 @@ pub mod text;
 pub use coarse_prof;
 pub use glow;
 pub use nalgebra;
+pub use web_sys;
 
 pub use canvas::{Canvas, CanvasSizeConfig};
 pub use color::{Color3, Color4};
