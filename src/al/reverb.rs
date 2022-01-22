@@ -1,6 +1,9 @@
-use web_sys::{AudioNode, ConvolverNode};
+use std::rc::Rc;
 
-use super::{PlayError, Sound};
+use wasm_bindgen::JsValue;
+use web_sys::{AudioNode, AudioParam, ConvolverNode, DelayNode, GainNode};
+
+use super::{Context, PlayError, Sound};
 
 #[derive(Debug, Clone)]
 pub struct ReverbParams {
@@ -14,13 +17,22 @@ pub struct ReverbParams {
 impl Default for ReverbParams {
     fn default() -> Self {
         Self {
-            pre_delay_secs: 0.1,
+            pre_delay_secs: 0.01,
             reverb_time_secs: 2.0,
-            num_taps: 2,
+            num_taps: 3,
             convolver_gain: 0.2,
-            taps_gain: 0.7,
+            taps_gain: 0.4,
         }
     }
+}
+
+pub struct ReverbNode {
+    al: Rc<Context>,
+    input: GainNode,
+    pre_delay: DelayNode,
+    taps: Vec<(DelayNode, GainNode)>,
+    taps_gain: GainNode,
+    convolver_gain: GainNode,
 }
 
 pub fn convolver(impulse: &Sound) -> Result<ConvolverNode, PlayError> {
@@ -38,69 +50,102 @@ pub fn reverb(
     impulse: &Sound,
     dest: &AudioNode,
     params: &ReverbParams,
-) -> Result<AudioNode, PlayError> {
+) -> Result<ReverbNode, PlayError> {
     // Inspired by <https://blog.gskinner.com/archives/2019/02/reverb-web-audio-api.html>.
 
     let al = impulse.al();
 
-    let input = al.context().create_gain().map_err(PlayError::WebAudio)?;
-    let pre_delay = al.context().create_delay().map_err(PlayError::WebAudio)?;
-    let taps = (0..params.num_taps)
-        .map(|_| Ok((al.context().create_delay()?, al.context().create_gain()?)))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(PlayError::WebAudio)?;
-    let taps_gain = al.context().create_gain().map_err(PlayError::WebAudio)?;
     let convolver = convolver(impulse)?;
-    let convolver_gain = al.context().create_gain().map_err(PlayError::WebAudio)?;
-    let output = al.context().create_gain().map_err(PlayError::WebAudio)?;
 
-    pre_delay.delay_time().set_value(params.pre_delay_secs);
-    for (i, (tap_delay, tap_gain)) in taps.iter().enumerate() {
-        tap_delay
-            .delay_time()
-            .set_value(0.001 + i as f32 * 0.5 * params.pre_delay_secs);
-        tap_gain.gain().set_value(params.taps_gain);
-    }
-    taps_gain.gain().set_value(params.taps_gain);
-    convolver_gain.gain().set_value(params.convolver_gain);
+    let reverb = (|| {
+        let input = al.context().create_gain()?;
+        let pre_delay = al.context().create_delay()?;
+        let taps = (0..params.num_taps)
+            .map(|_| Ok((al.context().create_delay()?, al.context().create_gain()?)))
+            .collect::<Result<Vec<_>, JsValue>>()?;
+        let taps_gain = al.context().create_gain()?;
+        let convolver_gain = al.context().create_gain()?;
+        let output = al.context().create_gain()?;
 
-    input
-        .connect_with_audio_node(&pre_delay)
-        .map_err(PlayError::WebAudio)?;
-    input
-        .connect_with_audio_node(&output)
-        .map_err(PlayError::WebAudio)?;
-    if !taps.is_empty() {
-        input
-            .connect_with_audio_node(&taps[0].0)
-            .map_err(PlayError::WebAudio)?;
-    }
-    for ((tap1_delay, tap1_gain), (tap2_delay, _)) in taps.iter().zip(taps.iter().skip(1)) {
-        tap1_delay
-            .connect_with_audio_node(tap1_gain)
-            .map_err(PlayError::WebAudio)?;
-        tap1_gain
-            .connect_with_audio_node(tap2_delay)
-            .map_err(PlayError::WebAudio)?;
-        tap1_gain
-            .connect_with_audio_node(&taps_gain)
-            .map_err(PlayError::WebAudio)?;
-    }
-    taps_gain
-        .connect_with_audio_node(&output)
-        .map_err(PlayError::WebAudio)?;
-    pre_delay
-        .connect_with_audio_node(&convolver)
-        .map_err(PlayError::WebAudio)?;
-    convolver
-        .connect_with_audio_node(&convolver_gain)
-        .map_err(PlayError::WebAudio)?;
-    convolver_gain
-        .connect_with_audio_node(&output)
-        .map_err(PlayError::WebAudio)?;
-    output
-        .connect_with_audio_node(dest)
-        .map_err(PlayError::WebAudio)?;
+        input.connect_with_audio_node(&dest)?;
+        input.connect_with_audio_node(&pre_delay)?;
+        if !taps.is_empty() {
+            input.connect_with_audio_node(&taps[0].0)?;
+        }
+        for ((tap1_delay, tap1_gain), (tap2_delay, _)) in taps.iter().zip(taps.iter().skip(1)) {
+            tap1_delay.connect_with_audio_node(tap1_gain)?;
+            tap1_gain.connect_with_audio_node(tap2_delay)?;
+            tap1_gain.connect_with_audio_node(&taps_gain)?;
+        }
+        taps_gain.connect_with_audio_node(&output)?;
+        pre_delay.connect_with_audio_node(&convolver)?;
+        convolver.connect_with_audio_node(&convolver_gain)?;
+        convolver_gain.connect_with_audio_node(&output)?;
+        output.connect_with_audio_node(dest)?;
 
-    Ok(input.into())
+        Ok(ReverbNode {
+            al,
+            input,
+            pre_delay,
+            taps,
+            taps_gain,
+            convolver_gain,
+        })
+    })()
+    .map_err(PlayError::WebAudio)?;
+
+    reverb.set_params(params)?;
+    Ok(reverb)
+}
+
+impl ReverbNode {
+    pub fn input(&self) -> &AudioNode {
+        &self.input
+    }
+
+    pub fn set_params(&self, params: &ReverbParams) -> Result<(), PlayError> {
+        assert!(self.taps.len() == params.num_taps);
+
+        let set = |audio_param: AudioParam, value: f32| {
+            audio_param.set_value(value);
+            Ok(())
+        };
+        self.set_params_generic(params, set)
+            .map_err(PlayError::WebAudio)
+    }
+
+    pub fn linear_ramp_to_params(&self, params: &ReverbParams, secs: f32) -> Result<(), PlayError> {
+        assert!(self.taps.len() == params.num_taps);
+
+        let end_time = self.al.context().current_time() + secs as f64;
+
+        let set = |audio_param: AudioParam, value: f32| {
+            audio_param
+                .linear_ramp_to_value_at_time(value, end_time)
+                .map(|_| ())
+        };
+        self.set_params_generic(params, set)
+            .map_err(PlayError::WebAudio)
+    }
+
+    fn set_params_generic(
+        &self,
+        params: &ReverbParams,
+        set: impl Fn(AudioParam, f32) -> Result<(), JsValue>,
+    ) -> Result<(), JsValue> {
+        assert!(self.taps.len() == params.num_taps);
+
+        set(self.pre_delay.delay_time(), params.pre_delay_secs)?;
+        for (i, (tap_delay, tap_gain)) in self.taps.iter().enumerate() {
+            set(
+                tap_delay.delay_time(),
+                0.001 + i as f32 * 0.5 * params.pre_delay_secs,
+            )?;
+            set(tap_gain.gain(), params.taps_gain)?;
+        }
+        set(self.taps_gain.gain(), params.taps_gain)?;
+        set(self.convolver_gain.gain(), params.convolver_gain)?;
+
+        Ok(())
+    }
 }
