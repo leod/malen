@@ -34,8 +34,11 @@ impl Game {
         let font = Font::load(&context, "resources/RobotoMono-Regular.ttf", 40.0).await?;
         let profile = Profile::new(&context, font, ProfileParams::default())?;
 
-        let shoot_sound =
-            Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
+        let shoot_sound = Sound::load(
+            context.al(),
+            "resources/440143__dpren__scifi-gun-laser-automatic-fast_cut.wav",
+        )
+        .await?;
         let hit_sound =
             Sound::load(context.al(), "resources/168984__lavik89__digital-hit.wav").await?;
 
@@ -155,24 +158,27 @@ impl Game {
         match (self.state.player.is_shooting, self.shoot_node.as_ref()) {
             (false, Some(node)) => {
                 node.set_loop(false);
-                self.shoot_node = None;
             }
-            (true, None) => {
-                let node = al::play_spatial(
-                    &self.shoot_sound,
-                    &SpatialPlayParams {
-                        pos: player_pos,
-                        gain: 0.5,
-                        ..SpatialPlayParams::default()
-                    },
-                )?;
-                node.set_loop(true);
-                self.shoot_node = Some(node)
-            }
-            (true, Some(node)) => {
-                node.set_pos(player_pos);
+            (true, node) => {
+                if node.map_or(true, |node| !node.source.loop_()) {
+                    let node = al::play_spatial(
+                        &self.shoot_sound,
+                        &SpatialPlayParams {
+                            pos: player_pos,
+                            gain: 0.5,
+                            ..SpatialPlayParams::default()
+                        },
+                    )?;
+                    node.source.set_loop_start(0.05);
+                    node.source.set_loop_end(0.11);
+                    node.set_loop(true);
+                    self.shoot_node = Some(node)
+                }
             }
             _ => (),
+        }
+        if let Some(node) = self.shoot_node.as_ref() {
+            node.set_pos(player_pos);
         }
 
         self.smoke.update(dt_secs);
