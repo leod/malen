@@ -265,7 +265,7 @@ impl Draw {
             radius: 300.0,
             angle: enemy.angle,
             angle_size: std::f32::consts::PI / 3.0,
-            start: 20.0,
+            start: enemy.circle().radius,
             color: Color3::from_u8(212, 230, 135).to_linear().scale(0.3),
         });
     }

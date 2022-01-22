@@ -4,7 +4,6 @@ use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
     text::{Font, Text},
-    web_sys::AudioNode,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
 use nalgebra::{Point2, Point3, Vector2, Vector3};
@@ -20,6 +19,7 @@ pub struct Game {
     shoot_sound: Sound,
     hit1_sound: Sound,
     hit2_sound: Sound,
+    explosion_sound: Sound,
     reverb: ReverbNode,
 
     state: State,
@@ -52,6 +52,11 @@ impl Game {
             "resources/612877__sound-designer-from-turkey__laser-1.wav",
         )
         .await?;
+        let explosion_sound = Sound::load(
+            context.al(),
+            "resources/183869__m-red__darkdetonation02.wav",
+        )
+        .await?;
         let impulse = Sound::load(context.al(), "resources/impulse4.wav").await?;
         let reverb = al::reverb(
             &impulse,
@@ -69,6 +74,7 @@ impl Game {
             shoot_sound,
             hit1_sound,
             hit2_sound,
+            explosion_sound,
             reverb,
             state,
             smoke,
@@ -167,11 +173,11 @@ impl Game {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
                 if self.hit_sound_cooldown_secs == 0.0 {
                     let hit_sound = match entity_type {
-                        EntityType::Ball | EntityType::Enemy => &self.hit1_sound,
+                        EntityType::Ball | EntityType::Enemy(_) => &self.hit1_sound,
                         _ => &self.hit2_sound,
                     };
                     let gain = match entity_type {
-                        EntityType::Ball | EntityType::Enemy => 0.4,
+                        EntityType::Ball | EntityType::Enemy(_) => 0.4,
                         _ => 1.0,
                     };
                     al::play_spatial(
@@ -188,6 +194,18 @@ impl Game {
                     )?;
                     self.hit_sound_cooldown_secs = 0.05;
                 }
+            }
+            EnemyDied { pos } => {
+                self.spawn_smoke_explosion(pos, 300);
+                al::play_spatial(
+                    &self.explosion_sound,
+                    &SpatialPlayParams {
+                        pos: Point3::new(pos.x, pos.y, 0.0),
+                        gain: 1.0,
+                        ..SpatialPlayParams::default()
+                    },
+                    self.reverb.input(),
+                )?;
             }
         }
 
@@ -269,7 +287,7 @@ impl Game {
         let closed_perc: f32 =
             dists.iter().filter(|&&d| f32::from(d) < 0.7).count() as f32 / dists.len() as f32;
         let reverb_params = ReverbParams {
-            pre_delay_secs: 0.2 * avg_dist.powf(2.0),
+            pre_delay_secs: 0.3 * avg_dist.powf(2.0),
             num_taps: ((closed_perc - 0.5).max(0.0) * 20.0) as usize + 1,
             convolver_gain: 0.1 + 0.2 * avg_dist.powf(2.0),
             ..ReverbParams::default()
@@ -332,6 +350,56 @@ impl Game {
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
                 slowdown: 2.0,
+                age_secs: 0.0,
+                max_age_secs,
+            };
+
+            self.smoke.spawn(particle);
+        }
+    }
+
+    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, n: usize) {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..n {
+            let speed = 1.5 * rng.gen_range(5.0, 150.0);
+            let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
+            let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let rot = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
+            let max_age_secs = rng.gen_range(3.0, 5.0);
+
+            let particle = Particle {
+                pos,
+                angle: 0.0,
+                vel,
+                rot,
+                depth: 0.15,
+                size: Vector2::new(25.0, 25.0),
+                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
+                slowdown: 10.0,
+                age_secs: 0.0,
+                max_age_secs,
+            };
+
+            self.smoke.spawn(particle);
+        }
+
+        for _ in 0..n {
+            let speed = 1.5 * rng.gen_range(100.0, 500.0);
+            let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
+            let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
+            let rot = 2.0 * std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
+            let max_age_secs = rng.gen_range(0.4, 1.2);
+
+            let particle = Particle {
+                pos,
+                angle: 0.0,
+                vel,
+                rot,
+                depth: 0.15,
+                size: Vector2::new(12.5, 12.5),
+                color: Color3::new(1.0, 0.3, 0.3).to_linear().to_color4(),
+                slowdown: 10.0,
                 age_secs: 0.0,
                 max_age_secs,
             };
