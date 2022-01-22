@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 
 use malen::{
-    al::{self, Sound, SoundSourceNode},
+    al::{self, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -18,7 +18,7 @@ pub struct Game {
 
     shoot_sound: Sound,
     hit_sound: Sound,
-    shoot_node: Option<SoundSourceNode>,
+    shoot_node: Option<SpatialPlayNode>,
 
     state: State,
     smoke: Particles,
@@ -113,12 +113,21 @@ impl Game {
     }
 
     fn handle_game_event(&mut self, game_event: GameEvent) -> Result<(), FrameError> {
+        profile!("Game::handle_game_event");
+
         use GameEvent::*;
 
         match game_event {
             LaserHit { pos, dir } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
-                al::play_spatial(&self.hit_sound, Point3::new(pos.x, pos.y, 0.0))?;
+                al::play_spatial(
+                    &self.hit_sound,
+                    &SpatialPlayParams {
+                        pos: Point3::new(pos.x, pos.y, 0.0),
+                        gain: 0.3,
+                        ..SpatialPlayParams::default()
+                    },
+                )?;
             }
         }
 
@@ -142,13 +151,22 @@ impl Game {
         self.context.al().set_listener_pos(player_pos);
         match (self.state.player.is_shooting, self.shoot_node.as_ref()) {
             (false, Some(node)) => {
-                node.stop().unwrap(); // TODO: wrap web audio
+                node.set_loop(false);
                 self.shoot_node = None;
             }
             (true, None) => {
-                let node = al::play_spatial(&self.shoot_sound, player_pos)?;
+                let node = al::play_spatial(
+                    &self.shoot_sound,
+                    &SpatialPlayParams {
+                        pos: player_pos,
+                        ..SpatialPlayParams::default()
+                    },
+                )?;
                 node.set_loop(true);
                 self.shoot_node = Some(node)
+            }
+            (true, Some(node)) => {
+                node.set_pos(player_pos);
             }
             _ => (),
         }
