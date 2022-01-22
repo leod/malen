@@ -1,7 +1,7 @@
 use coarse_prof::profile;
 
 use malen::{
-    al::{self, Sound},
+    al::{self, Sound, SoundSourceNode},
     particles::{Particle, Particles},
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -17,6 +17,8 @@ pub struct Game {
     profile: Profile,
 
     shoot_sound: Sound,
+    hit_sound: Sound,
+    shoot_node: Option<SoundSourceNode>,
 
     state: State,
     smoke: Particles,
@@ -34,6 +36,8 @@ impl Game {
 
         let shoot_sound =
             Sound::load(context.al(), "resources/344276__nsstudios__laser3.wav").await?;
+        let hit_sound =
+            Sound::load(context.al(), "resources/168984__lavik89__digital-hit.wav").await?;
 
         let state = State::new();
         let smoke = Particles::new(Vector2::new(512, 512));
@@ -43,6 +47,8 @@ impl Game {
             context,
             profile,
             shoot_sound,
+            hit_sound,
+            shoot_node: None,
             state,
             smoke,
             draw,
@@ -112,7 +118,7 @@ impl Game {
         match game_event {
             LaserHit { pos, dir } => {
                 self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
-                al::play_spatial(&self.shoot_sound, Point3::new(pos.x, pos.y, 0.0))?;
+                al::play_spatial(&self.hit_sound, Point3::new(pos.x, pos.y, 0.0))?;
             }
         }
 
@@ -131,11 +137,21 @@ impl Game {
         for game_event in game_events {
             self.handle_game_event(game_event)?;
         }
-        self.context.al().set_listener_pos(Point3::new(
-            self.state.player.pos.x,
-            self.state.player.pos.y,
-            0.0,
-        ));
+
+        let player_pos = Point3::new(self.state.player.pos.x, self.state.player.pos.y, 0.0);
+        self.context.al().set_listener_pos(player_pos);
+        match (self.state.player.is_shooting, self.shoot_node.as_ref()) {
+            (false, Some(node)) => {
+                node.stop().unwrap(); // TODO: wrap web audio
+                self.shoot_node = None;
+            }
+            (true, None) => {
+                let node = al::play_spatial(&self.shoot_sound, player_pos)?;
+                node.set_loop(true);
+                self.shoot_node = Some(node)
+            }
+            _ => (),
+        }
 
         self.smoke.update(dt_secs);
 
