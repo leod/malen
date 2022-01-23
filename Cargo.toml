@@ -20,6 +20,7 @@ glow = "0.11"
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 rand = { version = "0.7", features = ["wasm-bindgen"] }
 slab = "0.4"
+half = { version = "1.8", features = ["bytemuck"] }
 
 # Downgrade nalgebra for VS Code
 #crevice = { version = "0.8", features = ["nalgebra"] }
@@ -48,6 +49,20 @@ features = [
     "Response",
     "Blob",
     "ImageBitmapFormat",
+    "AudioContext",
+    "AudioBufferSourceNode",
+    "AudioBuffer",
+    "AudioNode",
+    "AudioDestinationNode",
+    "AudioListener",
+    "PannerNode",
+    "GainNode",
+    "AudioParam",
+    "PanningModelType",
+    "DistanceModelType",
+    "DynamicsCompressorNode",
+    "ConvolverNode",
+    "DelayNode",
 ]
 
 [workspace]

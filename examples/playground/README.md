@@ -48,3 +48,7 @@ There are many different installation instructions flying around. This one actua
    Author: Fupi
 
    URL: https://opengameart.org/content/smoke-vapor-particles
+
+- Sounds are from https://freesound.org/, with the filenames containing the artist names.
+
+- `impulse4.wav`: https://lucwhite.com/tutorials/convolutionreverb/

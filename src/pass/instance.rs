@@ -1,5 +1,4 @@
-use bytemuck::Zeroable;
-use bytemuck_derive::{Pod, Zeroable};
+use bytemuck::{Pod, Zeroable};
 use nalgebra::{Point2, Vector2};
 
 use crate::{
