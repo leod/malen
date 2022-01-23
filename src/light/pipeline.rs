@@ -126,6 +126,10 @@ impl LightPipeline {
         self.shadow_map.gl()
     }
 
+    pub fn shadow_map_framebuffer(&self) -> &Framebuffer {
+        &self.shadow_map
+    }
+
     pub fn shadow_map(&self) -> &Texture {
         &self.shadow_map.textures()[0]
     }

@@ -7,7 +7,7 @@ use crate::error::InitError;
 
 use super::{Button, Event, EventListener, Key};
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Clone)]
 struct SharedState {
     events: VecDeque<Event>,
 }

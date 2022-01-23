@@ -1,5 +1,4 @@
-//! `malen` is yet another one of these libraries for 2D web game
-//! development.
+//! `malen` is yet another one of these libraries for 2D web game development.
 
 mod canvas;
 mod color;
@@ -14,6 +13,7 @@ mod profile;
 
 pub(crate) mod util;
 
+pub mod al;
 pub mod data;
 pub mod geom;
 pub mod gl;
@@ -28,6 +28,7 @@ pub mod text;
 pub use coarse_prof;
 pub use glow;
 pub use nalgebra;
+pub use web_sys;
 
 pub use canvas::{Canvas, CanvasSizeConfig};
 pub use color::{Color3, Color4};
