@@ -45,7 +45,7 @@ vec3 trace_cone(
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = params.indirect_start;
+    float t = params.indirect_initial_offset;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
     vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
@@ -62,7 +62,7 @@ vec3 trace_cone(
         vec3 sample_color = read.rgb;
 
         if (sample_occlusion > 0.0) {
-            sample_color *= params.indirect_color_scale;
+            sample_color *= params.indirect_intensity;
 
             color += (1.0 - occlusion) * sample_color;
             occlusion += (1.0 - occlusion) * sample_occlusion;

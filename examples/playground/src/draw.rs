@@ -9,8 +9,8 @@ use malen::{
     geom::{Circle, Rect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
-        GlobalLightParams, LightPipelineParams, Light, LightPipeline,
-        ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
+        GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
+        OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
     particles::Particles,
     pass::{ColorInstance, MatricesBlock},
