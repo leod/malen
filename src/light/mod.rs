@@ -6,8 +6,7 @@ pub(super) mod pass;
 mod pipeline;
 
 pub use def::{
-    GlobalLightParams, GlobalLightParamsBlock, IndirectLightPipelineParams, Light,
-    LightPipelineParams, ObjectLightParams,
+    GlobalLightParams, GlobalLightParamsBlock, Light, LightPipelineParams, ObjectLightParams,
 };
 pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,

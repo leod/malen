@@ -98,7 +98,7 @@ impl LightPipeline {
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
         let compose_with_indirect_pass =
-            ComposeWithIndirectPass::new(context.gl(), params.indirect_light.clone())?;
+            ComposeWithIndirectPass::new(context.gl(), params.clone())?;
 
         Ok(Self {
             canvas,
