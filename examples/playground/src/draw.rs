@@ -9,7 +9,7 @@ use malen::{
     geom::{Circle, Rect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
-        GlobalLightParams, IndirectLightPipelineParams, Light, LightPipeline, LightPipelineParams,
+        GlobalLightParams, LightPipelineParams, Light, LightPipeline,
         ObjectLightParams, OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
     particles::Particles,
@@ -64,10 +64,8 @@ impl Draw {
             LightPipelineParams {
                 shadow_map_resolution: 2048,
                 max_num_lights: 300,
-                indirect_light: IndirectLightPipelineParams {
-                    num_tracing_cones: 8,
-                    num_tracing_steps: 8,
-                },
+                num_tracing_cones: 8,
+                num_tracing_steps: 8,
             },
         )?;
 

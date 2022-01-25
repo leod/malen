@@ -6,7 +6,7 @@ use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
-    light::IndirectLightPipelineParams,
+    light::LightPipelineParams,
     Color4,
 };
 
@@ -125,10 +125,7 @@ void main() {
 "#;
 
 impl ComposeWithIndirectPass {
-    pub fn new(
-        gl: Rc<gl::Context>,
-        params: IndirectLightPipelineParams,
-    ) -> Result<Self, gl::Error> {
+    pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let screen_rect = Mesh::from_geometry(
             gl.clone(),
             Sprite {

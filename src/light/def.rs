@@ -14,11 +14,6 @@ use crate::{
 pub struct LightPipelineParams {
     pub shadow_map_resolution: u32,
     pub max_num_lights: u32,
-    pub indirect_light: IndirectLightPipelineParams,
-}
-
-#[derive(Debug, Clone)]
-pub struct IndirectLightPipelineParams {
     pub num_tracing_cones: u32,
     pub num_tracing_steps: u32,
 }
