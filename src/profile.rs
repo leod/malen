@@ -112,8 +112,8 @@ impl Profile {
         coarse_prof::profile!("Profile::draw");
 
         self.render(screen)?;
-        /*self.pass
-        .draw(&self.screen_matrices, &mut self.font, &mut self.batch);*/
+        self.pass
+            .draw(&self.screen_matrices, &mut self.font, &mut self.batch);
 
         Ok(())
     }
@@ -123,10 +123,10 @@ impl Profile {
 
         {
             coarse_prof::profile!("prepare");
-            /*self.screen_matrices.set(MatricesBlock {
+            self.screen_matrices.set(MatricesBlock {
                 view: Matrix3::identity(),
                 projection: screen.orthographic_projection(),
-            });*/
+            });
 
             self.batch.clear();
         }

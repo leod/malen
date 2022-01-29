@@ -34,6 +34,8 @@ pub struct Game {
     indirect_light: bool,
     show_profile: bool,
     show_textures: bool,
+
+    dt_secs: f32,
 }
 
 impl Game {
@@ -86,6 +88,7 @@ impl Game {
             indirect_light: true,
             show_profile: false,
             show_textures: false,
+            dt_secs: 0.0,
         })
     }
 
@@ -217,6 +220,8 @@ impl Game {
     fn update(&mut self, dt_secs: f32) -> Result<(), FrameError> {
         profile!("Game::update");
 
+        self.dt_secs = dt_secs;
+
         let game_events =
             self.state
                 .update(dt_secs, self.context.screen(), self.context.input_state());
@@ -313,17 +318,17 @@ impl Game {
             &mut self.draw.text_batch,
         )?;*/
 
-        /*self.draw.text_batch.clear();
+        self.draw.text_batch.clear();
         self.draw.font.write(
             Text {
                 pos: Point2::new(10.0, 10.0),
                 size: 20.0,
                 z: 0.0,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
-                text: &format!("hello world! {}", rand::thread_rng().gen_range(0, 1000)),
+                text: &format!("{:.4}", self.dt_secs),
             },
             &mut self.draw.text_batch,
-        )?;*/
+        )?;
 
         Ok(())
     }
@@ -331,11 +336,13 @@ impl Game {
     fn draw(&mut self) -> Result<(), FrameError> {
         profile!("Game::draw");
 
-        /*self.context
-        .clear_color_and_depth(Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);*/
+        self.context
+            .clear_color_and_depth(Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
         self.draw.draw(&self.context, self.indirect_light)?;
 
-        //self.draw.font.draw(&self.draw.screen_matrices, &mut self.draw.text_batch);
+        self.draw
+            .font
+            .draw(&self.draw.screen_matrices, &mut self.draw.text_batch);
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;

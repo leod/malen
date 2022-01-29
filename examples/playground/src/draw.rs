@@ -135,16 +135,16 @@ impl Draw {
         if !self.first {
             return Ok(());
         }
-        self.first = false;
+        //self.first = false;
 
         self.camera_matrices.set(MatricesBlock {
             view: state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
-        /*self.screen_matrices.set(MatricesBlock {
+        self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
-        });*/
+        });
 
         self.circle_instances.clear();
         self.translucent_color_batch.clear();
@@ -157,11 +157,11 @@ impl Draw {
         self.lights.clear();
 
         self.render_player(&state.player);
-        /*self.render_floor(state);
+        self.render_floor(state);
         for wall in &state.walls {
             self.render_wall(wall);
-        }*/
-        /*for lamp in &state.lamps {
+        }
+        for lamp in &state.lamps {
             self.render_lamp(lamp);
         }
         for enemy in &state.enemies {
@@ -174,7 +174,7 @@ impl Draw {
             self.render_laser(laser);
         }
 
-        self.smoke_batch.push(smoke);*/
+        self.smoke_batch.push(smoke);
 
         Ok(())
     }

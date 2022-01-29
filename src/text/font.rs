@@ -151,18 +151,26 @@ impl Font {
     ) -> Result<Vector2<f32>, WriteTextError> {
         let dpr = util::device_pixel_ratio() as f32;
 
-        self.layout.reset(&LayoutSettings {
-            x: 0.0,
-            y: 0.0,
-            max_width: None,
-            ..Default::default()
-        });
-        self.layout.append(
-            &[&self.font],
-            &TextStyle::new(text.text, text.size * dpr, 0),
-        );
+        {
+            coarse_prof::profile!("reset");
+            self.layout.reset(&LayoutSettings {
+                x: 0.0,
+                y: 0.0,
+                max_width: None,
+                ..Default::default()
+            });
+        }
+        {
+            coarse_prof::profile!("append");
+            self.layout.append(
+                &[&self.font],
+                &TextStyle::new(text.text, text.size * dpr, 0),
+            );
+        }
 
         let mut size = Vector2::zeros();
+
+        coarse_prof::profile!("glyphs");
 
         for glyph_pos in self.layout.glyphs() {
             // Ignore empty glyphs (e.g. space).
