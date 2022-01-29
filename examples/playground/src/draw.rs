@@ -30,7 +30,7 @@ pub struct Draw {
     translucent_light_params: Uniform<ObjectLightParams>,
     reflector_light_params: Uniform<ObjectLightParams>,
     camera_matrices: Uniform<MatricesBlock>,
-    screen_matrices: Uniform<MatricesBlock>,
+    pub screen_matrices: Uniform<MatricesBlock>,
 
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     translucent_color_batch: ColorTriangleBatch,
@@ -41,6 +41,8 @@ pub struct Draw {
     smoke_batch: SpriteBatch,
     lights: Vec<Light>,
     pub text_batch: TextBatch,
+
+    first: bool,
 }
 
 impl Draw {
@@ -118,6 +120,7 @@ impl Draw {
             smoke_batch,
             lights,
             text_batch,
+            first: true,
         })
     }
 
@@ -129,14 +132,19 @@ impl Draw {
     ) -> Result<(), FrameError> {
         profile!("Draw::render");
 
+        if !self.first {
+            return Ok(());
+        }
+        self.first = false;
+
         self.camera_matrices.set(MatricesBlock {
             view: state.camera().matrix(screen),
             projection: screen.orthographic_projection(),
         });
-        self.screen_matrices.set(MatricesBlock {
+        /*self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
-        });
+        });*/
 
         self.circle_instances.clear();
         self.translucent_color_batch.clear();
@@ -149,11 +157,11 @@ impl Draw {
         self.lights.clear();
 
         self.render_player(&state.player);
-        self.render_floor(state);
+        /*self.render_floor(state);
         for wall in &state.walls {
             self.render_wall(wall);
-        }
-        for lamp in &state.lamps {
+        }*/
+        /*for lamp in &state.lamps {
             self.render_lamp(lamp);
         }
         for enemy in &state.enemies {
@@ -166,7 +174,7 @@ impl Draw {
             self.render_laser(laser);
         }
 
-        self.smoke_batch.push(smoke);
+        self.smoke_batch.push(smoke);*/
 
         Ok(())
     }
@@ -329,7 +337,7 @@ impl Draw {
     pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
-        let light = true;
+        let light = false;
 
         if light {
             let phase = self
@@ -348,17 +356,6 @@ impl Draw {
                     self.reflector_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: Some(DepthTest::default()),
-                        ..DrawParams::default()
-                    },
-                )
-                .draw_sprites_with_normals(
-                    &self.translucent_light_params,
-                    &self.smoke_texture,
-                    &self.smoke_normal_texture,
-                    self.smoke_batch.draw_unit(),
-                    &DrawParams {
-                        blend: Some(Blend::default()),
-                        depth_test: Some(DepthTest::read_only()),
                         ..DrawParams::default()
                     },
                 )
@@ -391,14 +388,14 @@ impl Draw {
                 phase.compose();
             }
         } else {
-            context.color_pass().draw(
+            /*context.color_pass().draw(
                 &self.camera_matrices,
                 self.translucent_color_batch.draw_unit(),
                 &DrawParams {
                     depth_test: Some(DepthTest::default()),
                     ..DrawParams::default()
                 },
-            );
+            );*/
             context.color_pass().draw(
                 &self.camera_matrices,
                 self.reflector_color_batch.draw_unit(),
@@ -407,7 +404,7 @@ impl Draw {
                     ..DrawParams::default()
                 },
             );
-            context.sprite_pass().draw(
+            /*context.sprite_pass().draw(
                 &self.camera_matrices,
                 &self.smoke_texture,
                 self.smoke_batch.draw_unit(),
@@ -415,7 +412,7 @@ impl Draw {
                     blend: Some(Blend::default()),
                     ..DrawParams::default()
                 },
-            );
+            );*/
         }
 
         /*context.color_pass().draw(
@@ -424,7 +421,7 @@ impl Draw {
             &DrawParams::default(),
         );*/
 
-        self.font.draw(&self.screen_matrices, &mut self.text_batch);
+        //self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
         Ok(())
     }

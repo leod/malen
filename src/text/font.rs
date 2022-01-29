@@ -233,6 +233,8 @@ impl Font {
         if let Some(glyph_loc) = glyph_locs.get(glyph_key) {
             Ok(glyph_loc.clone())
         } else {
+            log::info!("adding glyph: {:?}", glyph_key);
+
             let (metrics, alpha_bitmap) =
                 font.rasterize_indexed(glyph_key.glyph_index, glyph_key.px);
             let glyph_size = Vector2::new(

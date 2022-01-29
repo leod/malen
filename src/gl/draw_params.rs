@@ -27,7 +27,7 @@ pub fn set_draw_params(gl: &Context, draw_params: &DrawParams) {
     set_blend(gl, draw_params.blend);
     set_depth_test(gl, draw_params.depth_test);
     unsafe {
-        gl.line_width(draw_params.line_width);
+        //gl.line_width(draw_params.line_width);
         gl.color_mask(
             draw_params.color_mask.0,
             draw_params.color_mask.1,

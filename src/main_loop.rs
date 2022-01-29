@@ -42,14 +42,14 @@ where
         let f = f.clone();
 
         move |timestamp_millis: f64| {
+            request_animation_frame(f.borrow().as_ref().unwrap());
+
             callback(timestamp_millis / 1000.0f64, &mut running);
 
             if !running {
                 let _ = f.borrow_mut().take();
                 return;
             }
-
-            request_animation_frame(f.borrow().as_ref().unwrap());
         }
     }) as Box<dyn FnMut(f64)>));
 

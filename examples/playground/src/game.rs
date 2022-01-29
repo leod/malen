@@ -2,6 +2,7 @@ use coarse_prof::profile;
 
 use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
+    glow::HasContext,
     particles::{Particle, Particles},
     text::{Font, Text},
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -150,6 +151,7 @@ impl Game {
                         self.indirect_light = !self.indirect_light;
                     }
                     Key::R => {
+                        log::info!("Profiling:\n{}", coarse_prof::to_string());
                         coarse_prof::reset();
                     }
                     _ => (),
@@ -219,12 +221,12 @@ impl Game {
             self.state
                 .update(dt_secs, self.context.screen(), self.context.input_state());
 
-        for game_event in game_events {
+        /*for game_event in game_events {
             self.handle_game_event(game_event)?;
-        }
+        }*/
 
-        self.update_audio(dt_secs)?;
-        self.smoke.update(dt_secs);
+        //self.update_audio(dt_secs)?;
+        //self.smoke.update(dt_secs);
 
         Ok(())
     }
@@ -272,7 +274,7 @@ impl Game {
         self.draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
 
-        let dists = self
+        /*let dists = self
             .draw
             .light_pipeline
             .shadow_map_framebuffer()
@@ -292,8 +294,8 @@ impl Game {
             convolver_gain: 0.1 + 0.2 * avg_dist.powf(2.0),
             ..ReverbParams::default()
         };
-        self.reverb.linear_ramp_to_params(&reverb_params, 0.05)?;
-        self.draw.font.write(
+        self.reverb.linear_ramp_to_params(&reverb_params, 0.05)?;*/
+        /*self.draw.font.write(
             Text {
                 pos: Point2::new(10.0, 10.0),
                 size: 20.0,
@@ -309,7 +311,19 @@ impl Game {
                 ),
             },
             &mut self.draw.text_batch,
-        )?;
+        )?;*/
+
+        /*self.draw.text_batch.clear();
+        self.draw.font.write(
+            Text {
+                pos: Point2::new(10.0, 10.0),
+                size: 20.0,
+                z: 0.0,
+                color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                text: &format!("hello world! {}", rand::thread_rng().gen_range(0, 1000)),
+            },
+            &mut self.draw.text_batch,
+        )?;*/
 
         Ok(())
     }
@@ -317,16 +331,22 @@ impl Game {
     fn draw(&mut self) -> Result<(), FrameError> {
         profile!("Game::draw");
 
-        self.context
-            .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
+        /*self.context
+        .clear_color_and_depth(Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);*/
         self.draw.draw(&self.context, self.indirect_light)?;
+
+        //self.draw.font.draw(&self.draw.screen_matrices, &mut self.draw.text_batch);
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;
         }
-        if self.show_textures {
+        /*if self.show_textures {
             self.draw.draw_debug_textures(&mut self.context)?;
-        }
+        }*/
+
+        /*unsafe {
+            self.context.gl().finish();
+        }*/
 
         Ok(())
     }

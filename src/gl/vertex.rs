@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use bytemuck::Pod;
+use bytemuck::{Pod, Zeroable};
 use nalgebra::{Matrix2, Matrix3, Matrix4, Point2, Point3, Point4, Vector2, Vector3, Vector4};
 
 use glow::HasContext;
@@ -24,7 +24,7 @@ pub struct Attribute {
     pub num_elements: usize,
 }
 
-pub trait Vertex: Pod {
+pub trait Vertex: Pod + Zeroable {
     fn attributes() -> Vec<Attribute>;
 
     unsafe fn bind_to_vertex_array(

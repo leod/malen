@@ -8,6 +8,7 @@ pub struct VertexBuffer<V> {
     gl: Rc<Context>,
     id: glow::Buffer,
     len: Cell<usize>,
+    capacity: Cell<usize>,
     _phantom: PhantomData<V>,
 }
 
@@ -22,6 +23,7 @@ where
             gl,
             id,
             len: Cell::new(0),
+            capacity: Cell::new(0),
             _phantom: PhantomData,
         })
     }
@@ -42,6 +44,10 @@ where
 
     fn set_data_with_usage(&self, data: &[V], usage: u32) {
         let data_u8 = bytemuck::cast_slice(data);
+
+        if data.len() > self.capacity.get() {
+            self.capacity.set(data.len() + data.len() / 2);
+        }
 
         unsafe {
             self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.id));

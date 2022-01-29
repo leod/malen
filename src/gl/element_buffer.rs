@@ -1,11 +1,11 @@
 use std::{cell::Cell, marker::PhantomData, rc::Rc};
 
-use bytemuck::Pod;
+use bytemuck::{Pod, Zeroable};
 use glow::HasContext;
 
 use super::{Context, Error};
 
-pub trait Element: Pod {
+pub trait Element: Pod + Zeroable {
     fn to_gl() -> u32;
 }
 
@@ -25,6 +25,7 @@ pub struct ElementBuffer<E = u32> {
     gl: Rc<Context>,
     id: glow::Buffer,
     len: Cell<usize>,
+    capacity: Cell<usize>,
     _phantom: PhantomData<E>,
 }
 
@@ -39,6 +40,7 @@ where
             gl,
             id,
             len: Cell::new(0),
+            capacity: Cell::new(0),
             _phantom: PhantomData,
         })
     }

@@ -35,7 +35,7 @@ where
         unsafe {
             self.gl.bind_buffer(glow::UNIFORM_BUFFER, Some(self.id));
             self.gl
-                .buffer_data_u8_slice(glow::UNIFORM_BUFFER, data_u8, glow::STREAM_DRAW);
+                .buffer_data_u8_slice(glow::UNIFORM_BUFFER, data_u8, glow::DYNAMIC_DRAW);
         }
     }
 }

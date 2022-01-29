@@ -112,8 +112,8 @@ impl Profile {
         coarse_prof::profile!("Profile::draw");
 
         self.render(screen)?;
-        self.pass
-            .draw(&self.screen_matrices, &mut self.font, &mut self.batch);
+        /*self.pass
+        .draw(&self.screen_matrices, &mut self.font, &mut self.batch);*/
 
         Ok(())
     }
@@ -121,28 +121,37 @@ impl Profile {
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
         coarse_prof::profile!("Profile::render");
 
-        self.screen_matrices.set(MatricesBlock {
-            view: Matrix3::identity(),
-            projection: screen.orthographic_projection(),
-        });
+        {
+            coarse_prof::profile!("prepare");
+            /*self.screen_matrices.set(MatricesBlock {
+                view: Matrix3::identity(),
+                projection: screen.orthographic_projection(),
+            });*/
 
-        self.batch.clear();
+            self.batch.clear();
+        }
 
-        let prof_string = coarse_prof::to_string();
+        let prof_string = {
+            coarse_prof::profile!("coarse_prof");
+            coarse_prof::to_string()
+        };
         let prof_size =
             self.font.text_size(self.params.text_size, &prof_string) + 2.0 * self.params.padding;
         let prof_pos = Point2::from(screen.logical_size) - prof_size - self.params.margin;
 
-        self.font.write(
-            Text {
-                pos: prof_pos + self.params.padding,
-                size: self.params.text_size,
-                z: 0.0,
-                color: Color4::new(0.0, 0.0, 0.0, 1.0),
-                text: &prof_string,
-            },
-            &mut self.batch.text_batch,
-        )?;
+        {
+            coarse_prof::profile!("font");
+            self.font.write(
+                Text {
+                    pos: prof_pos + self.params.padding,
+                    size: self.params.text_size,
+                    z: 0.0,
+                    color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                    text: &prof_string,
+                },
+                &mut self.batch.text_batch,
+            )?;
+        }
 
         self.batch.triangle_batch.push(ColorRect {
             rect: Rect::from_top_left(prof_pos, prof_size),
@@ -150,13 +159,13 @@ impl Profile {
             color: PlotStyle::default().background_color.unwrap(),
         });
 
-        let plot = self.plot(Rect::from_bottom_left(
+        /*let plot = self.plot(Rect::from_bottom_left(
             screen.logical_rect().bottom_left()
                 + Vector2::new(self.params.margin.x, -self.params.margin.y),
             self.params.plot_size,
         ));
         self.batch
-            .push(&mut self.font, plot, PlotStyle::default())?;
+            .push(&mut self.font, plot, PlotStyle::default())?;*/
 
         Ok(())
     }
@@ -217,6 +226,8 @@ impl Profile {
 
 impl Drop for FrameGuard {
     fn drop(&mut self) {
+        coarse_prof::profile!("FrameGuard::drop");
+
         let mut frame_times = self.frame_times.borrow_mut();
         frame_times.push_back((
             self.start_time,

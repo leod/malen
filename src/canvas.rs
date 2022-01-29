@@ -71,13 +71,15 @@ impl Canvas {
         let event_handlers = EventHandlers::new(element.clone())?;
 
         let mut context_attributes = WebGlContextAttributes::new();
-        context_attributes.alpha(false);
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#avoid_alphafalse_which_can_be_expensive
+        context_attributes.alpha(true);
         context_attributes.depth(true);
         context_attributes.stencil(true);
         context_attributes.antialias(false);
         context_attributes.power_preference(WebGlPowerPreference::HighPerformance);
         context_attributes.preserve_drawing_buffer(false);
         context_attributes.xr_compatible(false);
+        context_attributes.fail_if_major_performance_caveat(true);
 
         let webgl_context = element
             .get_context_with_context_options("webgl2", &context_attributes.into())
