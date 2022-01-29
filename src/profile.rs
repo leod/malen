@@ -43,13 +43,15 @@ pub struct Profile {
     font: Font,
     params: ProfileParams,
 
-    screen_matrices: Uniform<MatricesBlock>,
-    batch: PlotBatch,
+    screen_matrices: [Uniform<MatricesBlock>; 3],
+    batch: [PlotBatch; 3],
     pass: Rc<PlotPass>,
 
     dts: VecDeque<(Instant, Duration)>,
     frame_times: FrameTimes,
     draw_times: DrawTimes,
+
+    frame: usize,
 }
 
 pub struct FrameGuard {
@@ -61,8 +63,12 @@ pub struct FrameGuard {
 
 impl Profile {
     pub fn new(context: &Context, font: Font, params: ProfileParams) -> Result<Self, InitError> {
-        let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
-        let batch = PlotBatch::new(context.gl())?;
+        let screen_matrices1 = Uniform::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices2 = Uniform::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices3 = Uniform::new(context.gl(), MatricesBlock::default())?;
+        let batch1 = PlotBatch::new(context.gl())?;
+        let batch2 = PlotBatch::new(context.gl())?;
+        let batch3 = PlotBatch::new(context.gl())?;
         let pass = context.plot_pass();
 
         let dts = VecDeque::new();
@@ -75,12 +81,13 @@ impl Profile {
         Ok(Self {
             font,
             params,
-            screen_matrices,
-            batch,
+            screen_matrices: [screen_matrices1, screen_matrices2, screen_matrices3],
+            batch: [batch1, batch2, batch3],
             pass,
             dts,
             frame_times,
             draw_times,
+            frame: 0,
         })
     }
 
@@ -119,8 +126,13 @@ impl Profile {
         coarse_prof::profile!("Profile::draw");
 
         self.render(screen)?;
-        self.pass
-            .draw(&self.screen_matrices, &mut self.font, &mut self.batch);
+        self.pass.draw(
+            &self.screen_matrices[self.frame % 3],
+            &mut self.font,
+            &mut self.batch[self.frame % 3],
+        );
+
+        self.frame += 1;
 
         Ok(())
     }
@@ -128,12 +140,12 @@ impl Profile {
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
         coarse_prof::profile!("Profile::render");
 
-        self.screen_matrices.set(MatricesBlock {
+        self.screen_matrices[self.frame % 3].set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.orthographic_projection(),
         });
 
-        self.batch.clear();
+        self.batch[self.frame % 3].clear();
 
         let prof_string = coarse_prof::to_string();
         let prof_size =
@@ -148,7 +160,7 @@ impl Profile {
                 color: Color4::new(0.0, 0.0, 0.0, 1.0),
                 text: &prof_string,
             },
-            &mut self.batch.text_batch,
+            &mut self.batch[self.frame % 3].text_batch,
         )?;
 
         /*self.batch.triangle_batch.push(ColorRect {

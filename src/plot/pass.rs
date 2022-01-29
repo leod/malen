@@ -23,10 +23,10 @@ impl PlotPass {
             ..DrawParams::default()
         };
 
-        self.color_pass
+        /*self.color_pass
             .draw(matrices, batch.triangle_batch.draw_unit(), &draw_params);
         self.color_pass
-            .draw(matrices, batch.line_batch.draw_unit(), &draw_params);
+            .draw(matrices, batch.line_batch.draw_unit(), &draw_params);*/
         font.draw(matrices, &mut batch.text_batch);
     }
 }
