@@ -329,7 +329,7 @@ impl Draw {
     pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
         profile!("Draw::draw");
 
-        let light = true;
+        let light = false;
 
         if light {
             let phase = self
@@ -391,23 +391,23 @@ impl Draw {
                 phase.compose();
             }
         } else {
-            context.color_pass().draw(
+            /*context.color_pass().draw(
                 &self.camera_matrices,
                 self.translucent_color_batch.draw_unit(),
                 &DrawParams {
                     depth_test: Some(DepthTest::default()),
                     ..DrawParams::default()
                 },
-            );
-            context.color_pass().draw(
+            );*/
+            /*context.color_pass().draw(
                 &self.camera_matrices,
                 self.reflector_color_batch.draw_unit(),
                 &DrawParams {
                     depth_test: Some(DepthTest::default()),
                     ..DrawParams::default()
                 },
-            );
-            context.sprite_pass().draw(
+            );*/
+            /*context.sprite_pass().draw(
                 &self.camera_matrices,
                 &self.smoke_texture,
                 self.smoke_batch.draw_unit(),
@@ -415,7 +415,7 @@ impl Draw {
                     blend: Some(Blend::default()),
                     ..DrawParams::default()
                 },
-            );
+            );*/
         }
 
         /*context.color_pass().draw(

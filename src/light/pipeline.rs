@@ -169,7 +169,6 @@ impl LightPipeline {
             coarse_prof::profile!("clear_geometry");
 
             gl::with_framebuffer(&self.screen_geometry, || {
-                coarse_prof::profile!("do it");
                 gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
             });
         }
@@ -376,7 +375,7 @@ impl<'a> ShadowMapPhase<'a> {
             );
         });
 
-        self.pipeline.shadow_map.invalidate();
+        //self.pipeline.shadow_map.invalidate();
 
         drop(self.guard);
 
@@ -408,9 +407,9 @@ impl<'a> BuiltScreenLightPhase<'a> {
             &self.pipeline.screen_light.textures()[0],
         );
 
-        self.pipeline.screen_geometry.invalidate();
-        self.pipeline.screen_reflectors.invalidate();
-        self.pipeline.screen_light.invalidate();
+        //self.pipeline.screen_geometry.invalidate();
+        //self.pipeline.screen_reflectors.invalidate();
+        //self.pipeline.screen_light.invalidate();
     }
 }
 
@@ -493,9 +492,9 @@ impl<'a> ComposeWithIndirectPhase<'a> {
             &self.pipeline.screen_light.textures()[0],
         );
 
-        self.pipeline.screen_geometry.invalidate();
-        self.pipeline.screen_reflectors.invalidate();
-        self.pipeline.screen_light.invalidate();
+        //self.pipeline.screen_geometry.invalidate();
+        //self.pipeline.screen_reflectors.invalidate();
+        //self.pipeline.screen_light.invalidate();
     }
 }
 

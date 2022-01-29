@@ -151,19 +151,19 @@ impl Profile {
             &mut self.batch.text_batch,
         )?;
 
-        self.batch.triangle_batch.push(ColorRect {
+        /*self.batch.triangle_batch.push(ColorRect {
             rect: Rect::from_top_left(prof_pos, prof_size),
             z: 0.0,
             color: PlotStyle::default().background_color.unwrap(),
-        });
+        });*/
 
         let plot = self.plot(Rect::from_bottom_left(
             screen.logical_rect().bottom_left()
                 + Vector2::new(self.params.margin.x, -self.params.margin.y),
             self.params.plot_size,
         ));
-        self.batch
-            .push(&mut self.font, plot, PlotStyle::default())?;
+        /*self.batch
+        .push(&mut self.font, plot, PlotStyle::default())?;*/
 
         Ok(())
     }

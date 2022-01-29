@@ -39,7 +39,7 @@ impl DrawTimer {
         Self {
             gl,
             max_age,
-            is_supported,
+            is_supported: false,
             last_query: None,
             poll_queries: VecDeque::new(),
             samples: VecDeque::new(),

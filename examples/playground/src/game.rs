@@ -2,6 +2,7 @@ use coarse_prof::profile;
 
 use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
+    glow::HasContext,
     particles::{Particle, Particles},
     text::{Font, Text},
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -151,6 +152,7 @@ impl Game {
                         self.indirect_light = !self.indirect_light;
                     }
                     Key::R => {
+                        log::info!("Profiling:\n{}", coarse_prof::to_string());
                         coarse_prof::reset();
                     }
                     _ => (),
@@ -181,7 +183,7 @@ impl Game {
                         EntityType::Ball | EntityType::Enemy(_) => 0.4,
                         _ => 1.0,
                     };
-                    al::play_spatial(
+                    /*al::play_spatial(
                         hit_sound,
                         &SpatialPlayParams {
                             cone_inner_angle: 180.0,
@@ -192,13 +194,13 @@ impl Game {
                             ..SpatialPlayParams::default()
                         },
                         self.reverb.input(),
-                    )?;
+                    )?;*/
                     self.hit_sound_cooldown_secs = 0.05;
                 }
             }
             EnemyDied { pos } => {
                 self.spawn_smoke_explosion(pos, 300);
-                al::play_spatial(
+                /*al::play_spatial(
                     &self.explosion_sound,
                     &SpatialPlayParams {
                         pos: Point3::new(pos.x, pos.y, 0.0),
@@ -206,7 +208,7 @@ impl Game {
                         ..SpatialPlayParams::default()
                     },
                     self.reverb.input(),
-                )?;
+                )?;*/
             }
         }
 
@@ -231,6 +233,8 @@ impl Game {
     }
 
     fn update_audio(&mut self, dt_secs: f32) -> Result<(), FrameError> {
+        return Ok(());
+
         let player_pos = Point3::new(self.state.player.pos.x, self.state.player.pos.y, 0.0);
         self.context.al().set_listener_pos(player_pos);
 
@@ -270,8 +274,8 @@ impl Game {
     fn render(&mut self) -> Result<(), FrameError> {
         profile!("Game::render");
 
-        self.draw
-            .render(self.context.screen(), &self.state, &self.smoke)?;
+        /*self.draw
+        .render(self.context.screen(), &self.state, &self.smoke)?;*/
 
         /*let dists = self
             .draw
@@ -320,7 +324,7 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&self.context, self.indirect_light)?;
+        //self.draw.draw(&self.context, self.indirect_light)?;
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;
@@ -328,6 +332,12 @@ impl Game {
         if self.show_textures {
             self.draw.draw_debug_textures(&mut self.context)?;
         }
+
+        /*unsafe {
+            coarse_prof::profile!("finish");
+            self.context.gl().flush();
+            self.context.gl().finish();
+        }*/
 
         Ok(())
     }

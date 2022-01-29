@@ -36,20 +36,38 @@ where
 
     let f = Rc::new(RefCell::new(None));
 
+    #[cfg(feature = "coarse-prof")]
+    let guard = Rc::new(RefCell::new(None));
+
     let mut running = true;
 
     *f.borrow_mut() = Some(Closure::wrap(Box::new({
         let f = f.clone();
 
         move |timestamp_millis: f64| {
-            callback(timestamp_millis / 1000.0f64, &mut running);
+            {
+                #[cfg(feature = "coarse-prof")]
+                {
+                    *guard.borrow_mut() = None;
+                }
 
-            if !running {
-                let _ = f.borrow_mut().take();
-                return;
+                #[cfg(feature = "coarse-prof")]
+                coarse_prof::profile!("animation_frame");
+
+                callback(timestamp_millis / 1000.0f64, &mut running);
+
+                if !running {
+                    let _ = f.borrow_mut().take();
+                    return;
+                }
+
+                request_animation_frame(f.borrow().as_ref().unwrap());
             }
 
-            request_animation_frame(f.borrow().as_ref().unwrap());
+            #[cfg(feature = "coarse-prof")]
+            {
+                *guard.borrow_mut() = Some(coarse_prof::enter("other"));
+            }
         }
     }) as Box<dyn FnMut(f64)>));
 
