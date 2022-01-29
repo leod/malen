@@ -10,7 +10,7 @@ pub const MAP_SIZE: f32 = 4096.0;
 pub const ENEMY_RADIUS: f32 = 20.0;
 pub const LAMP_RADIUS: f32 = 12.0;
 pub const PLAYER_SIZE: f32 = 35.0;
-pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.01;
+pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.005;
 pub const LASER_LENGTH: f32 = 7.0;
 pub const LASER_WIDTH: f32 = 2.0;
 pub const LASER_SPEED: f32 = 600.0;
@@ -202,7 +202,7 @@ impl State {
         for _ in 0..350 {
             state.add_wall();
         }
-        for _ in 0..80 {
+        for _ in 0..9999 {
             state.add_enemy();
         }
         for _ in 0..50 {

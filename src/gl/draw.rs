@@ -113,38 +113,26 @@ where
     let gl = framebuffer.gl();
 
     unsafe {
-        {
-            coarse_prof::profile!("bind");
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer.id()));
-        }
-        {
-            coarse_prof::profile!("set");
-            gl.viewport(
-                0,
-                0,
-                i32::try_from(framebuffer.textures()[0].size().x).unwrap(),
-                i32::try_from(framebuffer.textures()[0].size().y).unwrap(),
-            );
-        }
+        gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer.id()));
+        gl.viewport(
+            0,
+            0,
+            i32::try_from(framebuffer.textures()[0].size().x).unwrap(),
+            i32::try_from(framebuffer.textures()[0].size().y).unwrap(),
+        );
     }
 
     let result = f();
 
     // TODO: We should be able to reduce state changes by delaying the unbind.
     unsafe {
-        {
-            coarse_prof::profile!("unset");
-            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-        }
-        {
-            coarse_prof::profile!("set2");
-            gl.viewport(
-                gl.main_viewport.get()[0],
-                gl.main_viewport.get()[1],
-                gl.main_viewport.get()[2],
-                gl.main_viewport.get()[3],
-            );
-        }
+        gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+        gl.viewport(
+            gl.main_viewport.get()[0],
+            gl.main_viewport.get()[1],
+            gl.main_viewport.get()[2],
+            gl.main_viewport.get()[3],
+        );
     }
 
     result
