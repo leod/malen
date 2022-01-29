@@ -164,16 +164,21 @@ impl LightPipeline {
             self.screen_light = new_screen_light(self.canvas.clone())?;
         }
 
-        #[cfg(feature = "coarse-prof")]
-        coarse_prof::profile!("clear_geometry");
+        {
+            #[cfg(feature = "coarse-prof")]
+            coarse_prof::profile!("clear_geometry");
 
-        gl::with_framebuffer(&self.screen_geometry, || {
-            gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
-        });
+            gl::with_framebuffer(&self.screen_geometry, || {
+                coarse_prof::profile!("do it");
+                gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
+            });
+        }
 
         Ok(GeometryPhase {
             pipeline: self,
             input: PhaseInput { matrices },
+            #[cfg(feature = "coarse-prof")]
+            guard: coarse_prof::enter("geometry"),
         })
     }
 }
@@ -186,6 +191,8 @@ struct PhaseInput<'a> {
 pub struct GeometryPhase<'a> {
     pipeline: &'a mut LightPipeline,
     input: PhaseInput<'a>,
+    #[cfg(feature = "coarse-prof")]
+    guard: coarse_prof::Guard,
 }
 
 #[must_use]
@@ -193,20 +200,28 @@ pub struct ShadowMapPhase<'a> {
     pipeline: &'a mut LightPipeline,
     input: PhaseInput<'a>,
     lights: &'a [Light],
+    #[cfg(feature = "coarse-prof")]
+    guard: coarse_prof::Guard,
 }
 
 pub struct BuiltScreenLightPhase<'a> {
     pipeline: &'a mut LightPipeline,
     input: PhaseInput<'a>,
+    #[cfg(feature = "coarse-prof")]
+    guard: coarse_prof::Guard,
 }
 
 pub struct IndirectLightPhase<'a> {
     pipeline: &'a mut LightPipeline,
     input: PhaseInput<'a>,
+    #[cfg(feature = "coarse-prof")]
+    guard: coarse_prof::Guard,
 }
 
 pub struct ComposeWithIndirectPhase<'a> {
     pipeline: &'a mut LightPipeline,
+    #[cfg(feature = "coarse-prof")]
+    _guard: coarse_prof::Guard,
 }
 
 impl<'a> GeometryPhase<'a> {
@@ -289,10 +304,14 @@ impl<'a> GeometryPhase<'a> {
             );
         });
 
+        drop(self.guard);
+
         ShadowMapPhase {
             pipeline: self.pipeline,
             input: self.input,
             lights,
+            #[cfg(feature = "coarse-prof")]
+            guard: coarse_prof::enter("shadow_map"),
         }
     }
 }
@@ -359,18 +378,26 @@ impl<'a> ShadowMapPhase<'a> {
 
         self.pipeline.shadow_map.invalidate();
 
+        drop(self.guard);
+
         BuiltScreenLightPhase {
             pipeline: self.pipeline,
             input: self.input,
+            #[cfg(feature = "coarse-prof")]
+            guard: coarse_prof::enter("screen_light"),
         }
     }
 }
 
 impl<'a> BuiltScreenLightPhase<'a> {
     pub fn indirect_light_phase(self) -> IndirectLightPhase<'a> {
+        drop(self.guard);
+
         IndirectLightPhase {
             pipeline: self.pipeline,
             input: self.input,
+            #[cfg(feature = "coarse-prof")]
+            guard: coarse_prof::enter("indirect_light"),
         }
     }
 
@@ -446,8 +473,12 @@ impl<'a> IndirectLightPhase<'a> {
     pub fn prepare_cone_tracing(self) -> ComposeWithIndirectPhase<'a> {
         self.pipeline.screen_occlusion().generate_mipmap();
 
+        drop(self.guard);
+
         ComposeWithIndirectPhase {
             pipeline: self.pipeline,
+            #[cfg(feature = "coarse-prof")]
+            _guard: coarse_prof::enter("compose_with_indirect"),
         }
     }
 }
