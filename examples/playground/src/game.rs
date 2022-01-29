@@ -89,7 +89,15 @@ impl Game {
     }
 
     pub fn frame(&mut self, timestamp_secs: f64) -> Result<(), FrameError> {
-        let _frame_guard = self.profile.frame_guard();
+        let dt_secs = self
+            .last_timestamp_secs
+            .map_or(0.0, |last_timestamp_secs| {
+                (timestamp_secs - last_timestamp_secs) as f32
+            })
+            .max(0.0);
+        self.last_timestamp_secs = Some(timestamp_secs);
+
+        let _frame_guard = self.profile.frame_guard(dt_secs);
 
         while let Some(event) = self.context.pop_event() {
             self.handle_event(event);
@@ -97,21 +105,12 @@ impl Game {
 
         let max_update_secs = 1.0 / 60.0;
         let max_dt_secs = 10.0 * max_update_secs;
+        let mut capped_dt_secs = dt_secs.min(max_dt_secs) as f32;
 
-        let mut dt_secs = self
-            .last_timestamp_secs
-            .map_or(0.0, |last_timestamp_secs| {
-                (timestamp_secs - last_timestamp_secs) as f32
-            })
-            .max(0.0)
-            .min(max_dt_secs) as f32;
-
-        while dt_secs >= 0.0 {
+        while capped_dt_secs >= 0.0 {
             self.update(dt_secs.min(max_update_secs))?;
-            dt_secs -= max_update_secs;
+            capped_dt_secs -= max_update_secs;
         }
-
-        self.last_timestamp_secs = Some(timestamp_secs);
 
         self.render()?;
         self.draw()?;
@@ -272,7 +271,7 @@ impl Game {
         self.draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
 
-        let dists = self
+        /*let dists = self
             .draw
             .light_pipeline
             .shadow_map_framebuffer()
@@ -309,7 +308,7 @@ impl Game {
                 ),
             },
             &mut self.draw.text_batch,
-        )?;
+        )?;*/
 
         Ok(())
     }
