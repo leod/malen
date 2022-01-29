@@ -357,6 +357,8 @@ impl<'a> ShadowMapPhase<'a> {
             );
         });
 
+        self.pipeline.shadow_map.invalidate();
+
         BuiltScreenLightPhase {
             pipeline: self.pipeline,
             input: self.input,
@@ -378,6 +380,10 @@ impl<'a> BuiltScreenLightPhase<'a> {
             &self.pipeline.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION],
             &self.pipeline.screen_light.textures()[0],
         );
+
+        self.pipeline.screen_geometry.invalidate();
+        self.pipeline.screen_reflectors.invalidate();
+        self.pipeline.screen_light.invalidate();
     }
 }
 
@@ -455,6 +461,10 @@ impl<'a> ComposeWithIndirectPhase<'a> {
             &self.pipeline.screen_geometry.textures()[SCREEN_OCCLUSION_LOCATION],
             &self.pipeline.screen_light.textures()[0],
         );
+
+        self.pipeline.screen_geometry.invalidate();
+        self.pipeline.screen_reflectors.invalidate();
+        self.pipeline.screen_light.invalidate();
     }
 }
 
