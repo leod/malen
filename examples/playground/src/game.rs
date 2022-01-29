@@ -108,7 +108,9 @@ impl Game {
         let mut capped_dt_secs = dt_secs.min(max_dt_secs) as f32;
 
         while capped_dt_secs >= 0.0 {
-            self.update(dt_secs.min(max_update_secs))?;
+            let speed = 1.5;
+
+            self.update(speed * capped_dt_secs.min(max_update_secs))?;
             capped_dt_secs -= max_update_secs;
         }
 
