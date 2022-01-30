@@ -202,7 +202,7 @@ impl State {
         for _ in 0..350 {
             state.add_wall();
         }
-        for _ in 0..9999 {
+        for _ in 0..100 {
             state.add_enemy();
         }
         for _ in 0..50 {
@@ -211,6 +211,14 @@ impl State {
         for _ in 0..300 {
             state.add_lamp();
         }
+
+        log::info!(
+            "walls: {}, enemies: {}, balls: {}, lamps: {}",
+            state.walls.len(),
+            state.enemies.len(),
+            state.balls.len(),
+            state.lamps.len()
+        );
 
         state
     }

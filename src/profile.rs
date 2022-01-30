@@ -130,7 +130,7 @@ impl Profile {
 
         self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
-            projection: screen.orthographic_projection(),
+            projection: screen.project_logical_to_ndc(),
         });
 
         self.batch.clear();

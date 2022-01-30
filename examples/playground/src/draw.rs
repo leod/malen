@@ -63,7 +63,7 @@ impl Draw {
             context,
             LightPipelineParams {
                 shadow_map_resolution: 2048,
-                max_num_lights: 2048,
+                max_num_lights: 4096,
                 num_tracing_cones: 8,
                 num_tracing_steps: 8,
             },
@@ -131,11 +131,11 @@ impl Draw {
 
         self.camera_matrices.set(MatricesBlock {
             view: state.camera().matrix(screen),
-            projection: screen.orthographic_projection(),
+            projection: screen.project_logical_to_ndc(),
         });
         self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
-            projection: screen.orthographic_projection(),
+            projection: screen.project_logical_to_ndc(),
         });
 
         self.circle_instances.clear();
@@ -185,7 +185,7 @@ impl Draw {
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player.rotated_rect(),
             ignore_light_index1: Some(self.lights.len() as u32),
-            ignore_light_index2: Some(self.lights.len() as u32 + 1),
+            ignore_light_index2: None,
         });
         self.outline_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
