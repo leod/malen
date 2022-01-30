@@ -1,6 +1,6 @@
 use nalgebra::{Point2, Vector2};
 
-use super::Line;
+use super::{Line, Rect};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RotatedRect {
@@ -59,5 +59,20 @@ impl RotatedRect {
             Line(corners[2], corners[3]),
             Line(corners[3], corners[0]),
         ]
+    }
+
+    pub fn bounding_rect(&self) -> Rect {
+        let (dx, dy) = self.dxdy();
+
+        let offset1 = dx - dy; // top right
+        let offset2 = dx + dy; // bottom right
+
+        let ex = offset1.x.abs().max(offset2.x.abs());
+        let ey = offset1.y.abs().max(offset2.y.abs());
+
+        Rect {
+            center: self.center,
+            size: Vector2::new(ex, ey) * 2.0,
+        }
     }
 }
