@@ -84,6 +84,7 @@ where
         for cell in self.cells.iter_mut() {
             cell.entries.clear();
         }
+        self.locations.clear();
     }
 
     pub fn overlap<'a>(
