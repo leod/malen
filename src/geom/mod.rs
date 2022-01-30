@@ -1,5 +1,6 @@
 mod camera;
 mod circle;
+mod grid;
 mod line;
 mod overlap;
 mod rect;
@@ -10,6 +11,7 @@ mod transforms;
 
 pub use camera::Camera;
 pub use circle::Circle;
+pub use grid::Grid;
 pub use line::Line;
 pub use overlap::{
     circle_circle_overlap, rect_circle_overlap, rect_rect_overlap, shape_shape_overlap, Overlap,
