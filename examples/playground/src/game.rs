@@ -3,7 +3,7 @@ use coarse_prof::profile;
 use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     particles::{Particle, Particles},
-    text::{Font, Text},
+    text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
 use nalgebra::{Point2, Point3, Vector2, Vector3};
