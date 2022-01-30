@@ -3,8 +3,8 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
-        InstanceBatch, Mesh, SpriteBatch, TriangleTag,
+        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
+        Mesh, SpriteBatch, TriangleTag,
     },
     geom::{self, Circle, Rect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
