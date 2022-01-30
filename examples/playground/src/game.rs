@@ -2,6 +2,7 @@ use coarse_prof::profile;
 
 use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
+    geom::{self, Shape},
     particles::{Particle, Particles},
     text::Font,
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -227,6 +228,22 @@ impl Game {
         self.update_audio(dt_secs)?;
         self.smoke.update(dt_secs);
 
+        for particle in self.smoke.iter_mut() {
+            for (_, overlap) in self
+                .state
+                .grid
+                .overlap(&Shape::Circle(particle.rotated_rect().bounding_circle()))
+            {
+                particle.vel += overlap.resolution().normalize() * 6.0;
+            }
+            if let Some(overlap) = geom::rotated_rect_rotated_rect_overlap(
+                particle.rotated_rect(),
+                self.state.player.rotated_rect(),
+            ) {
+                particle.vel += overlap.resolution().normalize() * 7.0;
+            }
+        }
+
         if self.state.player.is_shooting {
             self.spawn_smoke(
                 self.state.player.pos + self.state.player.dir * 22.0,
@@ -375,18 +392,17 @@ impl Game {
             let speed = 0.6 * rng.gen_range(5.0, 150.0);
             let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = rng.gen_range(3.0, 8.0);
 
             let particle = Particle {
                 pos,
                 angle: 0.0,
                 vel,
-                rot,
+                rot: 0.0,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
-                slowdown: 10.0,
+                slowdown: 1.0,
                 age_secs: 0.0,
                 max_age_secs,
             };
@@ -394,12 +410,12 @@ impl Game {
             self.smoke.spawn(particle);
         }
 
-        for _ in 0..8 * n {
+        for _ in 0..n {
             let speed = 1.5 * rng.gen_range(300.0, 500.0);
             let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let rot = 2.0 * std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
-            let max_age_secs = rng.gen_range(0.6, 0.8);
+            let max_age_secs = 1.7 * rng.gen_range(0.6, 0.8);
 
             let particle = Particle {
                 pos,

@@ -3,7 +3,7 @@ use slab::Slab;
 
 use crate::{
     data::{Geometry, RotatedSprite, SpriteVertex, TriangleTag},
-    geom::Rect,
+    geom::{Rect, RotatedRect},
     Color4,
 };
 
@@ -19,6 +19,16 @@ pub struct Particle {
     pub slowdown: f32,
     pub age_secs: f32,
     pub max_age_secs: f32,
+}
+
+impl Particle {
+    pub fn rotated_rect(&self) -> RotatedRect {
+        Rect {
+            center: self.pos,
+            size: self.size,
+        }
+        .rotate(self.angle - std::f32::consts::PI / 2.0)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -55,13 +65,26 @@ impl Particles {
         self.particles.insert(particle);
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &Particle> {
+        self.particles.iter().map(|(_, p)| p)
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Particle> {
+        self.particles.iter_mut().map(|(_, p)| p)
+    }
+
     pub fn update(&mut self, dt_secs: f32) {
         for (_, particle) in self.particles.iter_mut() {
+            particle.pos += dt_secs * particle.vel;
+
+            let speed = particle.vel.norm();
+            let new_speed = (speed - dt_secs * particle.slowdown * speed).max(0.0);
+            particle.vel = new_speed / speed * particle.vel;
+
             let speed_factor =
                 (1.0 - particle.age_secs / particle.max_age_secs).powf(particle.slowdown);
-
-            particle.pos += dt_secs * speed_factor * particle.vel;
             particle.angle += dt_secs * speed_factor * particle.rot;
+
             particle.age_secs += dt_secs;
         }
 
@@ -76,11 +99,7 @@ impl<'a> Geometry<TriangleTag> for &'a Particles {
     fn write(&self, elements: &mut Vec<u32>, vertices: &mut Vec<Self::Vertex>) {
         for (_, particle) in self.particles.iter() {
             RotatedSprite {
-                rect: Rect {
-                    center: particle.pos,
-                    size: particle.size,
-                }
-                .rotate(particle.angle - std::f32::consts::PI / 2.0),
+                rect: particle.rotated_rect(),
                 depth: particle.depth,
                 tex_rect: Rect::from_top_left(Point2::origin(), self.texture_size),
                 color: Color4::new(
