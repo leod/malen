@@ -229,29 +229,33 @@ impl Game {
         self.smoke.update(dt_secs);
 
         for particle in self.smoke.iter_mut() {
-            for (_, overlap) in self
+            for (entry, overlap) in self
                 .state
                 .grid
                 .overlap(&Shape::Circle(particle.rotated_rect().bounding_circle()))
             {
                 particle.vel += overlap.resolution().normalize() * 6.0;
+                if !matches!(entry.data, EntityType::Enemy(_)) {
+                    particle.slowdown *= 1.25;
+                }
             }
             if let Some(overlap) = geom::rotated_rect_rotated_rect_overlap(
                 particle.rotated_rect(),
                 self.state.player.rotated_rect(),
             ) {
                 particle.vel += overlap.resolution().normalize() * 7.0;
+                particle.slowdown *= 1.25;
             }
         }
 
-        if self.state.player.is_shooting {
+        /*if self.state.player.is_shooting {
             self.spawn_smoke(
                 self.state.player.pos + self.state.player.dir * 22.0,
                 self.state.player.dir.y.atan2(self.state.player.dir.x) + std::f32::consts::PI,
                 std::f32::consts::PI,
                 1,
             );
-        }
+        }*/
 
         Ok(())
     }
