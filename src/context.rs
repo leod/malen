@@ -142,7 +142,7 @@ impl Context {
         let batch = self.debug_sprite_batch.as_mut().unwrap();
 
         matrices.set(MatricesBlock {
-            projection: self.canvas.borrow().screen().orthographic_projection(),
+            projection: self.canvas.borrow().screen().project_logical_to_ndc(),
             view: Matrix3::identity(),
         });
 

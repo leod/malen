@@ -213,12 +213,12 @@ impl Canvas {
 
         let device_pixel_ratio = util::device_pixel_ratio();
         let bounding_rect = self.element.get_bounding_client_rect();
-
         let logical_size = Vector2::new(bounding_rect.width(), bounding_rect.height());
         let physical_size = Vector2::new(
             (logical_size.x * device_pixel_ratio).round() as u32,
             (logical_size.y * device_pixel_ratio).round() as u32,
         );
+
         self.logical_size = logical_size.cast::<f32>();
 
         let need_resize =
