@@ -227,6 +227,15 @@ impl Game {
         self.update_audio(dt_secs)?;
         self.smoke.update(dt_secs);
 
+        if self.state.player.is_shooting {
+            self.spawn_smoke(
+                self.state.player.pos + self.state.player.dir * 22.0,
+                self.state.player.dir.y.atan2(self.state.player.dir.x) + std::f32::consts::PI,
+                std::f32::consts::PI,
+                1,
+            );
+        }
+
         Ok(())
     }
 
