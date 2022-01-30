@@ -1,6 +1,6 @@
 use nalgebra::{Point2, Vector2};
 
-use super::{Line, Rect};
+use super::{Circle, Line, Rect};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RotatedRect {
@@ -73,6 +73,13 @@ impl RotatedRect {
         Rect {
             center: self.center,
             size: Vector2::new(ex, ey) * 2.0,
+        }
+    }
+
+    pub fn bounding_circle(&self) -> Circle {
+        Circle {
+            center: self.center,
+            radius: self.size.x.max(self.size.y),
         }
     }
 }

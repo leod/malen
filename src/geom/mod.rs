@@ -15,7 +15,7 @@ pub use grid::Grid;
 pub use line::Line;
 pub use overlap::{
     circle_circle_overlap, rect_circle_overlap, rect_rect_overlap, rotated_rect_circle_overlap,
-    shape_shape_overlap, Overlap,
+    rotated_rect_rotated_rect_overlap, shape_shape_overlap, Overlap,
 };
 pub use rect::Rect;
 pub use rotated_rect::RotatedRect;
