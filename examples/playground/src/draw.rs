@@ -6,7 +6,7 @@ use malen::{
         ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
         InstanceBatch, Mesh, SpriteBatch, TriangleTag,
     },
-    geom::{Circle, Rect, Screen},
+    geom::{self, Circle, Rect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
@@ -19,6 +19,8 @@ use malen::{
 };
 
 use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
+
+const MAX_LIGHT_RADIUS: f32 = 600.0;
 
 pub struct Draw {
     pub font: Font,
@@ -63,7 +65,7 @@ impl Draw {
             context,
             LightPipelineParams {
                 shadow_map_resolution: 2048,
-                max_num_lights: 4096,
+                max_num_lights: 512,
                 num_tracing_cones: 8,
                 num_tracing_steps: 8,
             },
@@ -138,6 +140,10 @@ impl Draw {
             projection: screen.project_logical_to_ndc(),
         });
 
+        let visible_rect = state.camera().visible_world_rect(screen).scale(1.0);
+        let light_rect =
+            visible_rect.enlarge(Vector2::new(1.0, 1.0) * MAX_LIGHT_RADIUS / state.camera().zoom);
+
         self.circle_instances.clear();
         self.translucent_color_batch.clear();
         self.reflector_color_batch.clear();
@@ -151,16 +157,16 @@ impl Draw {
         self.render_player(&state.player);
         self.render_floor(state);
         for wall in &state.walls {
-            self.render_wall(wall);
+            self.render_wall(wall, visible_rect, light_rect);
         }
         for lamp in &state.lamps {
-            self.render_lamp(lamp);
+            self.render_lamp(lamp, visible_rect);
         }
         for enemy in &state.enemies {
-            self.render_enemy(enemy);
+            self.render_enemy(enemy, visible_rect, light_rect);
         }
         for ball in &state.balls {
-            self.render_ball(ball);
+            self.render_ball(ball, visible_rect, light_rect);
         }
         for laser in &state.lasers {
             self.render_laser(laser);
@@ -177,21 +183,22 @@ impl Draw {
 
     fn render_player(&mut self, player: &Player) {
         let color = Color3::from_u8(255, 209, 102);
-        self.reflector_color_batch.push(ColorRotatedRect {
-            rect: player.rotated_rect(),
-            depth: 0.4,
-            color: color.to_color4(),
-        });
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player.rotated_rect(),
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
+        });
+        self.reflector_color_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            depth: 0.4,
+            color: color.to_color4(),
         });
         self.outline_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             depth: 0.4,
             color: self.outline_color(),
         });
+
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 600.0,
@@ -210,106 +217,137 @@ impl Draw {
         });
     }
 
-    fn render_wall(&mut self, wall: &Wall) {
-        self.reflector_color_batch.push(ColorRect {
-            rect: wall.rect(),
-            z: 0.2,
-            color: Color4::new(0.48, 0.48, 0.48, 1.0),
-        });
-        self.occluder_batch.push(OccluderRect {
-            rect: wall.rect(),
-            ignore_light_index1: None,
-            ignore_light_index2: None,
-        });
-        self.outline_batch.push(ColorRect {
-            rect: wall.rect(),
-            z: 0.4,
-            color: self.outline_color(),
-        });
+    fn render_wall(&mut self, wall: &Wall, visible_rect: Rect, light_rect: Rect) {
+        if geom::rect_rect_overlap(light_rect, wall.rect()).is_some() {
+            self.occluder_batch.push(OccluderRect {
+                rect: wall.rect(),
+                ignore_light_index1: None,
+                ignore_light_index2: None,
+            });
+            if geom::rect_rect_overlap(visible_rect, wall.rect()).is_some() {
+                self.reflector_color_batch.push(ColorRect {
+                    rect: wall.rect(),
+                    z: 0.2,
+                    color: Color4::new(0.48, 0.48, 0.48, 1.0),
+                });
+                self.outline_batch.push(ColorRect {
+                    rect: wall.rect(),
+                    z: 0.4,
+                    color: self.outline_color(),
+                });
+            }
+        }
     }
 
-    fn render_enemy(&mut self, enemy: &Enemy) {
+    fn render_enemy(&mut self, enemy: &Enemy, visible_rect: Rect, light_rect: Rect) {
         let color = Color3::from_u8(240, 101, 67);
-        /*self.circle_instances.push(ColorInstance {
-            position: enemy.pos,
-            angle: enemy.angle,
-            color: color.to_color4(),
-            z: 0.3,
-            ..ColorInstance::default()
-        });*/
-        self.reflector_color_batch.push(ColorCircle {
-            circle: enemy.circle(),
-            angle: enemy.angle,
-            z: 0.3,
-            num_segments: 16,
-            color: color.to_color4(),
-        });
-        self.occluder_batch.push(OccluderCircle {
-            circle: enemy.circle(),
-            angle: 0.0,
-            num_segments: 16,
-            ignore_light_index1: Some(self.lights.len() as u32),
-            ignore_light_index2: None,
-        });
-        self.outline_batch.push(ColorCircle {
-            circle: enemy.circle(),
-            angle: enemy.angle,
-            z: 0.3,
-            num_segments: 16,
-            color: self.outline_color(),
-        });
-        self.lights.push(Light {
-            position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
+
+        if geom::rect_circle_overlap(light_rect, enemy.circle()).is_some() {
+            /*self.circle_instances.push(ColorInstance {
+                position: enemy.pos,
+                angle: enemy.angle,
+                color: color.to_color4(),
+                z: 0.3,
+                ..ColorInstance::default()
+            });*/
+            self.occluder_batch.push(OccluderCircle {
+                circle: enemy.circle(),
+                angle: 0.0,
+                num_segments: 16,
+                ignore_light_index1: Some(self.lights.len() as u32),
+                ignore_light_index2: None,
+            });
+            if geom::rect_circle_overlap(visible_rect, enemy.circle()).is_some() {
+                self.reflector_color_batch.push(ColorCircle {
+                    circle: enemy.circle(),
+                    angle: enemy.angle,
+                    z: 0.3,
+                    num_segments: 16,
+                    color: color.to_color4(),
+                });
+                self.outline_batch.push(ColorCircle {
+                    circle: enemy.circle(),
+                    angle: enemy.angle,
+                    z: 0.3,
+                    num_segments: 16,
+                    color: self.outline_color(),
+                });
+            }
+        }
+
+        let light_circle = Circle {
+            center: Point2::new(enemy.pos.x, enemy.pos.y),
             radius: 300.0,
-            angle: enemy.angle,
-            angle_size: std::f32::consts::PI / 3.0,
-            start: enemy.circle().radius,
-            color: Color3::from_u8(212, 230, 135).to_linear().scale(0.3),
-        });
+        };
+        if geom::rect_circle_overlap(visible_rect, light_circle).is_some() {
+            self.lights.push(Light {
+                position: Point3::new(enemy.pos.x, enemy.pos.y, 50.0),
+                radius: light_circle.radius,
+                angle: enemy.angle,
+                angle_size: std::f32::consts::PI / 3.0,
+                start: enemy.circle().radius,
+                color: Color3::from_u8(212, 230, 135).to_linear().scale(0.3),
+            });
+        }
     }
 
-    fn render_ball(&mut self, ball: &Ball) {
+    fn render_ball(&mut self, ball: &Ball, visible_rect: Rect, light_rect: Rect) {
         let color = Color3::from_u8(134, 187, 189);
-        self.reflector_color_batch.push(ColorCircle {
-            circle: ball.circle(),
-            angle: 0.0,
-            z: 0.3,
-            num_segments: 64,
-            color: color.to_color4(),
-        });
-        self.outline_batch.push(ColorCircle {
-            circle: ball.circle(),
-            angle: 0.0,
-            z: 0.3,
-            num_segments: 64,
-            color: self.outline_color(),
-        });
-        self.occluder_batch.push(OccluderCircle {
-            circle: ball.circle(),
-            angle: 0.0,
-            num_segments: 32,
-            ignore_light_index1: None,
-            ignore_light_index2: None,
-        });
+
+        if geom::rect_circle_overlap(light_rect, ball.circle()).is_some() {
+            self.occluder_batch.push(OccluderCircle {
+                circle: ball.circle(),
+                angle: 0.0,
+                num_segments: 32,
+                ignore_light_index1: None,
+                ignore_light_index2: None,
+            });
+            if geom::rect_circle_overlap(visible_rect, ball.circle()).is_some() {
+                self.reflector_color_batch.push(ColorCircle {
+                    circle: ball.circle(),
+                    angle: 0.0,
+                    z: 0.3,
+                    num_segments: 64,
+                    color: color.to_color4(),
+                });
+                self.outline_batch.push(ColorCircle {
+                    circle: ball.circle(),
+                    angle: 0.0,
+                    z: 0.3,
+                    num_segments: 64,
+                    color: self.outline_color(),
+                });
+            }
+        }
     }
 
-    fn render_lamp(&mut self, lamp: &Lamp) {
+    fn render_lamp(&mut self, lamp: &Lamp, visible_rect: Rect) {
         let color = Color3::from_u8(254, 196, 127);
-        self.reflector_color_batch.push(ColorCircle {
-            circle: lamp.circle(),
-            angle: 0.0,
-            z: 0.1,
-            num_segments: 64,
-            color: color.to_color4(),
-        });
-        self.lights.push(Light {
-            position: Point3::new(lamp.pos.x, lamp.pos.y, 10.0),
+
+        if geom::rect_circle_overlap(visible_rect, lamp.circle()).is_some() {
+            self.reflector_color_batch.push(ColorCircle {
+                circle: lamp.circle(),
+                angle: 0.0,
+                z: 0.1,
+                num_segments: 64,
+                color: color.to_color4(),
+            });
+        }
+
+        let light_circle = Circle {
+            center: Point2::new(lamp.pos.x, lamp.pos.y),
             radius: 300.0,
-            angle: lamp.light_angle,
-            angle_size: std::f32::consts::PI * 2.0,
-            start: 0.0,
-            color: color.to_linear().scale(0.7),
-        });
+        };
+        if geom::rect_circle_overlap(visible_rect, light_circle).is_some() {
+            self.lights.push(Light {
+                position: Point3::new(lamp.pos.x, lamp.pos.y, 10.0),
+                radius: light_circle.radius,
+                angle: lamp.light_angle,
+                angle_size: std::f32::consts::PI * 2.0,
+                start: 0.0,
+                color: color.to_linear().scale(0.7),
+            });
+        }
     }
 
     fn render_laser(&mut self, laser: &Laser) {

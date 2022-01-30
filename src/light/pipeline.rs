@@ -376,7 +376,7 @@ impl<'a> ShadowMapPhase<'a> {
             );
         });
 
-        self.pipeline.shadow_map.invalidate();
+        //self.pipeline.shadow_map.invalidate();
 
         drop(self.guard);
 
@@ -408,9 +408,9 @@ impl<'a> BuiltScreenLightPhase<'a> {
             &self.pipeline.screen_light.textures()[0],
         );
 
-        self.pipeline.screen_geometry.invalidate();
+        /*self.pipeline.screen_geometry.invalidate();
         self.pipeline.screen_reflectors.invalidate();
-        self.pipeline.screen_light.invalidate();
+        self.pipeline.screen_light.invalidate();*/
     }
 }
 
@@ -493,9 +493,9 @@ impl<'a> ComposeWithIndirectPhase<'a> {
             &self.pipeline.screen_light.textures()[0],
         );
 
-        self.pipeline.screen_geometry.invalidate();
+        /*self.pipeline.screen_geometry.invalidate();
         self.pipeline.screen_reflectors.invalidate();
-        self.pipeline.screen_light.invalidate();
+        self.pipeline.screen_light.invalidate();*/
     }
 }
 
