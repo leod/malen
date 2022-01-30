@@ -221,6 +221,10 @@ impl Draw {
     }
 
     fn render_enemy(&mut self, enemy: &Enemy, visible_rect: Rect, light_rect: Rect) {
+        if enemy.dead {
+            return;
+        }
+
         let color = Color3::from_u8(240, 101, 67);
 
         if geom::rect_circle_overlap(light_rect, enemy.circle()).is_some() {
