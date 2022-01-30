@@ -196,8 +196,8 @@ impl Game {
                     self.hit_sound_cooldown_secs = 0.05;
                 }
             }
-            EnemyDied { pos } => {
-                self.spawn_smoke_explosion(pos, 300);
+            EnemyDied { pos, dir } => {
+                self.spawn_smoke_explosion(pos, dir, 200);
                 al::play_spatial(
                     &self.explosion_sound,
                     &SpatialPlayParams {
@@ -359,15 +359,15 @@ impl Game {
         }
     }
 
-    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, n: usize) {
+    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, dir: Vector2<f32>, n: usize) {
         let mut rng = rand::thread_rng();
 
         for _ in 0..n {
-            let speed = 1.5 * rng.gen_range(5.0, 150.0);
+            let speed = 0.6 * rng.gen_range(5.0, 150.0);
             let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let rot = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
-            let max_age_secs = rng.gen_range(3.0, 5.0);
+            let max_age_secs = rng.gen_range(3.0, 8.0);
 
             let particle = Particle {
                 pos,
@@ -385,12 +385,12 @@ impl Game {
             self.smoke.spawn(particle);
         }
 
-        for _ in 0..n {
-            let speed = 1.5 * rng.gen_range(100.0, 500.0);
-            let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
+        for _ in 0..8 * n {
+            let speed = 1.5 * rng.gen_range(300.0, 500.0);
+            let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let rot = 2.0 * std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
-            let max_age_secs = rng.gen_range(0.4, 1.2);
+            let max_age_secs = rng.gen_range(0.6, 0.8);
 
             let particle = Particle {
                 pos,

@@ -3,7 +3,8 @@ use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
     geom::{
-        shape_shape_overlap, Camera, Circle, Grid, Line, Overlap, Rect, RotatedRect, Screen, Shape,
+        self, shape_shape_overlap, Camera, Circle, Grid, Line, Overlap, Rect, RotatedRect, Screen,
+        Shape,
     },
     Button, InputState, Key,
 };
@@ -27,12 +28,14 @@ pub struct Wall {
 #[derive(Debug, Clone)]
 pub struct Enemy {
     pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
     pub angle: f32,
     pub rot: f32,
     pub bump_power: f32,
     pub bump: f32,
     pub dead: bool,
     pub grid_key: usize,
+    pub die_dir: Vector2<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +75,7 @@ pub enum GameEvent {
     },
     EnemyDied {
         pos: Point2<f32>,
+        dir: Vector2<f32>,
     },
 }
 
@@ -311,12 +315,14 @@ impl State {
 
         let mut enemy = Enemy {
             pos,
+            vel: Vector2::new(0.0, 0.0),
             angle: rng.gen::<f32>() * std::f32::consts::PI,
             rot: (0.05 + rng.gen::<f32>() * 0.15) * std::f32::consts::PI,
             bump_power: 0.0,
             bump: 0.0,
             dead: false,
             grid_key: 0,
+            die_dir: Vector2::zeros(),
         };
 
         if self.shape_overlap(&enemy.shape()).is_none() {
@@ -370,8 +376,9 @@ impl State {
         screen: Screen,
         input_state: &InputState,
     ) -> Vec<GameEvent> {
+        let events = self.update_world(dt_secs);
         self.update_player(dt_secs, screen, input_state);
-        self.update_world(dt_secs)
+        events
     }
 
     fn update_player(&mut self, dt_secs: f32, screen: Screen, input_state: &InputState) {
@@ -396,19 +403,17 @@ impl State {
         };
 
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
-
-        let delta = dt_secs * self.player.vel;
-        self.player.pos += delta;
+        self.player.pos += dt_secs * self.player.vel;
 
         let mut player = self.player.clone();
         for (entry, overlap) in self.grid.overlap(&player.shape()) {
             if let EntityType::Enemy(j) = entry.data {
-                if self.enemies[j].dead {
-                    continue;
+                if !self.enemies[j].dead {
+                    player.pos += 0.01 * overlap.resolution();
                 }
+            } else {
+                player.pos += overlap.resolution();
             }
-
-            player.pos += overlap.resolution();
         }
         self.player = player;
 
@@ -462,24 +467,65 @@ impl State {
     fn update_world(&mut self, dt_secs: f32) -> Vec<GameEvent> {
         let mut events = Vec::new();
 
-        for (i, enemy) in self.enemies.iter_mut().enumerate() {
-            if enemy.dead {
+        for i in 0..self.enemies.len() {
+            if self.enemies[i].dead {
                 continue;
             }
 
-            let mut delta = enemy.rot * dt_secs;
-            if i % 2 == 0 {
-                delta *= -1.0;
-            }
-            enemy.angle += delta;
-            enemy.bump += enemy.bump_power * dt_secs;
-            enemy.bump_power *= 0.95;
-            enemy.bump *= 0.8;
+            let to_player = self.player.pos - self.enemies[i].pos;
+            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) {
+                let target_angle = to_player.y.atan2(to_player.x);
+                let angle_dist = target_angle - self.enemies[i].angle;
+                let angle_dist = angle_dist.sin().atan2(angle_dist.cos());
+                self.enemies[i].angle += 0.1 * angle_dist;
 
-            if enemy.bump > 0.9 {
-                enemy.dead = true;
-                self.grid.remove(enemy.grid_key);
-                events.push(GameEvent::EnemyDied { pos: enemy.pos });
+                to_player.normalize() * 70.0
+            } else {
+                let mut delta = self.enemies[i].rot * dt_secs;
+                if i % 2 == 0 {
+                    delta *= -1.0;
+                }
+                self.enemies[i].angle += delta;
+                Vector2::zeros()
+            };
+
+            let delta = dt_secs * self.enemies[i].vel;
+            self.enemies[i].vel =
+                target_vel - (target_vel - self.enemies[i].vel) * (-10.0 * dt_secs).exp();
+            self.enemies[i].pos += delta;
+
+            self.grid.remove(self.enemies[i].grid_key);
+
+            for (entry, overlap) in self.grid.overlap(&self.enemies[i].shape()) {
+                let delta = match entry.data {
+                    // FIXME: why negative?
+                    EntityType::Enemy(j) if !self.enemies[j].dead => -0.2 * overlap.resolution(),
+                    _ => overlap.resolution(),
+                };
+                self.enemies[i].pos += delta;
+            }
+            if let Some(overlap) = geom::rotated_rect_circle_overlap(
+                self.player.rotated_rect(),
+                self.enemies[i].circle(),
+            ) {
+                self.enemies[i].pos -= 0.2 * overlap.resolution();
+            }
+
+            self.enemies[i].grid_key = self
+                .grid
+                .insert(self.enemies[i].shape(), EntityType::Enemy(i));
+
+            self.enemies[i].bump += self.enemies[i].bump_power * dt_secs;
+            self.enemies[i].bump_power *= 0.8;
+            self.enemies[i].bump *= 0.8;
+
+            if self.enemies[i].bump > 0.9 {
+                self.enemies[i].dead = true;
+                self.grid.remove(self.enemies[i].grid_key);
+                events.push(GameEvent::EnemyDied {
+                    pos: self.enemies[i].pos,
+                    dir: self.enemies[i].die_dir,
+                });
             }
         }
 
@@ -492,7 +538,10 @@ impl State {
                     if self.enemies[j].dead {
                         continue;
                     }
-                    self.enemies[j].bump_power += 1.0;
+                    self.enemies[j].bump_power += 0.4;
+                    self.enemies[j].die_dir =
+                        0.5 * self.lasers[i].vel.normalize() + 0.5 * self.enemies[j].die_dir;
+                    self.enemies[j].die_dir.normalize_mut();
                 }
 
                 events.push(GameEvent::LaserHit {
