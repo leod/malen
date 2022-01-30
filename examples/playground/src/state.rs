@@ -255,33 +255,6 @@ impl State {
         }
     }
 
-    pub fn shapes(&self) -> impl Iterator<Item = (EntityType, Shape)> + '_ {
-        self.walls
-            .iter()
-            .map(|e| (EntityType::Wall, e.shape()))
-            .chain(self.balls.iter().map(|e| (EntityType::Ball, e.shape())))
-            .chain(
-                self.enemies
-                    .iter()
-                    .enumerate()
-                    .map(|(i, e)| (EntityType::Enemy(i), e.shape())),
-            )
-            .chain(self.lamps.iter().map(|e| (EntityType::Lamp, e.shape())))
-    }
-
-    pub fn shape_overlap(&self, shape: &Shape) -> Option<(EntityType, Overlap)> {
-        self.shapes()
-            .filter_map(|(entity_type, map_shape)| {
-                shape_shape_overlap(shape, &map_shape).and_then(|o| Some((entity_type, o)))
-            })
-            .max_by(|(_, o1), (_, o2)| {
-                o1.resolution()
-                    .norm_squared()
-                    .partial_cmp(&o2.resolution().norm_squared())
-                    .unwrap()
-            })
-    }
-
     pub fn add_wall(&mut self) {
         let mut rng = rand::thread_rng();
         let center = self.floor_rect().sample(&mut rng);
@@ -303,7 +276,7 @@ impl State {
             lamp_index: None,
         };
 
-        if self.shape_overlap(&wall.shape()).is_none() {
+        if self.grid.overlap(&wall.shape()).count() == 0 {
             self.grid.insert(wall.shape(), EntityType::Wall);
             self.walls.push(wall);
         }
@@ -325,7 +298,7 @@ impl State {
             die_dir: Vector2::zeros(),
         };
 
-        if self.shape_overlap(&enemy.shape()).is_none() {
+        if self.grid.overlap(&enemy.shape()).count() == 0 {
             enemy.grid_key = self
                 .grid
                 .insert(enemy.shape(), EntityType::Enemy(self.enemies.len()));
@@ -340,7 +313,7 @@ impl State {
 
         let ball = Ball { pos, radius };
 
-        if self.shape_overlap(&ball.shape()).is_none() {
+        if self.grid.overlap(&ball.shape()).count() == 0 {
             self.grid.insert(ball.shape(), EntityType::Ball);
             self.balls.push(ball);
         }
@@ -364,6 +337,8 @@ impl State {
                 pos: line.0 + 0.5 * (line.1 - line.0) + normal * 5.0,
                 light_angle: normal.y.atan2(normal.x),
             };
+
+            self.grid.insert(lamp.shape(), EntityType::Lamp);
             self.lamps.push(lamp);
         }
     }
