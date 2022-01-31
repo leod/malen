@@ -301,7 +301,7 @@ impl Draw {
                 self.reflector_sprite_batch.push(RotatedSprite {
                     rect: RotatedRect {
                         center: enemy.pos,
-                        size: 2.0 * ENEMY_RADIUS * Vector2::new(1.0, 1.0),
+                        size: 2.0 * ENEMY_RADIUS * (1.0 + enemy.bump) * Vector2::new(1.0, 1.0),
                         angle: enemy.angle,
                     },
                     depth: 0.8,
@@ -438,7 +438,7 @@ impl Draw {
                     self.reflector_sprite_batch.draw_unit(),
                     &DrawParams {
                         blend: Some(Blend::default()),
-                        depth_test: Some(DepthTest::read_only()),
+                        depth_test: Some(DepthTest::default()),
                         ..DrawParams::default()
                     },
                 )
