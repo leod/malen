@@ -7,10 +7,7 @@ use malen::{
         Mesh, RotatedSprite, SpriteBatch, TriangleTag,
     },
     geom::{self, Circle, Rect, RotatedRect, Screen},
-    gl::{
-        Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DepthTest, DrawParams, Texture,
-        TextureParams, Uniform,
-    },
+    gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
         OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -396,12 +393,12 @@ impl Draw {
     }
 
     fn render_laser(&mut self, laser: &Laser) {
-        let color = Color3::from_u8(200, 100, 100);
-        self.reflector_color_batch.push(ColorRotatedRect {
+        let color = Color3::from_u8(255, 100, 100);
+        /*self.reflector_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
             color: color.to_color4(),
-        });
+        });*/
         self.source_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
@@ -456,7 +453,7 @@ impl Draw {
                     },
                 )
                 .draw_colors(
-                    &self.translucent_light_params,
+                    &self.reflector_light_params,
                     self.source_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: None,
@@ -466,7 +463,7 @@ impl Draw {
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightParams {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.12).to_linear(),
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear(),
                     ..GlobalLightParams::default()
                 });
 
