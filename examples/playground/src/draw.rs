@@ -460,24 +460,28 @@ impl Draw {
     }
 
     pub fn draw_debug_textures(&self, context: &mut Context) -> Result<(), FrameError> {
+        let width = 320.0;
+        let height = 200.0;
+        let size = Vector2::new(width, height);
+
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 10.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 10.0), size),
             &self.light_pipeline.shadow_map(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 260.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, height + 20.0), size),
             &self.light_pipeline.screen_albedo(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 510.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 2.0 * height + 30.0), size),
             &self.light_pipeline.screen_normals(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(10.0, 760.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 3.0 * height + 40.0), size),
             &self.light_pipeline.screen_occlusion(),
         )?;
         context.draw_debug_texture(
-            Rect::from_top_left(Point2::new(340.0, 10.0), Vector2::new(320.0, 240.0)),
+            Rect::from_top_left(Point2::new(10.0, 4.0 * height + 50.0), size),
             &self.light_pipeline.screen_light(),
         )?;
 

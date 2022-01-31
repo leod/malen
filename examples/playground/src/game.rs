@@ -361,8 +361,8 @@ impl Game {
         if self.show_profile {
             self.draw.font.write(
                 Text {
-                    pos: Point2::new(1800.0, 10.0),
-                    size: 20.0,
+                    pos: Point2::new(2100.0, 10.0),
+                    size: 16.0,
                     z: 0.0,
                     color: Color4::new(1.0, 1.0, 1.0, 1.0),
                     text: &format!("{:#?}\n{:#?}", render_info, self.state.grid.info()),
