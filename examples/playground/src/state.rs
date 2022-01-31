@@ -1,3 +1,4 @@
+use coarse_prof::profile;
 use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
@@ -7,7 +8,7 @@ use malen::{
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
-pub const ENEMY_RADIUS: f32 = 20.0;
+pub const ENEMY_RADIUS: f32 = 15.0;
 pub const LAMP_RADIUS: f32 = 12.0;
 pub const PLAYER_SIZE: f32 = 35.0;
 pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.005;
@@ -207,7 +208,7 @@ impl State {
                     center: Point2::origin(),
                     size: Vector2::new(MAP_SIZE, MAP_SIZE),
                 },
-                200.0,
+                40.0,
             ),
         };
 
@@ -348,12 +349,20 @@ impl State {
         screen: Screen,
         input_state: &InputState,
     ) -> Vec<GameEvent> {
-        let events = self.update_world(dt_secs);
+        self.grid.reset_info_lookups();
+
+        let mut events = Vec::new();
+
+        self.update_enemies(dt_secs, &mut events);
+        self.update_lasers(dt_secs, &mut events);
         self.update_player(dt_secs, screen, input_state);
+
         events
     }
 
     fn update_player(&mut self, dt_secs: f32, screen: Screen, input_state: &InputState) {
+        profile!("player");
+
         let mut player_dir = Vector2::zeros();
         if input_state.key(Key::W) {
             player_dir.y -= 1.0;
@@ -436,8 +445,8 @@ impl State {
             target_offset - (target_offset - self.view_offset) * (-3.0 * dt_secs).exp();
     }
 
-    fn update_world(&mut self, dt_secs: f32) -> Vec<GameEvent> {
-        let mut events = Vec::new();
+    fn update_enemies(&mut self, dt_secs: f32, events: &mut Vec<GameEvent>) {
+        profile!("enemies");
 
         for i in 0..self.enemies.len() {
             if self.enemies[i].dead {
@@ -449,7 +458,7 @@ impl State {
                 let target_angle = to_player.y.atan2(to_player.x);
                 let angle_dist = target_angle - self.enemies[i].angle;
                 let angle_dist = angle_dist.sin().atan2(angle_dist.cos());
-                self.enemies[i].angle += 0.1 * angle_dist;
+                self.enemies[i].angle += 0.03 * angle_dist;
 
                 to_player.normalize() * 70.0
             } else {
@@ -499,6 +508,10 @@ impl State {
                 });
             }
         }
+    }
+
+    fn update_lasers(&mut self, dt_secs: f32, events: &mut Vec<GameEvent>) {
+        profile!("lasers");
 
         for i in 0..self.lasers.len() {
             let vel = self.lasers[i].vel;
@@ -509,7 +522,7 @@ impl State {
                     if self.enemies[j].dead {
                         continue;
                     }
-                    self.enemies[j].bump_power += 0.6;
+                    self.enemies[j].bump_power += 1.0;
                     self.enemies[j].die_dir =
                         0.5 * self.lasers[i].vel.normalize() + 0.5 * self.enemies[j].die_dir;
                     self.enemies[j].die_dir.normalize_mut();
@@ -531,7 +544,5 @@ impl State {
         }
 
         self.lasers.retain(|laser| !laser.dead);
-
-        events
     }
 }

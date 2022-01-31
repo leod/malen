@@ -116,8 +116,6 @@ impl Profile {
     }
 
     pub fn draw(&mut self, screen: Screen) -> Result<(), FrameError> {
-        coarse_prof::profile!("Profile::draw");
-
         self.render(screen)?;
         self.pass
             .draw(&self.screen_matrices, &self.font, &mut self.batch);
@@ -126,8 +124,6 @@ impl Profile {
     }
 
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
-        coarse_prof::profile!("Profile::render");
-
         self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
             projection: screen.project_logical_to_ndc(),
@@ -221,7 +217,7 @@ impl Profile {
 
 impl Drop for FrameGuard {
     fn drop(&mut self) {
-        coarse_prof::profile!("FrameGuard::drop");
+        coarse_prof::profile!("drop_frame_guard");
 
         let mut frame_times = self.frame_times.borrow_mut();
         frame_times.push_back((
