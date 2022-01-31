@@ -31,7 +31,7 @@ impl Default for ProfileParams {
         Self {
             margin: Vector2::new(10.0, 10.0),
             padding: Vector2::new(15.0, 15.0),
-            text_size: 17.0,
+            text_size: 14.0,
             plot_duration: Duration::from_secs(5),
             plot_size: Vector2::new(700.0, 200.0),
             plot_style: PlotStyle::default(),
