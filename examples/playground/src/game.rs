@@ -34,6 +34,8 @@ pub struct Game {
     indirect_light: bool,
     show_profile: bool,
     show_textures: bool,
+
+    update_budget_secs: f32,
 }
 
 impl Game {
@@ -86,6 +88,7 @@ impl Game {
             indirect_light: true,
             show_profile: false,
             show_textures: false,
+            update_budget_secs: 0.0,
         })
     }
 
@@ -104,15 +107,16 @@ impl Game {
             self.handle_event(event);
         }
 
-        let max_update_secs = 1.0 / 60.0;
-        let max_dt_secs = 10.0 * max_update_secs;
-        let mut capped_dt_secs = dt_secs.min(max_dt_secs) as f32;
+        let update_secs = 1.0 / 60.0;
+        self.update_budget_secs = (self.update_budget_secs + dt_secs).min(2.0 * update_secs);
 
-        while capped_dt_secs >= 0.0 {
-            let speed = 1.5;
-
-            self.update(speed * capped_dt_secs.min(max_update_secs))?;
-            capped_dt_secs -= max_update_secs;
+        if self.update_budget_secs >= update_secs {
+            let update_speed = 1.5;
+            // TODO: We should consider a fixed dt_secs here, since we have some effects
+            //       involving exponentials. However, then we might also need to interpolate
+            //       states, which I'm too lazy to implement now.
+            self.update(update_speed * update_secs)?;
+            self.update_budget_secs -= update_secs;
         }
 
         self.render()?;
@@ -240,10 +244,6 @@ impl Game {
         {
             profile!("particles");
             {
-                profile!("update");
-                self.smoke.update(dt_secs);
-            }
-            {
                 profile!("overlap");
                 let player_circle = self.state.player.rotated_rect().bounding_circle();
 
@@ -268,6 +268,10 @@ impl Game {
                         }
                     }
                 }
+            }
+            {
+                profile!("update");
+                self.smoke.update(dt_secs);
             }
         }
 
@@ -362,8 +366,8 @@ impl Game {
         if self.show_profile {
             self.draw.font.write(
                 Text {
-                    pos: Point2::new(2100.0, 10.0),
-                    size: 16.0,
+                    pos: Point2::new(self.context.screen().logical_size.x - 300.0, 10.0),
+                    size: 12.0,
                     z: 0.0,
                     color: Color4::new(1.0, 1.0, 1.0, 1.0),
                     text: &format!("{:#?}\n{:#?}", render_info, self.state.grid.info()),
@@ -420,7 +424,7 @@ impl Game {
         }
     }
 
-    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, dir: Vector2<f32>, n: usize) {
+    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, _dir: Vector2<f32>, n: usize) {
         let mut rng = rand::thread_rng();
 
         for _ in 0..n {

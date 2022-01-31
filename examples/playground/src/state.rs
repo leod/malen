@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use coarse_prof::profile;
 use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
@@ -387,7 +389,12 @@ impl State {
         self.player.pos += dt_secs * self.player.vel;
 
         let mut player = self.player.clone();
+        let mut overlaps = HashSet::new();
         for (entry, overlap) in self.grid.overlap(&player.shape()) {
+            if !overlaps.insert(entry.key) {
+                continue;
+            }
+
             if let EntityType::Enemy(j) = entry.data {
                 if !self.enemies[j].dead {
                     player.pos += 0.01 * overlap.resolution();
@@ -448,6 +455,8 @@ impl State {
     fn update_enemies(&mut self, dt_secs: f32, events: &mut Vec<GameEvent>) {
         profile!("enemies");
 
+        let mut overlaps = HashSet::new();
+
         for i in 0..self.enemies.len() {
             if self.enemies[i].dead {
                 continue;
@@ -477,7 +486,12 @@ impl State {
 
             self.grid.remove(self.enemies[i].grid_key);
 
+            overlaps.clear();
             for (entry, overlap) in self.grid.overlap(&self.enemies[i].shape()) {
+                if !overlaps.insert(entry.key) {
+                    continue;
+                }
+
                 let delta = match entry.data {
                     EntityType::Enemy(j) if !self.enemies[j].dead => 0.2 * overlap.resolution(),
                     _ => overlap.resolution(),
