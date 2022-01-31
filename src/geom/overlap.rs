@@ -62,7 +62,7 @@ pub fn rect_rect_overlap(r1: Rect, r2: Rect) -> Option<Overlap> {
     if (r1.center.x - r2.center.x).abs() * 2.0 < r1.size.x + r2.size.x
         && (r1.center.y - r2.center.y).abs() * 2.0 < r1.size.y + r2.size.y
     {
-        // TODO
+        // TODO: rect_rect_overlap
         Some(Overlap(Vector2::zeros()))
     } else {
         None

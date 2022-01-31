@@ -487,8 +487,8 @@ impl State {
                 .insert(self.enemies[i].shape(), EntityType::Enemy(i));
 
             self.enemies[i].bump += self.enemies[i].bump_power * dt_secs;
-            self.enemies[i].bump_power *= 0.8;
-            self.enemies[i].bump *= 0.8;
+            self.enemies[i].bump_power *= (-10.0 * dt_secs).exp();
+            self.enemies[i].bump *= (-10.0 * dt_secs).exp();
 
             if self.enemies[i].bump > 0.9 {
                 self.enemies[i].dead = true;
@@ -509,7 +509,7 @@ impl State {
                     if self.enemies[j].dead {
                         continue;
                     }
-                    self.enemies[j].bump_power += 0.4;
+                    self.enemies[j].bump_power += 0.6;
                     self.enemies[j].die_dir =
                         0.5 * self.lasers[i].vel.normalize() + 0.5 * self.enemies[j].die_dir;
                     self.enemies[j].die_dir.normalize_mut();

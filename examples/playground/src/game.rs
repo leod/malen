@@ -348,7 +348,7 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&self.context, self.indirect_light)?;
+        self.draw.draw(&self.context, !self.indirect_light)?;
 
         if self.show_profile {
             self.profile.draw(self.context.screen())?;
