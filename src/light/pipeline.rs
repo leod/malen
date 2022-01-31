@@ -31,6 +31,7 @@ use super::{
 
 pub struct LightPipeline {
     canvas: Rc<RefCell<Canvas>>,
+    params: LightPipelineParams,
 
     light_instances: Rc<VertexBuffer<Light>>,
     light_area_batch: TriangleBatch<LightAreaVertex>,
@@ -97,10 +98,12 @@ impl LightPipeline {
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
-        let compose_with_indirect_pass = ComposeWithIndirectPass::new(context.gl(), params)?;
+        let compose_with_indirect_pass =
+            ComposeWithIndirectPass::new(context.gl(), params.clone())?;
 
         Ok(Self {
             canvas,
+            params,
             light_instances,
             light_area_batch,
             global_light_params,
@@ -292,7 +295,11 @@ impl<'a> GeometryPhase<'a> {
         self
     }
 
-    pub fn shadow_map_phase(self, lights: &'a [Light]) -> ShadowMapPhase<'a> {
+    pub fn shadow_map_phase(self, mut lights: &'a [Light]) -> ShadowMapPhase<'a> {
+        if lights.len() as u32 > self.pipeline.params.max_num_lights {
+            lights = &lights[..self.pipeline.params.max_num_lights as usize];
+        }
+
         self.pipeline.light_instances.set(lights);
 
         gl::with_framebuffer(&self.pipeline.shadow_map, || {

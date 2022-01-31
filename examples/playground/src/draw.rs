@@ -140,7 +140,7 @@ impl Draw {
         state: &State,
         smoke: &Particles,
     ) -> Result<RenderInfo, FrameError> {
-        profile!("Draw::render");
+        profile!("render");
 
         self.camera_matrices.set(MatricesBlock {
             view: state.camera().matrix(screen),
@@ -252,7 +252,7 @@ impl Draw {
             return;
         }
 
-        let color = Color3::from_u8(240, 101, 67);
+        let color = Color3::from_u8(170, 67, 68);
 
         if geom::rect_circle_overlap(light_rect, enemy.circle()).is_some() {
             /*self.circle_instances.push(ColorInstance {
@@ -291,7 +291,7 @@ impl Draw {
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 3.0,
                 start: enemy.circle().radius,
-                color: Color3::from_u8(212, 230, 135).to_linear().scale(0.3),
+                color: Color3::from_u8(180, 230, 180).to_linear(),
             });
         }
     }
@@ -363,7 +363,7 @@ impl Draw {
     }
 
     pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
-        profile!("Draw::draw");
+        profile!("draw");
 
         let light = true;
 
