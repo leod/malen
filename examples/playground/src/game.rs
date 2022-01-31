@@ -384,7 +384,7 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&self.context, !self.indirect_light)?;
+        self.draw.draw(&self.context, self.indirect_light)?;
 
         if self.show_profile {
             profile!("profile");
@@ -404,14 +404,12 @@ impl Game {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
             let speed = 1.5 * rng.gen_range(10.0, 100.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = 0.0; //std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = rng.gen_range(0.7, 1.3);
 
             let particle = Particle {
                 pos,
                 angle,
                 vel,
-                rot,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
@@ -437,7 +435,6 @@ impl Game {
                 pos,
                 angle: 0.0,
                 vel,
-                rot: 0.0,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
@@ -453,14 +450,12 @@ impl Game {
             let speed = 1.5 * rng.gen_range(300.0, 500.0);
             let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = 2.0 * std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = 1.7 * rng.gen_range(0.6, 0.8);
 
             let particle = Particle {
                 pos,
                 angle: 0.0,
                 vel,
-                rot,
                 depth: 0.15,
                 size: Vector2::new(12.5, 12.5),
                 color: Color3::new(1.0, 0.3, 0.3).to_linear().to_color4(),

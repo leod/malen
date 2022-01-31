@@ -214,16 +214,16 @@ impl State {
             ),
         };
 
-        for _ in 0..350 {
+        for _ in 0..500 {
             state.add_wall();
         }
-        for _ in 0..300 {
+        for _ in 0..1000 {
             state.add_enemy();
         }
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..300 {
+        for _ in 0..500 {
             state.add_lamp();
         }
 
