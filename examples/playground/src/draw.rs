@@ -228,7 +228,7 @@ impl Draw {
         self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
             color: Color4::new(0.5, 0.5, 0.8, 1.0),
-            z: 0.8,
+            z: 0.9,
         });
     }
 
@@ -350,7 +350,7 @@ impl Draw {
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
                 back_glow: 25.0,
-                color: color.to_linear().scale(2.0),
+                color: color.to_linear().scale(1.0),
             });
         }
     }
