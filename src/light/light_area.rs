@@ -1,4 +1,4 @@
-use nalgebra::{Point2, Point3, Vector2, Vector4};
+use nalgebra::{Point2, Point4, Vector2, Vector4};
 
 use bytemuck::{Pod, Zeroable};
 
@@ -17,7 +17,7 @@ use super::Light;
 pub struct LightAreaVertex {
     pub position: Point2<f32>,
     pub light_index: f32,
-    pub light_position: Point3<f32>,
+    pub light_position: Point4<f32>,
     pub light_params: Vector4<f32>,
     pub light_color: Color3,
 }
@@ -39,8 +39,13 @@ impl LightAreaVertex {
         Self {
             position,
             light_index: light_index as f32,
-            light_position: light.position,
-            light_params: Vector4::new(light.radius, light.angle, light.angle_size, light.start),
+            light_position: Point4::new(
+                light.position.x,
+                light.position.y,
+                light.position.z,
+                light.radius,
+            ),
+            light_params: Vector4::new(light.angle, light.angle_size, light.start, light.back_glow),
             light_color: light.color,
         }
     }

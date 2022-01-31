@@ -25,6 +25,7 @@ const UNIFORM_BLOCKS: [(&str, u32); 2] = [
 const SAMPLERS: [&str; 2] = ["shadow_map", "screen_normals"];
 
 const VERTEX_SOURCE: &str = r#"
+flat out float v_light_radius;
 flat out vec4 v_light_params;
 flat out vec3 v_light_color;
 flat out float v_light_offset;
@@ -32,6 +33,7 @@ out vec2 v_screen_uv;
 out vec3 v_delta;
 
 void main() {
+    v_light_radius = a_light_position.w;
     v_light_params = a_light_params;
     v_light_color = a_light_color;
     v_light_offset = (float(a_light_index) + 0.5) / float({max_num_lights});
@@ -39,7 +41,7 @@ void main() {
     vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
     gl_Position = vec4(p.xy, 0.0, 1.0);
     v_screen_uv = p.xy * 0.5 + 0.5;
-    v_delta = vec3(a_position.xy, 0.0) - a_light_position;
+    v_delta = vec3(a_position.xy, 0.0) - a_light_position.xyz;
 }
 "#;
 
@@ -47,16 +49,17 @@ pub(crate) const VISIBILITY_SOURCE: &str = r#"
 float visibility(
     in sampler2D shadow_map,
     in float light_offset,
+    in float light_radius,
     in vec4 light_params,
     in vec2 delta
 ) {
     const float PI = 3.141592;
     const float DEPTH_TEXELS = 2.0;
 
-    float light_radius = light_params.x;
-    float light_angle = light_params.y;
-    float light_angle_size = light_params.z;
-    float light_start = light_params.w;
+    float light_angle = light_params.x;
+    float light_angle_size = light_params.y;
+    float light_start = light_params.z;
+    float light_back_glow = light_params.w;
 
     float dist_to_light = length(delta);
     if (dist_to_light > light_radius)
@@ -102,7 +105,7 @@ float visibility(
     vec2 vis_depth2rm = step(dist_to_light, depth2rm);
 
     float inner_light = front_light *
-        pow(1.0 - clamp((dist_to_light - depth0m.x) / params.back_glow, 0.0, 1.0), 4.0);
+        pow(1.0 - clamp((dist_to_light - depth0m.x) / light_back_glow, 0.0, 1.0), 4.0);
 
     vec2 vis_avg = (vis_depth2lm + vis_depth1lm + vis_depth0m + vis_depth1rm + vis_depth2rm) / 5.0;
 
@@ -111,6 +114,7 @@ float visibility(
 "#;
 
 const FRAGMENT_SOURCE: &str = r#"
+flat in float v_light_radius;
 flat in vec4 v_light_params;
 flat in vec3 v_light_color;
 flat in float v_light_offset;
@@ -131,6 +135,7 @@ void main() {
         visibility(
             shadow_map,
             v_light_offset,
+            v_light_radius,
             v_light_params,
             v_delta.xy
         );
