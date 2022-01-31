@@ -204,6 +204,7 @@ impl Draw {
         let color = Color3::from_u8(255, 209, 102);
         self.occluder_batch.push(OccluderRotatedRect {
             rect: player.rotated_rect(),
+            height: 1000.0,
             ignore_light_index1: Some(self.lights.len() as u32),
             ignore_light_index2: None,
         });
@@ -219,14 +220,14 @@ impl Draw {
             angle_size: std::f32::consts::PI / 5.0,
             start: 18.0,
             back_glow: 30.0,
-            color: Color3::from_u8(200, 200, 200).to_linear(),
+            color: Color3::from_u8(200, 200, 200).to_linear().scale(2.0),
         });
     }
 
     fn render_floor(&mut self, state: &State) {
         self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.95, 0.95, 1.0, 1.0),
+            color: Color4::new(0.5, 0.5, 0.8, 1.0),
             z: 0.8,
         });
     }
@@ -235,6 +236,7 @@ impl Draw {
         if geom::rect_rect_overlap(light_rect, wall.rect()).is_some() {
             self.occluder_batch.push(OccluderRect {
                 rect: wall.rect(),
+                height: 1000.0,
                 ignore_light_index1: None,
                 ignore_light_index2: None,
             });
@@ -267,6 +269,7 @@ impl Draw {
                 circle: enemy.circle(),
                 angle: 0.0,
                 num_segments: 16,
+                height: 75.0,
                 ignore_light_index1: Some(self.lights.len() as u32),
                 ignore_light_index2: None,
             });
@@ -293,7 +296,7 @@ impl Draw {
                 angle_size: std::f32::consts::PI / 3.0,
                 start: enemy.circle().radius,
                 back_glow: 5.0,
-                color: Color3::from_u8(200, 240, 200).to_linear().scale(0.3),
+                color: Color3::from_u8(200, 240, 200).to_linear().scale(0.5),
             });
         }
     }
@@ -306,6 +309,7 @@ impl Draw {
                 circle: ball.circle(),
                 angle: 0.0,
                 num_segments: 32,
+                height: 1000.0,
                 ignore_light_index1: None,
                 ignore_light_index2: None,
             });
@@ -340,13 +344,13 @@ impl Draw {
         };
         if geom::rect_circle_overlap(visible_rect, light_circle).is_some() {
             self.lights.push(Light {
-                position: Point3::new(lamp.pos.x, lamp.pos.y, 10.0),
+                position: Point3::new(lamp.pos.x, lamp.pos.y, 100.0),
                 radius: light_circle.radius,
                 angle: lamp.light_angle,
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
                 back_glow: 35.0,
-                color: color.to_linear().scale(0.7),
+                color: color.to_linear().scale(2.0),
             });
         }
     }
@@ -404,7 +408,7 @@ impl Draw {
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightParams {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.2).to_linear(),
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.12).to_linear(),
                     ..GlobalLightParams::default()
                 });
 

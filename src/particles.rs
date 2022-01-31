@@ -13,7 +13,6 @@ pub struct Particle {
     pub angle: f32,
     pub depth: f32,
     pub vel: Vector2<f32>,
-    pub rot: f32,
     pub size: Vector2<f32>,
     pub color: Color4,
     pub slowdown: f32,
@@ -80,11 +79,7 @@ impl Particles {
             let speed = particle.vel.norm();
             let new_speed = (speed - dt_secs * particle.slowdown * speed).max(0.0);
             particle.vel = new_speed / speed * particle.vel;
-
-            let speed_factor =
-                (1.0 - particle.age_secs / particle.max_age_secs).powf(particle.slowdown);
-            particle.angle += dt_secs * speed_factor * particle.rot;
-
+            particle.angle = particle.vel.y.atan2(particle.vel.x);
             particle.age_secs += dt_secs;
         }
 
