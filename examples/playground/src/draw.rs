@@ -293,7 +293,7 @@ impl Draw {
                 angle_size: std::f32::consts::PI / 3.0,
                 start: enemy.circle().radius,
                 back_glow: 5.0,
-                color: Color3::from_u8(180, 230, 180).to_linear(),
+                color: Color3::from_u8(200, 240, 200).to_linear().scale(0.3),
             });
         }
     }

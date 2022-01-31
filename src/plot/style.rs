@@ -21,12 +21,12 @@ impl Default for PlotStyle {
     fn default() -> Self {
         Self {
             axis_margin: Vector2::new(60.0, 30.0),
-            tick_size: 7.5,
+            tick_size: 6.5,
             legend_line_size: 36.0,
             legend_text_margin: 9.0,
             legend_entry_margin: 36.0,
             legend_y_offset: 15.0,
-            text_size: 17.0,
+            text_size: 14.0,
             tic_precision: 1,
             background_color: Some(Color4::new(0.4, 0.4, 0.7, 0.8)),
             axis_color: Color4::new(0.0, 0.0, 0.0, 1.0),

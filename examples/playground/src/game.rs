@@ -253,7 +253,7 @@ impl Game {
                         radius: 1.0,
                     };
                     for (_, overlap) in self.state.grid.overlap(&Shape::Circle(circle)) {
-                        particle.vel += overlap.resolution().normalize() * 6.0;
+                        particle.vel += overlap.resolution().normalize() * 15.0;
                         particle.slowdown *= 1.25;
                     }
 
@@ -262,7 +262,8 @@ impl Game {
                             self.state.player.rotated_rect(),
                             circle,
                         ) {
-                            particle.vel += overlap.resolution().normalize() * 7.0;
+                            particle.vel -= overlap.resolution().normalize() * 15.0;
+                            particle.vel += self.state.player.vel * 0.1;
                             particle.slowdown *= 1.25;
                         }
                     }
