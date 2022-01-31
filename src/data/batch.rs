@@ -53,6 +53,14 @@ where
     pub fn vertex_array(&self) -> &VertexArray<V> {
         &self.vertex_array
     }
+
+    pub fn num_elements(&self) -> usize {
+        self.buffer.num_elements()
+    }
+
+    pub fn num_vertices(&self) -> usize {
+        self.buffer.num_vertices()
+    }
 }
 
 impl<P, V> GeometryBatch<P, V>

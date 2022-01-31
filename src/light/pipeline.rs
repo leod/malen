@@ -168,7 +168,6 @@ impl LightPipeline {
             coarse_prof::profile!("clear_geometry");
 
             gl::with_framebuffer(&self.screen_geometry, || {
-                coarse_prof::profile!("do it");
                 gl::clear_color_and_depth(&self.gl(), Color4::new(0.0, 0.0, 0.0, 1.0), 1.0);
             });
         }

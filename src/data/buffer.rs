@@ -24,6 +24,14 @@ impl<P, V> GeometryBuffer<P, V> {
         self.elements.clear();
         self.vertices.clear();
     }
+
+    pub fn num_elements(&self) -> usize {
+        self.elements.len()
+    }
+
+    pub fn num_vertices(&self) -> usize {
+        self.vertices.len()
+    }
 }
 
 impl<P, V> GeometryBuffer<P, V>

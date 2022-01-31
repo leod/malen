@@ -4,7 +4,7 @@ use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
     geom::{self, Shape},
     particles::{Particle, Particles},
-    text::Font,
+    text::{Font, Text},
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
 };
 use nalgebra::{Point2, Point3, Vector2, Vector3};
@@ -298,7 +298,8 @@ impl Game {
     fn render(&mut self) -> Result<(), FrameError> {
         profile!("Game::render");
 
-        self.draw
+        let render_info = self
+            .draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
 
         /*let dists = self
@@ -339,6 +340,19 @@ impl Game {
             },
             &mut self.draw.text_batch,
         )?;*/
+
+        if self.show_profile {
+            self.draw.font.write(
+                Text {
+                    pos: Point2::new(1800.0, 10.0),
+                    size: 20.0,
+                    z: 0.0,
+                    color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                    text: &format!("{:#?}", render_info),
+                },
+                &mut self.draw.text_batch,
+            )?;
+        }
 
         Ok(())
     }
