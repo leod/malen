@@ -95,8 +95,8 @@ impl Draw {
             LightPipelineParams {
                 shadow_map_resolution: 2048,
                 max_num_lights: 512,
-                num_tracing_cones: 8,
-                num_tracing_steps: 8,
+                num_tracing_cones: 7,
+                num_tracing_steps: 16,
             },
         )?;
 
