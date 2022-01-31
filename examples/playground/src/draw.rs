@@ -174,8 +174,8 @@ impl Draw {
         });
 
         let visible_rect = state.camera().visible_world_rect(screen).scale(1.0);
-        let light_rect =
-            visible_rect.enlarge(Vector2::new(1.0, 1.0) * MAX_LIGHT_RADIUS / state.camera().zoom);
+        let light_rect = visible_rect
+            .enlarge(Vector2::new(1.0, 1.0) * 2.0 * MAX_LIGHT_RADIUS / state.camera().zoom);
 
         self.circle_instances.clear();
         self.translucent_color_batch.clear();
