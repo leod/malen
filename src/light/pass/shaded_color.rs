@@ -24,7 +24,7 @@ void main() {
         * vec3(a_position.xy, 1.0);
 
     gl_Position = vec4(position.xy, a_position.z, 1.0);
-    v_color = vec3(a_color);
+    v_color = pow(vec3(a_color), vec3(2.2));
     v_screen_uv = vec2(position.xy) * 0.5 + 0.5;
 }
 "#;

@@ -60,7 +60,7 @@ void main() {
     normal.xy = rot * normal.xy;
 
     f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
-    f_occlusion.a = object_params.occlusion;
+    f_occlusion.a = f_albedo.a * object_params.occlusion;
 }
 "#;
 
