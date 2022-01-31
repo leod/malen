@@ -12,7 +12,7 @@ impl Shape {
         use Shape::*;
 
         match self {
-            Rect(r) => r.clone(),
+            Rect(r) => *r,
             RotatedRect(r) => r.bounding_rect(),
             Circle(c) => c.bounding_rect(),
         }

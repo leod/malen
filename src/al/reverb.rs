@@ -71,7 +71,7 @@ pub fn reverb(
         let convolver_gain = al.context().create_gain()?;
         let output = al.context().create_gain()?;
 
-        input.connect_with_audio_node(&dest)?;
+        input.connect_with_audio_node(dest)?;
         input.connect_with_audio_node(&pre_delay)?;
         if !taps.is_empty() {
             input.connect_with_audio_node(&taps[0].0)?;

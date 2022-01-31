@@ -120,7 +120,7 @@ impl Profile {
 
         self.render(screen)?;
         self.pass
-            .draw(&self.screen_matrices, &mut self.font, &mut self.batch);
+            .draw(&self.screen_matrices, &self.font, &mut self.batch);
 
         Ok(())
     }
@@ -214,7 +214,7 @@ impl Profile {
                 range: None,
                 tics: 15.0,
             },
-            line_graphs: line_graphs,
+            line_graphs,
         }
     }
 }

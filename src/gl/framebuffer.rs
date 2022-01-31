@@ -37,7 +37,7 @@ impl Framebuffer {
         gl: Rc<Context>,
         textures: Vec<Texture>,
     ) -> Result<Self, NewFramebufferError> {
-        Self::new(gl.clone(), textures.into_iter().map(Rc::new).collect())
+        Self::new(gl, textures.into_iter().map(Rc::new).collect())
     }
 
     pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
