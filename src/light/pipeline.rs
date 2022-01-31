@@ -97,8 +97,7 @@ impl LightPipeline {
         let shaded_color_pass = ShadedColorPass::new(context.gl())?;
         let shaded_sprite_pass = ShadedSpritePass::new(context.gl())?;
         let compose_pass = ComposePass::new(context.gl())?;
-        let compose_with_indirect_pass =
-            ComposeWithIndirectPass::new(context.gl(), params.clone())?;
+        let compose_with_indirect_pass = ComposeWithIndirectPass::new(context.gl(), params)?;
 
         Ok(Self {
             canvas,
@@ -514,7 +513,7 @@ fn new_shadow_map(
     Framebuffer::from_textures(
         gl.clone(),
         vec![Texture::new(
-            gl.clone(),
+            gl,
             Vector2::new(params.shadow_map_resolution, params.max_num_lights),
             TextureParams {
                 value_type: TextureValueType::RgF16,

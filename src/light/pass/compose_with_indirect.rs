@@ -142,7 +142,7 @@ impl ComposeWithIndirectPass {
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,
             samplers: SAMPLERS,
-            vertex_source: &VERTEX_SOURCE,
+            vertex_source: VERTEX_SOURCE,
             fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
                 .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
                 .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
