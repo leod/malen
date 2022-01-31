@@ -38,9 +38,9 @@ impl Default for GlobalLightParams {
             gamma: 2.2,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_intensity: 8.0,
-            indirect_initial_offset: 2.5,
-            indirect_step_factor: 0.5,
+            indirect_intensity: 4.0,
+            indirect_initial_offset: 4.0,
+            indirect_step_factor: 0.3,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
         }
