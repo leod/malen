@@ -98,7 +98,7 @@ impl Draw {
                     center: Point2::origin(),
                     radius: 20.0,
                 },
-                z: 0.0,
+                depth: 0.0,
                 angle: 0.0,
                 num_segments: 64,
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
@@ -277,7 +277,7 @@ impl Draw {
                 self.reflector_color_batch.push(ColorCircle {
                     circle: enemy.circle(),
                     angle: enemy.angle,
-                    z: 0.3,
+                    depth: 0.8,
                     num_segments: 16,
                     color: color.to_color4(),
                 });
@@ -317,7 +317,7 @@ impl Draw {
                 self.reflector_color_batch.push(ColorCircle {
                     circle: ball.circle(),
                     angle: 0.0,
-                    z: 0.3,
+                    depth: 0.3,
                     num_segments: 64,
                     color: color.to_color4(),
                 });
@@ -332,7 +332,7 @@ impl Draw {
             self.reflector_color_batch.push(ColorCircle {
                 circle: lamp.circle(),
                 angle: 0.0,
-                z: 0.1,
+                depth: 0.1,
                 num_segments: 64,
                 color: color.to_color4(),
             });
@@ -349,7 +349,7 @@ impl Draw {
                 angle: lamp.light_angle,
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
-                back_glow: 35.0,
+                back_glow: 25.0,
                 color: color.to_linear().scale(2.0),
             });
         }

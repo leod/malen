@@ -58,6 +58,14 @@ pub struct ColorLine {
     pub color: Color4,
 }
 
+pub struct ColorCircle {
+    pub circle: Circle,
+    pub depth: f32,
+    pub angle: f32,
+    pub num_segments: usize,
+    pub color: Color4,
+}
+
 impl PrimitiveTag for TriangleTag {
     fn primitive_mode() -> PrimitiveMode {
         PrimitiveMode::Triangle
@@ -180,14 +188,6 @@ impl Geometry<LineTag> for ColorLine {
     }
 }
 
-pub struct ColorCircle {
-    pub circle: Circle,
-    pub z: f32,
-    pub angle: f32,
-    pub num_segments: usize,
-    pub color: Color4,
-}
-
 impl Geometry<TriangleTag> for ColorCircle {
     type Vertex = ColorVertex;
 
@@ -195,7 +195,7 @@ impl Geometry<TriangleTag> for ColorCircle {
         let start_index = vertices.len() as u32;
 
         vertices.push(ColorVertex {
-            position: Point3::new(self.circle.center.x, self.circle.center.y, self.z),
+            position: Point3::new(self.circle.center.x, self.circle.center.y, self.depth),
             color: self.color,
         });
 
@@ -205,7 +205,7 @@ impl Geometry<TriangleTag> for ColorCircle {
             .enumerate()
         {
             vertices.push(ColorVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 color: self.color,
             });
 
@@ -231,7 +231,7 @@ impl Geometry<LineTag> for ColorCircle {
         for i in 0..points.len() {
             ColorLine {
                 line: Line(points[i], points[(i + 1) % points.len()]),
-                depth: self.z,
+                depth: self.depth,
                 color: self.color,
             }
             .write(elements, vertices);
