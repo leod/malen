@@ -252,8 +252,12 @@ impl Game {
                         center: particle.pos,
                         radius: 1.0,
                     };
-                    for (_, overlap) in self.state.grid.overlap(&Shape::Circle(circle)) {
-                        particle.vel += overlap.resolution().normalize() * 15.0;
+                    for (entry, overlap) in self.state.grid.overlap(&Shape::Circle(circle)) {
+                        let speed = match entry.data {
+                            EntityType::Wall => 15.0,
+                            _ => 30.0,
+                        };
+                        particle.vel += overlap.resolution().normalize() * speed;
                         particle.slowdown *= 1.25;
                     }
 
@@ -262,7 +266,7 @@ impl Game {
                             self.state.player.rotated_rect(),
                             circle,
                         ) {
-                            particle.vel -= overlap.resolution().normalize() * 15.0;
+                            particle.vel -= overlap.resolution().normalize() * 50.0;
                             particle.vel += self.state.player.vel * 0.1;
                             particle.slowdown *= 1.25;
                         }
@@ -412,7 +416,7 @@ impl Game {
                 vel,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
-                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
+                color: Color3::new(1.0, 1.0, 1.0).to_linear().to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
                 max_age_secs,
@@ -426,7 +430,7 @@ impl Game {
         let mut rng = rand::thread_rng();
 
         for _ in 0..n {
-            let speed = 0.6 * rng.gen_range(5.0, 150.0);
+            let speed = 0.4 * rng.gen_range(5.0, 150.0);
             let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let max_age_secs = rng.gen_range(3.0, 8.0);
@@ -436,7 +440,7 @@ impl Game {
                 angle: 0.0,
                 vel,
                 depth: 0.15,
-                size: Vector2::new(25.0, 25.0),
+                size: Vector2::new(30.0, 30.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
                 slowdown: 1.0,
                 age_secs: 0.0,
@@ -450,14 +454,15 @@ impl Game {
             let speed = 1.5 * rng.gen_range(300.0, 500.0);
             let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let max_age_secs = 1.7 * rng.gen_range(0.6, 0.8);
+            let max_age_secs = 2.0 * rng.gen_range(0.6, 0.8);
+            let size = 12.5 * rng.gen_range(0.8, 6.0);
 
             let particle = Particle {
                 pos,
                 angle: 0.0,
                 vel,
-                depth: 0.15,
-                size: Vector2::new(12.5, 12.5),
+                depth: 0.25,
+                size: Vector2::new(size, size),
                 color: Color3::new(1.0, 0.3, 0.3).to_linear().to_color4(),
                 slowdown: 10.0,
                 age_secs: 0.0,

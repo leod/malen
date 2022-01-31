@@ -4,9 +4,9 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 use malen::{
     data::{
         ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, SpriteBatch, TriangleTag,
+        Mesh, RotatedSprite, SpriteBatch, TriangleTag,
     },
-    geom::{self, Circle, Rect, Screen},
+    geom::{self, Circle, Rect, RotatedRect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
@@ -18,7 +18,7 @@ use malen::{
     Color3, Color4, Context, FrameError, InitError,
 };
 
-use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
+use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall, ENEMY_RADIUS};
 
 const MAX_LIGHT_RADIUS: f32 = 600.0;
 
@@ -40,6 +40,8 @@ pub struct Draw {
     pub font: Font,
     smoke_texture: Texture,
     smoke_normal_texture: Texture,
+    enemy_texture: Texture,
+    enemy_normal_texture: Texture,
 
     pub light_pipeline: LightPipeline,
 
@@ -51,6 +53,8 @@ pub struct Draw {
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     translucent_color_batch: ColorTriangleBatch,
     reflector_color_batch: ColorTriangleBatch,
+    reflector_color_batch2: ColorTriangleBatch,
+    reflector_sprite_batch: SpriteBatch,
     source_color_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
     smoke_batch: SpriteBatch,
@@ -70,6 +74,18 @@ impl Draw {
         let smoke_normal_texture = Texture::load(
             context.gl(),
             "resources/smoke1_Nrm.png",
+            TextureParams::mipmapped(),
+        )
+        .await?;
+        let enemy_texture = Texture::load(
+            context.gl(),
+            "resources/enemy.png",
+            TextureParams::mipmapped(),
+        )
+        .await?;
+        let enemy_normal_texture = Texture::load(
+            context.gl(),
+            "resources/enemy_Nrm.png",
             TextureParams::mipmapped(),
         )
         .await?;
@@ -108,6 +124,8 @@ impl Draw {
         let circle_instances = InstanceBatch::from_mesh(circle_mesh)?;
         let translucent_color_batch = ColorTriangleBatch::new(context.gl())?;
         let reflector_color_batch = ColorTriangleBatch::new(context.gl())?;
+        let reflector_color_batch2 = ColorTriangleBatch::new(context.gl())?;
+        let reflector_sprite_batch = SpriteBatch::new(context.gl())?;
         let source_color_batch = ColorTriangleBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
         let smoke_batch = SpriteBatch::new(context.gl())?;
@@ -118,6 +136,8 @@ impl Draw {
             font,
             smoke_texture,
             smoke_normal_texture,
+            enemy_texture,
+            enemy_normal_texture,
             light_pipeline,
             translucent_light_params,
             reflector_light_params,
@@ -126,6 +146,8 @@ impl Draw {
             circle_instances,
             translucent_color_batch,
             reflector_color_batch,
+            reflector_color_batch2,
+            reflector_sprite_batch,
             source_color_batch,
             occluder_batch,
             smoke_batch,
@@ -158,6 +180,8 @@ impl Draw {
         self.circle_instances.clear();
         self.translucent_color_batch.clear();
         self.reflector_color_batch.clear();
+        self.reflector_color_batch2.clear();
+        self.reflector_sprite_batch.clear();
         self.source_color_batch.clear();
         self.text_batch.clear();
         self.occluder_batch.clear();
@@ -274,7 +298,20 @@ impl Draw {
                 ignore_light_index2: None,
             });
             if geom::rect_circle_overlap(visible_rect, enemy.circle()).is_some() {
-                self.reflector_color_batch.push(ColorCircle {
+                self.reflector_sprite_batch.push(RotatedSprite {
+                    rect: RotatedRect {
+                        center: enemy.pos,
+                        size: 2.0 * ENEMY_RADIUS * Vector2::new(1.0, 1.0),
+                        angle: enemy.angle,
+                    },
+                    depth: 0.8,
+                    color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                    tex_rect: Rect::from_top_left(
+                        Point2::origin(),
+                        self.enemy_texture.size().cast(),
+                    ),
+                });
+                self.reflector_color_batch2.push(ColorCircle {
                     circle: enemy.circle(),
                     angle: enemy.angle,
                     depth: 0.8,
@@ -356,7 +393,7 @@ impl Draw {
     }
 
     fn render_laser(&mut self, laser: &Laser) {
-        let color = Color3::from_u8(200, 70, 30);
+        let color = Color3::from_u8(200, 100, 100);
         self.reflector_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
@@ -365,7 +402,7 @@ impl Draw {
         self.source_color_batch.push(ColorRotatedRect {
             rect: laser.rotated_rect(),
             depth: 0.2,
-            color: color.to_linear().scale(0.5).to_color4(),
+            color: color.to_color4(),
         });
     }
 
@@ -395,6 +432,17 @@ impl Draw {
                     },
                 )
                 .draw_sprites_with_normals(
+                    &self.reflector_light_params,
+                    &self.enemy_texture,
+                    &self.enemy_normal_texture,
+                    self.reflector_sprite_batch.draw_unit(),
+                    &DrawParams {
+                        blend: Some(Blend::default()),
+                        depth_test: Some(DepthTest::read_only()),
+                        ..DrawParams::default()
+                    },
+                )
+                .draw_sprites_with_normals(
                     &self.translucent_light_params,
                     &self.smoke_texture,
                     &self.smoke_normal_texture,
@@ -402,6 +450,14 @@ impl Draw {
                     &DrawParams {
                         blend: Some(Blend::default()),
                         depth_test: Some(DepthTest::read_only()),
+                        ..DrawParams::default()
+                    },
+                )
+                .draw_colors(
+                    &self.translucent_light_params,
+                    self.source_color_batch.draw_unit(),
+                    &DrawParams {
+                        depth_test: None,
                         ..DrawParams::default()
                     },
                 )
@@ -417,6 +473,10 @@ impl Draw {
                     .indirect_light_phase()
                     .draw_color_reflectors(
                         self.reflector_color_batch.draw_unit(),
+                        &DrawParams::default(),
+                    )
+                    .draw_color_reflectors(
+                        self.reflector_color_batch2.draw_unit(),
                         &DrawParams::default(),
                     )
                     .draw_sprite_reflectors(
@@ -460,6 +520,12 @@ impl Draw {
                 },
             );
         }
+
+        /*context.color_pass().draw(
+            &self.camera_matrices,
+            self.source_color_batch.draw_unit(),
+            &DrawParams::default(),
+        );*/
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
