@@ -22,6 +22,20 @@ use crate::state::{Ball, Enemy, Lamp, Laser, Player, State, Wall};
 
 const MAX_LIGHT_RADIUS: f32 = 600.0;
 
+#[derive(Debug, Clone)]
+pub struct RenderInfo {
+    pub translucent_color_verts: usize,
+    pub translucent_color_elems: usize,
+    pub reflector_color_verts: usize,
+    pub reflector_color_elems: usize,
+    pub source_color_verts: usize,
+    pub source_color_elems: usize,
+    pub occluder_verts: usize,
+    pub occluder_elems: usize,
+    pub lights: usize,
+    pub particles: usize,
+}
+
 pub struct Draw {
     pub font: Font,
     smoke_texture: Texture,
@@ -125,7 +139,7 @@ impl Draw {
         screen: Screen,
         state: &State,
         smoke: &Particles,
-    ) -> Result<(), FrameError> {
+    ) -> Result<RenderInfo, FrameError> {
         profile!("Draw::render");
 
         self.camera_matrices.set(MatricesBlock {
@@ -170,7 +184,20 @@ impl Draw {
 
         self.smoke_batch.push(smoke);
 
-        Ok(())
+        let render_info = RenderInfo {
+            translucent_color_verts: self.translucent_color_batch.num_vertices(),
+            translucent_color_elems: self.translucent_color_batch.num_elements(),
+            reflector_color_verts: self.reflector_color_batch.num_vertices(),
+            reflector_color_elems: self.reflector_color_batch.num_elements(),
+            source_color_verts: self.source_color_batch.num_vertices(),
+            source_color_elems: self.source_color_batch.num_elements(),
+            occluder_verts: self.occluder_batch.num_vertices(),
+            occluder_elems: self.occluder_batch.num_elements(),
+            lights: self.lights.len(),
+            particles: smoke.len(),
+        };
+
+        Ok(render_info)
     }
 
     fn render_player(&mut self, player: &Player) {
