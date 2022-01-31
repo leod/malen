@@ -451,11 +451,11 @@ impl Game {
         }
 
         for _ in 0..n {
-            let speed = 1.5 * rng.gen_range(300.0, 500.0);
+            let speed = 1.5 * rng.gen_range(400.0, 500.0);
             let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
             let max_age_secs = 2.0 * rng.gen_range(0.6, 0.8);
-            let size = 12.5 * rng.gen_range(0.8, 6.0);
+            let size = 12.5 * rng.gen_range(0.5, 4.5);
 
             let particle = Particle {
                 pos,
@@ -463,7 +463,7 @@ impl Game {
                 vel,
                 depth: 0.25,
                 size: Vector2::new(size, size),
-                color: Color3::new(1.0, 0.3, 0.3).to_linear().to_color4(),
+                color: Color3::new(0.9, 0.4, 0.4).to_linear().to_color4(),
                 slowdown: 10.0,
                 age_secs: 0.0,
                 max_age_secs,
