@@ -22,8 +22,8 @@ const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_B
 const SAMPLERS: [&str; 5] = [
     "screen_albedo",
     "screen_normals",
-    "screen_reflector",
     "screen_occlusion",
+    "screen_reflector",
     "screen_light",
 ];
 
@@ -84,11 +84,12 @@ vec3 calc_indirect_diffuse_lighting(
     const int n = {num_tracing_cones};
     const float dangle = 2.0 * PI / float(n);
 
-    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).a;
+    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
 
     vec3 normal_value = texture(screen_normals, origin).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
+    normal = normalize(normal);
 
     vec3 color = vec3(0.0, 0.0, 0.0);
     float angle = 0.0;
@@ -97,7 +98,7 @@ vec3 calc_indirect_diffuse_lighting(
         vec2 dir = vec2(cos(angle), sin(angle));
         float scale = normal_value == vec3(0.0) ?
             1.0 :
-            max(dot(normalize(vec3(-dir, params.indirect_z)), normalize(normal)), 0.0);
+            max(dot(normalize(vec3(-dir, params.indirect_z)), normal), 0.0);
 
         color += scale * trace_cone(origin, dir);
         angle += dangle;
@@ -160,8 +161,8 @@ impl ComposeWithIndirectPass {
         params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
         screen_normal: &Texture,
-        screen_reflector: &Texture,
         screen_occlusion: &Texture,
+        screen_reflector: &Texture,
         screen_light: &Texture,
     ) {
         gl::draw(
@@ -170,8 +171,8 @@ impl ComposeWithIndirectPass {
             [
                 screen_albedo,
                 screen_normal,
-                screen_reflector,
                 screen_occlusion,
+                screen_reflector,
                 screen_light,
             ],
             self.screen_rect.draw_unit(),

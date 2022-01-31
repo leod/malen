@@ -451,20 +451,7 @@ impl Draw {
                     &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
                     &DrawParams {
-                        blend: Some(Blend {
-                            equation: BlendEquation {
-                                color: BlendOp::Add,
-                                alpha: BlendOp::Add,
-                            },
-                            func: BlendFunc {
-                                src_color: BlendFactor::SrcAlpha,
-                                src_alpha: BlendFactor::One,
-                                dst_color: BlendFactor::OneMinusSrcAlpha,
-                                dst_alpha: BlendFactor::Zero,
-                            },
-                            ..Blend::default()
-                        }),
-                        //blend: Some(Blend::default()),
+                        blend: Some(Blend::default()),
                         ..DrawParams::default()
                     },
                 )
@@ -571,6 +558,10 @@ impl Draw {
         context.draw_debug_texture(
             Rect::from_top_left(Point2::new(10.0, 4.0 * height + 50.0), size),
             &self.light_pipeline.screen_light(),
+        )?;
+        context.draw_debug_texture(
+            Rect::from_top_left(Point2::new(10.0, 5.0 * height + 60.0), size),
+            &self.light_pipeline.screen_reflector(),
         )?;
 
         Ok(())
