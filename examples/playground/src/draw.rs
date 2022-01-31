@@ -218,6 +218,7 @@ impl Draw {
             angle: player.dir.y.atan2(player.dir.x),
             angle_size: std::f32::consts::PI / 5.0,
             start: 18.0,
+            back_glow: 30.0,
             color: Color3::from_u8(200, 200, 200).to_linear(),
         });
     }
@@ -291,6 +292,7 @@ impl Draw {
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 3.0,
                 start: enemy.circle().radius,
+                back_glow: 5.0,
                 color: Color3::from_u8(180, 230, 180).to_linear(),
             });
         }
@@ -343,6 +345,7 @@ impl Draw {
                 angle: lamp.light_angle,
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
+                back_glow: 35.0,
                 color: color.to_linear().scale(0.7),
             });
         }

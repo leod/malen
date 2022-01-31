@@ -22,7 +22,6 @@ pub struct LightPipelineParams {
 pub struct GlobalLightParams {
     pub ambient: Color3,
     pub gamma: f32,
-    pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
     pub indirect_intensity: f32,
@@ -37,7 +36,6 @@ impl Default for GlobalLightParams {
         Self {
             ambient: Color3::from_u8(0, 0, 0),
             gamma: 2.2,
-            back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
             indirect_intensity: 8.0,
@@ -53,7 +51,6 @@ impl Default for GlobalLightParams {
 pub struct GlobalLightParamsBlock {
     pub ambient: Vector3<f32>,
     pub gamma: f32,
-    pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
     pub indirect_intensity: f32,
@@ -70,7 +67,6 @@ impl GlobalLightParamsBlock {
         GlobalLightParamsBlock {
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
-            back_glow: params.back_glow,
             angle_fall_off_size: params.angle_fall_off_size,
             angle_fall_off_factor: params.angle_fall_off_factor,
             indirect_intensity: params.indirect_intensity,
@@ -97,6 +93,7 @@ pub struct Light {
     pub angle: f32,
     pub angle_size: f32,
     pub start: f32,
+    pub back_glow: f32,
     pub color: Color3,
 }
 
@@ -108,6 +105,7 @@ impl Vertex for Light {
             angle,
             angle_size,
             start,
+            back_glow,
             color
         ]
     }
