@@ -14,14 +14,15 @@ use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDIN
 
 pub struct ComposeWithIndirectPass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 4>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
 }
 
 const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
-const SAMPLERS: [&str; 4] = [
+const SAMPLERS: [&str; 5] = [
     "screen_albedo",
     "screen_normals",
+    "screen_reflector",
     "screen_occlusion",
     "screen_light",
 ];
@@ -57,9 +58,8 @@ vec3 trace_cone(
             break;
 
         float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
-        vec4 read = textureLod(screen_occlusion, p, mip_level);
-        float sample_occlusion = read.a;
-        vec3 sample_color = read.rgb;
+        float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
+        vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
             sample_color *= params.indirect_intensity;
@@ -160,13 +160,20 @@ impl ComposeWithIndirectPass {
         params: &Uniform<GlobalLightParamsBlock>,
         screen_albedo: &Texture,
         screen_normal: &Texture,
+        screen_reflector: &Texture,
         screen_occlusion: &Texture,
         screen_light: &Texture,
     ) {
         gl::draw(
             &self.program,
             params,
-            [screen_albedo, screen_normal, screen_occlusion, screen_light],
+            [
+                screen_albedo,
+                screen_normal,
+                screen_reflector,
+                screen_occlusion,
+                screen_light,
+            ],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),
         );

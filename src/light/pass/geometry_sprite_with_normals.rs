@@ -41,6 +41,7 @@ in vec4 v_color;
 layout (location = 0) out vec4 f_albedo;
 layout (location = 1) out vec4 f_normal;
 layout (location = 2) out vec4 f_occlusion;
+layout (location = 3) out vec4 f_occlusion;
 
 float myatan2(vec2 dir) {
     float angle = asin(dir.x) > 0.0 ? acos(dir.y) : -acos(dir.y);
@@ -59,8 +60,13 @@ void main() {
     vec3 normal = texture(normal_map, v_uv).rgb * 2.0 - 1.0;
     normal.xy = rot * normal.xy;
 
+    if (f_albedo.a < 0.1) {
+        discard;
+    }
+
     f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
-    f_occlusion.a = f_albedo.a * object_params.occlusion;
+    //f_occlusion.a = f_albedo.a * object_params.occlusion;
+    f_occlusion = vec4(0.0, 0.0, 0.0, f_albedo.a * object_params.occlusion);
 }
 "#;
 

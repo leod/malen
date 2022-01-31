@@ -7,7 +7,10 @@ use malen::{
         Mesh, RotatedSprite, SpriteBatch, TriangleTag,
     },
     geom::{self, Circle, Rect, RotatedRect, Screen},
-    gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
+    gl::{
+        Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DepthTest, DrawParams, Texture,
+        TextureParams, Uniform,
+    },
     light::{
         GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
         OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
@@ -448,8 +451,20 @@ impl Draw {
                     &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
                     &DrawParams {
-                        blend: Some(Blend::default()),
-                        depth_test: Some(DepthTest::read_only()),
+                        blend: Some(Blend {
+                            equation: BlendEquation {
+                                color: BlendOp::Add,
+                                alpha: BlendOp::Add,
+                            },
+                            func: BlendFunc {
+                                src_color: BlendFactor::SrcAlpha,
+                                src_alpha: BlendFactor::One,
+                                dst_color: BlendFactor::OneMinusSrcAlpha,
+                                dst_alpha: BlendFactor::Zero,
+                            },
+                            ..Blend::default()
+                        }),
+                        //blend: Some(Blend::default()),
                         ..DrawParams::default()
                     },
                 )
