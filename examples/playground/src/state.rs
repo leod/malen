@@ -2,10 +2,7 @@ use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
-    geom::{
-        self, shape_shape_overlap, Camera, Circle, Grid, Line, Overlap, Rect, RotatedRect, Screen,
-        Shape,
-    },
+    geom::{self, Camera, Circle, Grid, Line, Rect, RotatedRect, Screen, Shape},
     Button, InputState, Key,
 };
 
@@ -473,8 +470,7 @@ impl State {
 
             for (entry, overlap) in self.grid.overlap(&self.enemies[i].shape()) {
                 let delta = match entry.data {
-                    // FIXME: why negative?
-                    EntityType::Enemy(j) if !self.enemies[j].dead => -0.2 * overlap.resolution(),
+                    EntityType::Enemy(j) if !self.enemies[j].dead => 0.2 * overlap.resolution(),
                     _ => overlap.resolution(),
                 };
                 self.enemies[i].pos += delta;

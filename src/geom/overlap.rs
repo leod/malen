@@ -98,9 +98,18 @@ pub fn rotated_rect_rotated_rect_overlap(r1: RotatedRect, r2: RotatedRect) -> Op
 }
 
 pub fn circle_circle_overlap(c1: Circle, c2: Circle) -> Option<Overlap> {
-    if (c1.center - c2.center).norm_squared() <= (c1.radius + c2.radius).powi(2) {
-        // TODO
-        Some(Overlap(Vector2::zeros()))
+    let delta = c1.center - c2.center;
+    let dist_sq = delta.norm_squared();
+
+    if dist_sq <= (c1.radius + c2.radius).powi(2) {
+        let dist = dist_sq.sqrt();
+        let normal = if dist < 0.000001 {
+            Vector2::new(-1.0, 0.0)
+        } else {
+            delta / dist
+        };
+
+        Some(Overlap((c1.radius + c2.radius - dist) * normal))
     } else {
         None
     }

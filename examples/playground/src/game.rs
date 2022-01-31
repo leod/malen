@@ -229,15 +229,13 @@ impl Game {
         self.smoke.update(dt_secs);
 
         for particle in self.smoke.iter_mut() {
-            for (entry, overlap) in self
+            for (_, overlap) in self
                 .state
                 .grid
                 .overlap(&Shape::Circle(particle.rotated_rect().bounding_circle()))
             {
                 particle.vel += overlap.resolution().normalize() * 6.0;
-                if !matches!(entry.data, EntityType::Enemy(_)) {
-                    particle.slowdown *= 1.25;
-                }
+                particle.slowdown *= 1.25;
             }
             if let Some(overlap) = geom::rotated_rect_rotated_rect_overlap(
                 particle.rotated_rect(),
