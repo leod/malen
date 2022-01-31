@@ -96,7 +96,7 @@ impl Draw {
                 shadow_map_resolution: 2048,
                 max_num_lights: 512,
                 num_tracing_cones: 7,
-                num_tracing_steps: 16,
+                num_tracing_steps: 12,
             },
         )?;
 
