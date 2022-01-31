@@ -80,10 +80,6 @@ impl Camera {
     }
 
     pub fn visible_world_rect(&self, screen: Screen) -> Rect {
-        self.visible_world_rotated_rect(screen).bounding_rect();
-        Rect {
-            center: self.center,
-            size: screen.logical_size / self.zoom,
-        }
+        self.visible_world_rotated_rect(screen).bounding_rect()
     }
 }
