@@ -54,18 +54,20 @@ void main() {
     // If the sprite is rotated, we need to rotate the normals as well. Unfortunately, since we
     // do object -> world transformation on CPU-side, we don't have angle information in the vertex
     // data. "Luckily", we can derive the angle by using dFdx and dFdy.
-    float angle = -myatan2(vec2(-dFdy(5.0 * v_uv.x), dFdx(5.0 * v_uv.x)));
-    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-    vec3 normal = texture(normal_map, v_uv).rgb * 2.0 - 1.0;
-    normal.xy = rot * normal.xy;
+    vec2 query = v_uv;
+    vec2 dx = normalize(vec2(dFdx(query.x), dFdy(query.x)));
+    vec2 dy = normalize(vec2(dFdx(query.y), dFdy(query.y)));
+    mat2 rot = mat2(dx, dy);
 
-    if (f_albedo.a < 0.1) {
-        discard;
-    }
+    vec3 normal = texture(normal_map, v_uv).rgb * 2.0 - 1.0;
+    normal.xy = inverse(rot) * normal.xy;
 
     f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
-    //f_occlusion.a = f_albedo.a * object_params.occlusion;
     f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, f_albedo.a);
+
+    /*if (f_albedo.a == 0.0) {
+        discard;
+    }*/
 }
 "#;
 
