@@ -101,7 +101,7 @@ impl<'a> Render<'a> {
         if let Some(background_color) = self.style.background_color {
             self.batch.triangle_batch.push(ColorRect {
                 rect: self.plot.rect,
-                z: 0.0,
+                depth: 0.0,
                 color: background_color,
             });
         }
@@ -132,7 +132,7 @@ impl<'a> Render<'a> {
                 self.plot.rect.top_left() + self.style.axis_margin,
                 self.graph_size,
             ),
-            z: 0.0,
+            depth: 0.0,
             color: self.style.axis_color,
         });
     }

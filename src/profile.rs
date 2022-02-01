@@ -149,7 +149,7 @@ impl Profile {
 
         self.batch.triangle_batch.push(ColorRect {
             rect: Rect::from_top_left(prof_pos, prof_size),
-            z: 0.0,
+            depth: 0.0,
             color: PlotStyle::default().background_color.unwrap(),
         });
 

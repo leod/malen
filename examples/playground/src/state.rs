@@ -214,7 +214,7 @@ impl State {
             ),
         };
 
-        for _ in 0..500 {
+        /*for _ in 0..500 {
             state.add_wall();
         }
         for _ in 0..1000 {
@@ -225,7 +225,7 @@ impl State {
         }
         for _ in 0..500 {
             state.add_lamp();
-        }
+        }*/
 
         log::info!(
             "walls: {}, enemies: {}, balls: {}, lamps: {}",

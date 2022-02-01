@@ -90,10 +90,7 @@ impl Draw {
         )
         .await?;
 
-        let light_pipeline = LightPipeline::new(
-            context,
-            LightPipelineParams::default(),
-        )?;
+        let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
         let translucent_light_params =
             Uniform::new(context.gl(), ObjectLightParams { occlusion: 0.0 })?;
@@ -186,7 +183,7 @@ impl Draw {
         self.render_player(&state.player);
         self.render_floor(state);
         for wall in &state.walls {
-            self.render_wall(wall, visible_rect, light_rect);
+            //self.render_wall(wall, visible_rect, light_rect);
         }
         for lamp in &state.lamps {
             self.render_lamp(lamp, visible_rect);
@@ -200,6 +197,23 @@ impl Draw {
         for laser in &state.lasers {
             self.render_laser(laser);
         }
+
+        self.source_color_batch.push(ColorRect {
+            rect: Rect {
+                center: Point2::new(0.0, 0.0),
+                size: Vector2::new(50.0, 50.0),
+            },
+            depth: 0.2,
+            color: Color4::new(0.5, 0.0, 0.0, 1.0),
+        });
+        self.reflector_color_batch.push(ColorRect {
+            rect: Rect {
+                center: Point2::new(0.0, 0.0),
+                size: Vector2::new(50.0, 50.0),
+            },
+            depth: 0.2,
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
+        });
 
         self.smoke_batch.push(smoke);
 
@@ -247,7 +261,7 @@ impl Draw {
         self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
             color: Color4::new(0.5, 0.5, 0.8, 1.0),
-            z: 0.9,
+            depth: 0.9,
         });
     }
 
@@ -262,7 +276,7 @@ impl Draw {
             if geom::rect_rect_overlap(visible_rect, wall.rect()).is_some() {
                 self.reflector_color_batch.push(ColorRect {
                     rect: wall.rect(),
-                    z: 0.2,
+                    depth: 0.2,
                     color: Color4::new(0.48, 0.48, 0.48, 1.0),
                 });
             }
@@ -515,11 +529,11 @@ impl Draw {
             );
         }
 
-        /*context.color_pass().draw(
+        context.color_pass().draw(
             &self.camera_matrices,
-            self.source_color_batch.draw_unit(),
+            self.reflector_color_batch.draw_unit(),
             &DrawParams::default(),
-        );*/
+        );
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 

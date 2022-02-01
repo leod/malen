@@ -60,6 +60,7 @@ vec3 trace_cone(
         float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
         vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
+        sample_color = vec3(sample_occlusion, 0.0, 0.0);
 
         sample_color *= params.indirect_intensity;
 
@@ -91,16 +92,16 @@ vec3 calc_indirect_diffuse_lighting(
     normal = normalize(normal);
 
     vec3 color = vec3(0.0, 0.0, 0.0);
-    float angle = 0.0;
 
     for (int i = 0; i < n; i++) {
+        float angle = float(i) * dangle;
         vec2 dir = vec2(cos(angle), sin(angle));
         float scale = normal_value == vec3(0.0) ?
             1.0 :
             max(dot(normalize(vec3(-dir, params.indirect_z)), normal), 0.0);
+        scale = 1.0;
 
         color += scale * trace_cone(origin, dir);
-        angle += dangle;
     }
 
     return (1.0 - params.indirect_self_occlusion * self_occlusion) * color / float(n);

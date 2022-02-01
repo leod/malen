@@ -571,7 +571,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
         size,
         TextureParams {
             value_type: TextureValueType::RgbaU8,
-            min_filter: TextureMinFilter::LinearMipmapLinear,
+            min_filter: TextureMinFilter::NearestMipmapNearest,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::ClampToEdge,
             wrap_horizontal: TextureWrap::ClampToEdge,
@@ -600,7 +600,7 @@ fn new_screen_reflector(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewF
         size,
         TextureParams {
             value_type: TextureValueType::RgbaU8,
-            min_filter: TextureMinFilter::LinearMipmapLinear,
+            min_filter: TextureMinFilter::NearestMipmapNearest,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::ClampToEdge,
             wrap_horizontal: TextureWrap::ClampToEdge,

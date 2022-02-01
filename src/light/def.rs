@@ -23,8 +23,8 @@ impl Default for LightPipelineParams {
         Self {
             shadow_map_resolution: 2048,
             max_num_lights: 512,
-            num_tracing_cones: 8,
-            num_tracing_steps: 10,
+            num_tracing_cones: 4,
+            num_tracing_steps: 32,
         }
     }
 }

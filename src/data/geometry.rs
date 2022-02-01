@@ -40,7 +40,7 @@ pub struct RotatedSprite {
 #[derive(Debug, Copy, Clone)]
 pub struct ColorRect {
     pub rect: Rect,
-    pub z: f32,
+    pub depth: f32,
     pub color: Color4,
 }
 
@@ -118,7 +118,7 @@ impl Geometry<TriangleTag> for ColorRect {
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 color: self.color,
             });
         }
@@ -133,7 +133,7 @@ impl Geometry<LineTag> for ColorRect {
 
         for p in self.rect.corners() {
             vertices.push(ColorVertex {
-                position: Point3::new(p.x, p.y, self.z),
+                position: Point3::new(p.x, p.y, self.depth),
                 color: self.color,
             });
         }
