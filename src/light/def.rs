@@ -18,6 +18,17 @@ pub struct LightPipelineParams {
     pub num_tracing_steps: u32,
 }
 
+impl Default for LightPipelineParams {
+    fn default() -> Self {
+        Self {
+            shadow_map_resolution: 2048,
+            max_num_lights: 512,
+            num_tracing_cones: 8,
+            num_tracing_steps: 10,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct GlobalLightParams {
     pub ambient: Color3,
@@ -38,9 +49,9 @@ impl Default for GlobalLightParams {
             gamma: 2.2,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_intensity: 4.0,
-            indirect_initial_offset: 4.0,
-            indirect_step_factor: 0.2,
+            indirect_intensity: 10.0,
+            indirect_initial_offset: 1.0,
+            indirect_step_factor: 1.0,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
         }

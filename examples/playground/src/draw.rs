@@ -92,12 +92,7 @@ impl Draw {
 
         let light_pipeline = LightPipeline::new(
             context,
-            LightPipelineParams {
-                shadow_map_resolution: 2048,
-                max_num_lights: 512,
-                num_tracing_cones: 7,
-                num_tracing_steps: 12,
-            },
+            LightPipelineParams::default(),
         )?;
 
         let translucent_light_params =

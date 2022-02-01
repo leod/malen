@@ -61,16 +61,14 @@ vec3 trace_cone(
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
         vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
 
-        if (sample_occlusion > 0.0) {
-            sample_color *= params.indirect_intensity;
+        sample_color *= params.indirect_intensity;
 
-            color += (1.0 - occlusion) * sample_color;
-            occlusion += (1.0 - occlusion) * sample_occlusion;
+        color += (1.0 - occlusion) * sample_color;
+        //occlusion += (1.0 - occlusion) * sample_occlusion;
 
-            // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
-            // of interior lighting.
-            //color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
-        }
+        // This equation (from the paper) leads to very pronounced borders in 2D, due to lack
+        // of interior lighting. (This is probably due to a misunderstanding on my end.)
+        //color = occlusion * color + (1.0 - occlusion) * occlusion * 2.0 * sample_color;
 
         t += params.indirect_step_factor * cone_diameter;
     }
@@ -85,6 +83,7 @@ vec3 calc_indirect_diffuse_lighting(
     const float dangle = 2.0 * PI / float(n);
 
     float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
+    self_occlusion = 0.0;
 
     vec3 normal_value = texture(screen_normals, origin).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
@@ -121,7 +120,7 @@ void main() {
     vec3 diffuse = vec3(albedo) * (light + params.ambient);
 
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
+    f_color = vec4(indirect_light, 1.0); //vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
 }
 "#;
 
