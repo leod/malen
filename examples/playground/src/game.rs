@@ -111,7 +111,7 @@ impl Game {
         self.update_budget_secs = (self.update_budget_secs + dt_secs).min(2.0 * update_secs);
 
         if self.update_budget_secs >= update_secs {
-            let update_speed = 1.5;
+            let update_speed = 1.25;
             // TODO: We should consider a fixed dt_secs here, since we have some effects
             //       involving exponentials. However, then we might also need to interpolate
             //       states, which I'm too lazy to implement now.
