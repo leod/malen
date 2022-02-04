@@ -57,10 +57,10 @@ vec3 trace_cone(
         if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
             break;
 
-        float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
+        float mip_level = log2(cone_diameter);
         float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
         vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
-        sample_color = vec3(sample_occlusion, 0.0, 0.0);
+        //sample_color = vec3(sample_occlusion, 0.0, 0.0);
 
         sample_color *= params.indirect_intensity;
 
@@ -102,6 +102,7 @@ vec3 calc_indirect_diffuse_lighting(
         scale = 1.0;
 
         color += scale * trace_cone(origin, dir);
+        break;
     }
 
     return (1.0 - params.indirect_self_occlusion * self_occlusion) * color / float(n);
@@ -121,7 +122,9 @@ void main() {
     vec3 diffuse = vec3(albedo) * (light + params.ambient);
 
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    f_color = vec4(indirect_light, 1.0); //vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
+    //f_color = textureLod(screen_reflector, v_tex_coords, 4.0) * 10.0;
+    //f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
+    f_color = vec4(indirect_light, 1.0); 
 }
 "#;
 

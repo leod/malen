@@ -3,8 +3,8 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, RotatedSprite, SpriteBatch, TriangleTag,
+        ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
+        InstanceBatch, Mesh, RotatedSprite, SpriteBatch, TriangleTag,
     },
     geom::{self, Circle, Rect, RotatedRect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
@@ -56,6 +56,7 @@ pub struct Draw {
     reflector_color_batch2: ColorTriangleBatch,
     reflector_sprite_batch: SpriteBatch,
     source_color_batch: ColorTriangleBatch,
+    outline_color_batch: ColorLineBatch,
     occluder_batch: OccluderBatch,
     smoke_batch: SpriteBatch,
     lights: Vec<Light>,
@@ -119,6 +120,7 @@ impl Draw {
         let reflector_color_batch2 = ColorTriangleBatch::new(context.gl())?;
         let reflector_sprite_batch = SpriteBatch::new(context.gl())?;
         let source_color_batch = ColorTriangleBatch::new(context.gl())?;
+        let outline_color_batch = ColorLineBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
         let smoke_batch = SpriteBatch::new(context.gl())?;
         let lights = Vec::new();
@@ -141,6 +143,7 @@ impl Draw {
             reflector_color_batch2,
             reflector_sprite_batch,
             source_color_batch,
+            outline_color_batch,
             occluder_batch,
             smoke_batch,
             lights,
@@ -180,7 +183,7 @@ impl Draw {
         self.smoke_batch.clear();
         self.lights.clear();
 
-        self.render_player(&state.player);
+        //self.render_player(&state.player);
         self.render_floor(state);
         for wall in &state.walls {
             //self.render_wall(wall, visible_rect, light_rect);
@@ -198,21 +201,29 @@ impl Draw {
             self.render_laser(laser);
         }
 
-        self.source_color_batch.push(ColorRect {
+        /*self.source_color_batch.push(ColorRect {
             rect: Rect {
                 center: Point2::new(0.0, 0.0),
                 size: Vector2::new(50.0, 50.0),
             },
             depth: 0.2,
             color: Color4::new(0.5, 0.0, 0.0, 1.0),
-        });
-        self.reflector_color_batch.push(ColorRect {
+        });*/
+        /*self.reflector_color_batch.push(ColorRect {
             rect: Rect {
                 center: Point2::new(0.0, 0.0),
                 size: Vector2::new(50.0, 50.0),
             },
             depth: 0.2,
             color: Color4::new(1.0, 1.0, 1.0, 1.0),
+        });*/
+        self.outline_color_batch.push(ColorRect {
+            rect: Rect {
+                center: Point2::new(0.0, 0.0),
+                size: Vector2::new(50.0, 50.0),
+            },
+            depth: 0.2,
+            color: Color4::new(0.0, 0.0, 0.5, 1.0),
         });
 
         self.smoke_batch.push(smoke);
@@ -495,7 +506,8 @@ impl Draw {
                             ..DrawParams::default()
                         },
                     )
-                    .draw_color_sources(self.source_color_batch.draw_unit())
+                    //.draw_color_sources(self.source_color_batch.draw_unit())
+                    .draw_color_sources(self.outline_color_batch.draw_unit())
                     .prepare_cone_tracing()
                     .compose();
             } else {
@@ -529,11 +541,11 @@ impl Draw {
             );
         }
 
-        context.color_pass().draw(
+        /*context.color_pass().draw(
             &self.camera_matrices,
-            self.reflector_color_batch.draw_unit(),
+            self.outline_color_batch.draw_unit(),
             &DrawParams::default(),
-        );
+        );*/
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
