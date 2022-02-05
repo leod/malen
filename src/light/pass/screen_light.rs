@@ -17,11 +17,9 @@ use super::{
 program! { |params: LightPipelineParams|
     Program [
         matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
-        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
-        ;
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
         shadow_map: Sampler2,
-        screen_normals: Sampler2,
-        ;
+        screen_normals: Sampler2;
         a: LightAreaVertex,
     ] -> (
         &VERTEX_SOURCE.replace("{max_num_lights}", &params.max_num_lights.to_string()),

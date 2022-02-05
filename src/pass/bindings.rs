@@ -1,4 +1,5 @@
 pub const MATRICES_BLOCK_BINDING: u32 = 0;
 pub const SPRITE_INFO_BLOCK_BINDING: u32 = 1;
+pub const BLUR_PROPS_BLOCK_BINDING: u32 = 1;
 
 pub const SPRITE_SAMPLER_BINDING: u32 = 0;

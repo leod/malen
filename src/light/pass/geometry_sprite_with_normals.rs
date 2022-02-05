@@ -12,11 +12,9 @@ use super::{super::ObjectLightProps, OBJECT_LIGHT_PROPS_BLOCK_BINDING};
 program! {
     Program [
         matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
-        object_light_props: ObjectLightProps = OBJECT_LIGHT_PROPS_BLOCK_BINDING,
-        ;
+        object_light_props: ObjectLightProps = OBJECT_LIGHT_PROPS_BLOCK_BINDING;
         sprite: Sampler2,
-        normal_map: Sampler2,
-        ;
+        normal_map: Sampler2;
         a: SpriteVertex,
     ]
     -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
