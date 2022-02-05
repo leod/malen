@@ -10,9 +10,7 @@ use super::{ColorInstance, ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
-        ;
-        ;
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING;;
         a: ColorVertex,
         i: ColorInstance,
     ]

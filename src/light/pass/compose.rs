@@ -12,16 +12,16 @@ use crate::{
 use super::{super::GlobalLightProps, GLOBAL_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
-    Program [
-        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
-        ;
+    ComposeProgram [
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
         screen_albedo: Sampler2,
-        screen_light: Sampler2,
-        ;
+        screen_light: Sampler2;
         a: SpriteVertex,
     ]
     -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
+
+// => struct ComposeProgram(Program<GlobalLightProps, SpriteVertex, 2>)
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
@@ -45,7 +45,7 @@ void main() {
 
 pub struct ComposePass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program,
+    program: ComposeProgram,
 }
 
 impl ComposePass {
@@ -63,7 +63,7 @@ impl ComposePass {
             },
         )?;
 
-        let program = Program::new(gl)?;
+        let program = ComposeProgram::new(gl)?;
 
         Ok(Self {
             screen_rect,

@@ -9,11 +9,9 @@ use crate::{
 
 program! {
     Program [
-        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
-        ;
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING;
         sprite: Sampler2,
-        screen_light: Sampler2,
-        ;
+        screen_light: Sampler2;
         a: SpriteVertex,
     ]
     -> (VERTEX_SOURCE, FRAGMENT_SOURCE)

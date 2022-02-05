@@ -11,8 +11,7 @@ use super::super::{Light, OccluderLineVertex};
 
 program! { |max_num_lights: u32|
     Program [
-        ;
-        ;
+        ;;
         a_occluder: OccluderLineVertex,
         i_light: Light,
     ]

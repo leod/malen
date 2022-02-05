@@ -16,14 +16,12 @@ use super::{
 
 program! { |params: LightPipelineParams|
     Program [
-        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
-        ;
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
         screen_albedo: Sampler2,
         screen_normals: Sampler2,
         screen_occlusion: Sampler2,
         screen_reflector: Sampler2,
-        screen_light: Sampler2,
-        ;
+        screen_light: Sampler2;
         a: SpriteVertex,
     ] -> (
         VERTEX_SOURCE,
