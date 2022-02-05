@@ -1,16 +1,19 @@
+use std::collections::HashSet;
+
+use coarse_prof::profile;
 use nalgebra::{Point2, Vector2};
 use rand::{prelude::SliceRandom, Rng};
 
 use malen::{
-    geom::{shape_shape_overlap, Camera, Circle, Line, Overlap, Rect, RotatedRect, Screen, Shape},
+    geom::{self, Camera, Circle, Grid, Line, Rect, RotatedRect, Screen, Shape},
     Button, InputState, Key,
 };
 
 pub const MAP_SIZE: f32 = 4096.0;
-pub const ENEMY_RADIUS: f32 = 20.0;
+pub const ENEMY_RADIUS: f32 = 15.0;
 pub const LAMP_RADIUS: f32 = 12.0;
 pub const PLAYER_SIZE: f32 = 35.0;
-pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.01;
+pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.005;
 pub const LASER_LENGTH: f32 = 7.0;
 pub const LASER_WIDTH: f32 = 2.0;
 pub const LASER_SPEED: f32 = 600.0;
@@ -25,11 +28,14 @@ pub struct Wall {
 #[derive(Debug, Clone)]
 pub struct Enemy {
     pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
     pub angle: f32,
     pub rot: f32,
     pub bump_power: f32,
     pub bump: f32,
     pub dead: bool,
+    pub grid_key: usize,
+    pub die_dir: Vector2<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +75,7 @@ pub enum GameEvent {
     },
     EnemyDied {
         pos: Point2<f32>,
+        dir: Vector2<f32>,
     },
 }
 
@@ -91,6 +98,7 @@ pub struct State {
     pub lasers: Vec<Laser>,
     pub player: Player,
     pub view_offset: Vector2<f32>,
+    pub grid: Grid<EntityType>,
 }
 
 impl Wall {
@@ -197,20 +205,35 @@ impl State {
                 is_shooting: false,
             },
             view_offset: Vector2::zeros(),
+            grid: Grid::new(
+                Rect {
+                    center: Point2::origin(),
+                    size: Vector2::new(MAP_SIZE, MAP_SIZE),
+                },
+                40.0,
+            ),
         };
 
-        for _ in 0..350 {
+        for _ in 0..500 {
             state.add_wall();
         }
-        for _ in 0..80 {
+        for _ in 0..1000 {
             state.add_enemy();
         }
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..300 {
+        for _ in 0..500 {
             state.add_lamp();
         }
+
+        log::info!(
+            "walls: {}, enemies: {}, balls: {}, lamps: {}",
+            state.walls.len(),
+            state.enemies.len(),
+            state.balls.len(),
+            state.lamps.len()
+        );
 
         state
     }
@@ -230,33 +253,6 @@ impl State {
             center: Point2::origin(),
             size: Vector2::new(MAP_SIZE, MAP_SIZE),
         }
-    }
-
-    pub fn shapes(&self) -> impl Iterator<Item = (EntityType, Shape)> + '_ {
-        self.walls
-            .iter()
-            .map(|e| (EntityType::Wall, e.shape()))
-            .chain(self.balls.iter().map(|e| (EntityType::Ball, e.shape())))
-            .chain(
-                self.enemies
-                    .iter()
-                    .enumerate()
-                    .map(|(i, e)| (EntityType::Enemy(i), e.shape())),
-            )
-            .chain(self.lamps.iter().map(|e| (EntityType::Lamp, e.shape())))
-    }
-
-    pub fn shape_overlap(&self, shape: &Shape) -> Option<(EntityType, Overlap)> {
-        self.shapes()
-            .filter_map(|(entity_type, map_shape)| {
-                shape_shape_overlap(shape, &map_shape).and_then(|o| Some((entity_type, o)))
-            })
-            .max_by(|(_, o1), (_, o2)| {
-                o1.resolution()
-                    .norm_squared()
-                    .partial_cmp(&o2.resolution().norm_squared())
-                    .unwrap()
-            })
     }
 
     pub fn add_wall(&mut self) {
@@ -280,7 +276,8 @@ impl State {
             lamp_index: None,
         };
 
-        if self.shape_overlap(&wall.shape()).is_none() {
+        if self.grid.overlap(&wall.shape()).count() == 0 {
+            self.grid.insert(wall.shape(), EntityType::Wall);
             self.walls.push(wall);
         }
     }
@@ -289,16 +286,22 @@ impl State {
         let mut rng = rand::thread_rng();
         let pos = self.floor_rect().sample(&mut rng);
 
-        let enemy = Enemy {
+        let mut enemy = Enemy {
             pos,
+            vel: Vector2::new(0.0, 0.0),
             angle: rng.gen::<f32>() * std::f32::consts::PI,
             rot: (0.05 + rng.gen::<f32>() * 0.15) * std::f32::consts::PI,
             bump_power: 0.0,
             bump: 0.0,
             dead: false,
+            grid_key: 0,
+            die_dir: Vector2::zeros(),
         };
 
-        if self.shape_overlap(&enemy.shape()).is_none() {
+        if self.grid.overlap(&enemy.shape()).count() == 0 {
+            enemy.grid_key = self
+                .grid
+                .insert(enemy.shape(), EntityType::Enemy(self.enemies.len()));
             self.enemies.push(enemy);
         }
     }
@@ -310,7 +313,8 @@ impl State {
 
         let ball = Ball { pos, radius };
 
-        if self.shape_overlap(&ball.shape()).is_none() {
+        if self.grid.overlap(&ball.shape()).count() == 0 {
+            self.grid.insert(ball.shape(), EntityType::Ball);
             self.balls.push(ball);
         }
     }
@@ -333,6 +337,8 @@ impl State {
                 pos: line.0 + 0.5 * (line.1 - line.0) + normal * 5.0,
                 light_angle: normal.y.atan2(normal.x),
             };
+
+            self.grid.insert(lamp.shape(), EntityType::Lamp);
             self.lamps.push(lamp);
         }
     }
@@ -345,6 +351,20 @@ impl State {
         screen: Screen,
         input_state: &InputState,
     ) -> Vec<GameEvent> {
+        self.grid.reset_info_lookups();
+
+        let mut events = Vec::new();
+
+        self.update_enemies(dt_secs, &mut events);
+        self.update_lasers(dt_secs, &mut events);
+        self.update_player(dt_secs, screen, input_state);
+
+        events
+    }
+
+    fn update_player(&mut self, dt_secs: f32, screen: Screen, input_state: &InputState) {
+        profile!("player");
+
         let mut player_dir = Vector2::zeros();
         if input_state.key(Key::W) {
             player_dir.y -= 1.0;
@@ -366,13 +386,20 @@ impl State {
         };
 
         self.player.vel = target_vel - (target_vel - self.player.vel) * (-25.0 * dt_secs).exp();
-
-        let delta = dt_secs * self.player.vel;
-        self.player.pos += delta;
+        self.player.pos += dt_secs * self.player.vel;
 
         let mut player = self.player.clone();
-        for (_, shape) in self.shapes() {
-            if let Some(overlap) = shape_shape_overlap(&player.shape(), &shape) {
+        let mut overlaps = HashSet::new();
+        for (entry, overlap) in self.grid.overlap(&player.shape()) {
+            if !overlaps.insert(entry.key) {
+                continue;
+            }
+
+            if let EntityType::Enemy(j) = entry.data {
+                if !self.enemies[j].dead {
+                    player.pos += 0.01 * overlap.resolution();
+                }
+            } else {
                 player.pos += overlap.resolution();
             }
         }
@@ -423,40 +450,104 @@ impl State {
         );
         self.view_offset =
             target_offset - (target_offset - self.view_offset) * (-3.0 * dt_secs).exp();
+    }
 
-        let mut events = Vec::new();
+    fn update_enemies(&mut self, dt_secs: f32, events: &mut Vec<GameEvent>) {
+        profile!("enemies");
 
-        for (i, enemy) in self.enemies.iter_mut().enumerate() {
-            let mut delta = enemy.rot * dt_secs;
-            if i % 2 == 0 {
-                delta *= -1.0;
+        let mut overlaps = HashSet::new();
+
+        for i in 0..self.enemies.len() {
+            if self.enemies[i].dead {
+                continue;
             }
-            enemy.angle += delta;
-            enemy.bump += enemy.bump_power * dt_secs;
-            enemy.bump_power *= 0.95;
-            enemy.bump *= 0.8;
 
-            if enemy.bump > 0.9 {
-                enemy.dead = true;
-                events.push(GameEvent::EnemyDied { pos: enemy.pos });
+            let to_player = self.player.pos - self.enemies[i].pos;
+            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) {
+                let target_angle = to_player.y.atan2(to_player.x);
+                let angle_dist = target_angle - self.enemies[i].angle;
+                let angle_dist = angle_dist.sin().atan2(angle_dist.cos());
+                self.enemies[i].angle += 0.03 * angle_dist;
+
+                to_player.normalize() * 70.0
+            } else {
+                let mut delta = self.enemies[i].rot * dt_secs;
+                if i % 2 == 0 {
+                    delta *= -1.0;
+                }
+                self.enemies[i].angle += delta;
+                Vector2::zeros()
+            };
+
+            let delta = dt_secs * self.enemies[i].vel;
+            self.enemies[i].vel =
+                target_vel - (target_vel - self.enemies[i].vel) * (-10.0 * dt_secs).exp();
+            self.enemies[i].pos += delta;
+
+            self.grid.remove(self.enemies[i].grid_key);
+
+            overlaps.clear();
+            for (entry, overlap) in self.grid.overlap(&self.enemies[i].shape()) {
+                if !overlaps.insert(entry.key) {
+                    continue;
+                }
+
+                let delta = match entry.data {
+                    EntityType::Enemy(j) if !self.enemies[j].dead => 0.2 * overlap.resolution(),
+                    _ => overlap.resolution(),
+                };
+                self.enemies[i].pos += delta;
+            }
+            if let Some(overlap) = geom::rotated_rect_circle_overlap(
+                self.player.rotated_rect(),
+                self.enemies[i].circle(),
+            ) {
+                self.enemies[i].pos -= 0.2 * overlap.resolution();
+            }
+
+            self.enemies[i].grid_key = self
+                .grid
+                .insert(self.enemies[i].shape(), EntityType::Enemy(i));
+
+            self.enemies[i].bump += self.enemies[i].bump_power * dt_secs;
+            self.enemies[i].bump_power *= (-10.0 * dt_secs).exp();
+            self.enemies[i].bump *= (-10.0 * dt_secs).exp();
+
+            if self.enemies[i].bump > 0.9 {
+                self.enemies[i].dead = true;
+                self.grid.remove(self.enemies[i].grid_key);
+                events.push(GameEvent::EnemyDied {
+                    pos: self.enemies[i].pos,
+                    dir: self.enemies[i].die_dir,
+                });
             }
         }
+    }
+
+    fn update_lasers(&mut self, dt_secs: f32, events: &mut Vec<GameEvent>) {
+        profile!("lasers");
 
         for i in 0..self.lasers.len() {
             let vel = self.lasers[i].vel;
             self.lasers[i].pos += vel * dt_secs;
 
-            if let Some((entity_type, overlap)) = self.shape_overlap(&self.lasers[i].shape()) {
+            for (entry, overlap) in self.grid.overlap(&self.lasers[i].shape()) {
+                if let EntityType::Enemy(j) = entry.data {
+                    if self.enemies[j].dead {
+                        continue;
+                    }
+                    self.enemies[j].bump_power += 1.0;
+                    self.enemies[j].die_dir =
+                        0.5 * self.lasers[i].vel.normalize() + 0.5 * self.enemies[j].die_dir;
+                    self.enemies[j].die_dir.normalize_mut();
+                }
+
                 events.push(GameEvent::LaserHit {
-                    entity_type,
+                    entity_type: entry.data,
                     pos: self.lasers[i].line().1 + overlap.resolution(),
                     dir: overlap.resolution().normalize(),
                 });
                 self.lasers[i].dead = true;
-
-                if let EntityType::Enemy(j) = entity_type {
-                    self.enemies[j].bump_power += 1.0;
-                }
             }
 
             let out_of_bounds = !self.floor_rect().contains_point(self.lasers[i].line().0)
@@ -467,8 +558,5 @@ impl State {
         }
 
         self.lasers.retain(|laser| !laser.dead);
-        self.enemies.retain(|enemy| !enemy.dead);
-
-        events
     }
 }

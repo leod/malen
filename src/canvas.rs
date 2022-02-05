@@ -196,18 +196,16 @@ impl Canvas {
             }
         }
 
-        self.set_viewport(Point2::origin(), self.screen().physical_size);
+        self.set_main_viewport(Point2::origin(), self.screen().physical_size);
     }
 
-    fn set_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
-        unsafe {
-            self.gl.viewport(
-                lower_left.x as i32,
-                lower_left.y as i32,
-                size.x as i32,
-                size.y as i32,
-            );
-        }
+    fn set_main_viewport(&self, lower_left: Point2<u32>, size: Vector2<u32>) {
+        self.gl.set_main_viewport([
+            i32::try_from(lower_left.x).unwrap(),
+            i32::try_from(lower_left.y).unwrap(),
+            i32::try_from(size.x).unwrap(),
+            i32::try_from(size.y).unwrap(),
+        ]);
     }
 
     fn adjust_sizes(&mut self) {
@@ -215,12 +213,12 @@ impl Canvas {
 
         let device_pixel_ratio = util::device_pixel_ratio();
         let bounding_rect = self.element.get_bounding_client_rect();
-
         let logical_size = Vector2::new(bounding_rect.width(), bounding_rect.height());
         let physical_size = Vector2::new(
             (logical_size.x * device_pixel_ratio).round() as u32,
             (logical_size.y * device_pixel_ratio).round() as u32,
         );
+
         self.logical_size = logical_size.cast::<f32>();
 
         let need_resize =
@@ -228,7 +226,7 @@ impl Canvas {
 
         if need_resize {
             util::set_canvas_physical_size(&self.element, physical_size);
-            self.set_viewport(Point2::origin(), physical_size);
+            self.set_main_viewport(Point2::origin(), physical_size);
 
             log::info!(
                 "Resized canvas physical size [logical_size={}, physical_size={}]",

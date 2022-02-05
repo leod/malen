@@ -1,6 +1,6 @@
 use nalgebra::{Matrix3, Point2, Vector2};
 
-use super::{translate_rotate_scale, Screen};
+use super::{translate_rotate_scale, Rect, RotatedRect, Screen};
 
 #[derive(Debug, Copy, Clone)]
 /// Parameters that define a two-dimensional camera transformation.
@@ -46,15 +46,18 @@ impl Camera {
         // (Using S(x)^-1 = S(1/x),
         //        R(x)^-1 = R(-x),
         //        T(x)^-1 = T(-x).)
-
-        Matrix3::new_translation(&Vector2::new(
-            screen.logical_size.x as f32 / 2.0,
-            screen.logical_size.y as f32 / 2.0,
-        )) * translate_rotate_scale(
+        let transform = translate_rotate_scale(
             -self.center.coords,
             -self.angle,
             Vector2::new(self.zoom, self.zoom),
-        )
+        );
+
+        let center = Matrix3::new_translation(&Vector2::new(
+            screen.logical_size.x as f32 / 2.0,
+            screen.logical_size.y as f32 / 2.0,
+        ));
+
+        center * transform
     }
 
     pub fn inverse_matrix(&self, screen: Screen) -> Matrix3<f32> {
@@ -65,5 +68,18 @@ impl Camera {
         self.matrix(screen)
             .try_inverse()
             .unwrap_or_else(Matrix3::identity)
+    }
+
+    pub fn visible_world_rotated_rect(&self, screen: Screen) -> RotatedRect {
+        // TODO: Double check that this handles rotation correctly
+        RotatedRect {
+            center: self.center,
+            size: screen.logical_size / self.zoom,
+            angle: self.angle,
+        }
+    }
+
+    pub fn visible_world_rect(&self, screen: Screen) -> Rect {
+        self.visible_world_rotated_rect(screen).bounding_rect()
     }
 }

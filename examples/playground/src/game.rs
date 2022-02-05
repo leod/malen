@@ -2,6 +2,7 @@ use coarse_prof::profile;
 
 use malen::{
     al::{self, ReverbNode, ReverbParams, Sound, SpatialPlayNode, SpatialPlayParams},
+    geom::{self, Circle, Shape},
     particles::{Particle, Particles},
     text::{Font, Text},
     Color3, Color4, Context, Event, FrameError, InitError, Key, Profile, ProfileParams,
@@ -33,6 +34,8 @@ pub struct Game {
     indirect_light: bool,
     show_profile: bool,
     show_textures: bool,
+
+    update_budget_secs: f32,
 }
 
 impl Game {
@@ -85,33 +88,36 @@ impl Game {
             indirect_light: true,
             show_profile: false,
             show_textures: false,
+            update_budget_secs: 0.0,
         })
     }
 
     pub fn frame(&mut self, timestamp_secs: f64) -> Result<(), FrameError> {
-        let _frame_guard = self.profile.frame_guard();
+        let dt_secs = self
+            .last_timestamp_secs
+            .map_or(0.0, |last_timestamp_secs| {
+                (timestamp_secs - last_timestamp_secs) as f32
+            })
+            .max(0.0);
+        self.last_timestamp_secs = Some(timestamp_secs);
+
+        let _frame_guard = self.profile.frame_guard(dt_secs);
 
         while let Some(event) = self.context.pop_event() {
             self.handle_event(event);
         }
 
-        let max_update_secs = 1.0 / 60.0;
-        let max_dt_secs = 10.0 * max_update_secs;
+        let update_secs = 1.0 / 60.0;
+        self.update_budget_secs = (self.update_budget_secs + dt_secs).min(2.0 * update_secs);
 
-        let mut dt_secs = self
-            .last_timestamp_secs
-            .map_or(0.0, |last_timestamp_secs| {
-                (timestamp_secs - last_timestamp_secs) as f32
-            })
-            .max(0.0)
-            .min(max_dt_secs) as f32;
-
-        while dt_secs >= 0.0 {
-            self.update(dt_secs.min(max_update_secs))?;
-            dt_secs -= max_update_secs;
+        if self.update_budget_secs >= update_secs {
+            let update_speed = 1.25;
+            // TODO: We should consider a fixed dt_secs here, since we have some effects
+            //       involving exponentials. However, then we might also need to interpolate
+            //       states, which I'm too lazy to implement now.
+            self.update(update_speed * update_secs)?;
+            self.update_budget_secs -= update_secs;
         }
-
-        self.last_timestamp_secs = Some(timestamp_secs);
 
         self.render()?;
         self.draw()?;
@@ -120,7 +126,7 @@ impl Game {
     }
 
     fn handle_event(&mut self, event: Event) {
-        profile!("Game::handle_event");
+        profile!("handle_event");
 
         use Event::*;
         match event {
@@ -150,6 +156,7 @@ impl Game {
                         self.indirect_light = !self.indirect_light;
                     }
                     Key::R => {
+                        log::info!("Profiling:\n{}", coarse_prof::to_string());
                         coarse_prof::reset();
                     }
                     _ => (),
@@ -160,8 +167,6 @@ impl Game {
     }
 
     fn handle_game_event(&mut self, game_event: GameEvent) -> Result<(), FrameError> {
-        profile!("Game::handle_game_event");
-
         use GameEvent::*;
 
         match game_event {
@@ -195,8 +200,8 @@ impl Game {
                     self.hit_sound_cooldown_secs = 0.05;
                 }
             }
-            EnemyDied { pos } => {
-                self.spawn_smoke_explosion(pos, 300);
+            EnemyDied { pos, dir } => {
+                self.spawn_smoke_explosion(pos, dir, 200);
                 al::play_spatial(
                     &self.explosion_sound,
                     &SpatialPlayParams {
@@ -213,23 +218,73 @@ impl Game {
     }
 
     fn update(&mut self, dt_secs: f32) -> Result<(), FrameError> {
-        profile!("Game::update");
+        profile!("update");
 
         let game_events =
             self.state
                 .update(dt_secs, self.context.screen(), self.context.input_state());
 
-        for game_event in game_events {
-            self.handle_game_event(game_event)?;
+        {
+            profile!("handle_events");
+            for game_event in game_events {
+                self.handle_game_event(game_event)?;
+            }
+
+            /*if self.state.player.is_shooting {
+                self.spawn_smoke(
+                    self.state.player.pos + self.state.player.dir * 22.0,
+                    self.state.player.dir.y.atan2(self.state.player.dir.x) + std::f32::consts::PI,
+                    std::f32::consts::PI,
+                    1,
+                );
+            }*/
         }
 
         self.update_audio(dt_secs)?;
-        self.smoke.update(dt_secs);
+        {
+            profile!("particles");
+            {
+                profile!("overlap");
+                let player_circle = self.state.player.rotated_rect().bounding_circle();
+
+                for particle in self.smoke.iter_mut() {
+                    let circle = Circle {
+                        center: particle.pos,
+                        radius: 1.0,
+                    };
+                    for (entry, overlap) in self.state.grid.overlap(&Shape::Circle(circle)) {
+                        let speed = match entry.data {
+                            EntityType::Wall => 15.0,
+                            _ => 30.0,
+                        };
+                        particle.vel += overlap.resolution().normalize() * speed;
+                        particle.slowdown *= 1.25;
+                    }
+
+                    if geom::circle_circle_overlap(circle, player_circle).is_some() {
+                        if let Some(overlap) = geom::rotated_rect_circle_overlap(
+                            self.state.player.rotated_rect(),
+                            circle,
+                        ) {
+                            particle.vel -= overlap.resolution().normalize() * 50.0;
+                            particle.vel += self.state.player.vel * 0.1;
+                            particle.slowdown *= 1.25;
+                        }
+                    }
+                }
+            }
+            {
+                profile!("update");
+                self.smoke.update(dt_secs);
+            }
+        }
 
         Ok(())
     }
 
     fn update_audio(&mut self, dt_secs: f32) -> Result<(), FrameError> {
+        profile!("update_audio");
+
         let player_pos = Point3::new(self.state.player.pos.x, self.state.player.pos.y, 0.0);
         self.context.al().set_listener_pos(player_pos);
 
@@ -267,12 +322,13 @@ impl Game {
     }
 
     fn render(&mut self) -> Result<(), FrameError> {
-        profile!("Game::render");
+        profile!("render");
 
-        self.draw
+        let render_info = self
+            .draw
             .render(self.context.screen(), &self.state, &self.smoke)?;
 
-        let dists = self
+        /*let dists = self
             .draw
             .light_pipeline
             .shadow_map_framebuffer()
@@ -309,19 +365,33 @@ impl Game {
                 ),
             },
             &mut self.draw.text_batch,
-        )?;
+        )?;*/
+
+        if self.show_profile {
+            self.draw.font.write(
+                Text {
+                    pos: Point2::new(self.context.screen().logical_size.x - 300.0, 10.0),
+                    size: 12.0,
+                    z: 0.0,
+                    color: Color4::new(1.0, 1.0, 1.0, 1.0),
+                    text: &format!("{:#?}\n{:#?}", render_info, self.state.grid.info()),
+                },
+                &mut self.draw.text_batch,
+            )?;
+        }
 
         Ok(())
     }
 
     fn draw(&mut self) -> Result<(), FrameError> {
-        profile!("Game::draw");
+        profile!("draw");
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
         self.draw.draw(&self.context, self.indirect_light)?;
 
         if self.show_profile {
+            profile!("profile");
             self.profile.draw(self.context.screen())?;
         }
         if self.show_textures {
@@ -338,17 +408,15 @@ impl Game {
             let angle = rng.gen_range(angle - angle_size / 2.0, angle + angle_size / 2.0);
             let speed = 1.5 * rng.gen_range(10.0, 100.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = 0.0; //std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let max_age_secs = rng.gen_range(0.7, 1.3);
 
             let particle = Particle {
                 pos,
                 angle,
                 vel,
-                rot,
                 depth: 0.15,
                 size: Vector2::new(25.0, 25.0),
-                color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
+                color: Color3::new(1.0, 1.0, 1.0).to_linear().to_color4(),
                 slowdown: 2.0,
                 age_secs: 0.0,
                 max_age_secs,
@@ -358,25 +426,23 @@ impl Game {
         }
     }
 
-    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, n: usize) {
+    fn spawn_smoke_explosion(&mut self, pos: Point2<f32>, _dir: Vector2<f32>, n: usize) {
         let mut rng = rand::thread_rng();
 
         for _ in 0..n {
-            let speed = 1.5 * rng.gen_range(5.0, 150.0);
+            let speed = 0.4 * rng.gen_range(5.0, 150.0);
             let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
-            let max_age_secs = rng.gen_range(3.0, 5.0);
+            let max_age_secs = rng.gen_range(3.0, 8.0);
 
             let particle = Particle {
                 pos,
                 angle: 0.0,
                 vel,
-                rot,
                 depth: 0.15,
-                size: Vector2::new(25.0, 25.0),
+                size: Vector2::new(30.0, 30.0),
                 color: Color3::new(1.0, 0.8, 0.8).to_linear().to_color4(),
-                slowdown: 10.0,
+                slowdown: 1.0,
                 age_secs: 0.0,
                 max_age_secs,
             };
@@ -385,20 +451,19 @@ impl Game {
         }
 
         for _ in 0..n {
-            let speed = 1.5 * rng.gen_range(100.0, 500.0);
-            let angle = rng.gen_range(0.0, std::f32::consts::PI * 2.0);
+            let speed = 1.5 * rng.gen_range(400.0, 500.0);
+            let angle = std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
             let vel = Vector2::new(angle.cos(), angle.sin()) * speed;
-            let rot = 2.0 * std::f32::consts::PI * rng.gen_range(-1.0, 1.0);
-            let max_age_secs = rng.gen_range(0.4, 1.2);
+            let max_age_secs = 2.0 * rng.gen_range(0.6, 0.8);
+            let size = 12.5 * rng.gen_range(0.5, 4.5);
 
             let particle = Particle {
                 pos,
                 angle: 0.0,
                 vel,
-                rot,
-                depth: 0.15,
-                size: Vector2::new(12.5, 12.5),
-                color: Color3::new(1.0, 0.3, 0.3).to_linear().to_color4(),
+                depth: 0.25,
+                size: Vector2::new(size, size),
+                color: Color3::new(0.9, 0.4, 0.4).to_linear().to_color4(),
                 slowdown: 10.0,
                 age_secs: 0.0,
                 max_age_secs,

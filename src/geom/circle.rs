@@ -1,5 +1,7 @@
 use nalgebra::{Point2, Vector2};
 
+use super::Rect;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Circle {
     pub center: Point2<f32>,
@@ -13,5 +15,12 @@ impl Circle {
 
             self.center + self.radius * Vector2::new(phi.cos(), phi.sin())
         })
+    }
+
+    pub fn bounding_rect(self) -> Rect {
+        Rect {
+            center: self.center,
+            size: Vector2::new(2.0 * self.radius, 2.0 * self.radius),
+        }
     }
 }

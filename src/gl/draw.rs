@@ -112,11 +112,8 @@ where
 {
     let gl = framebuffer.gl();
 
-    let mut prev_viewport = [0, 0, 0, 0];
-
     unsafe {
         gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer.id()));
-        gl.get_parameter_i32_slice(glow::VIEWPORT, &mut prev_viewport);
         gl.viewport(
             0,
             0,
@@ -131,10 +128,10 @@ where
     unsafe {
         gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         gl.viewport(
-            prev_viewport[0],
-            prev_viewport[1],
-            prev_viewport[2],
-            prev_viewport[3],
+            gl.main_viewport.get()[0],
+            gl.main_viewport.get()[1],
+            gl.main_viewport.get()[2],
+            gl.main_viewport.get()[3],
         );
     }
 
