@@ -219,6 +219,9 @@ impl<U, V, const S: usize> Drop for Program<U, V, S> {
 macro_rules! program_def {
     {
         name: $name:ident,
+        params: (
+            $($param_name:ident : $param_type:ty),* $(,)?
+        ),
         uniforms: {
             $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
         },
@@ -236,7 +239,9 @@ macro_rules! program_def {
         );
 
         impl $name {
-            pub fn def() -> $crate::gl::ProgramDef<
+            pub fn def(
+                $($param_name : $param_type),*
+            ) -> $crate::gl::ProgramDef<
                 'static,
                 { [$(stringify!($uniform_name)),*].len() },
                 { [$($sampler_name),*].len() },
@@ -253,8 +258,14 @@ macro_rules! program_def {
                 }
             }
 
-            pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-                let program = $crate::gl::Program::new(gl, Self::def())?;
+            pub fn new(
+                gl: Rc<gl::Context>,
+                $($param_name : $param_type),*
+            ) -> Result<Self, gl::Error> {
+                let program_def = Self::def(
+                    $($param_name),*
+                );
+                let program = $crate::gl::Program::new(gl, program_def)?;
                 Ok($name(program))
             }
         }

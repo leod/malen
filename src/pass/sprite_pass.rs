@@ -10,6 +10,7 @@ use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 program_def! {
     name: Program,
+    params: (),
     uniforms: {
         matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
     },
