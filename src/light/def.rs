@@ -99,15 +99,7 @@ pub struct Light {
 
 impl Vertex for Light {
     fn attributes() -> Vec<Attribute> {
-        attributes![
-            "i_light_": position,
-            radius,
-            angle,
-            angle_size,
-            start,
-            back_glow,
-            color
-        ]
+        attributes![position, radius, angle, angle_size, start, back_glow, color]
     }
 }
 

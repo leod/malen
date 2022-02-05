@@ -1,14 +1,25 @@
 use std::rc::Rc;
 
-use crate::gl::{
-    self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, InstancedDrawUnit,
-    Program, ProgramDef,
+use crate::{
+    gl::{
+        self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, InstancedDrawUnit,
+    },
+    program,
 };
 
 use super::super::{Light, OccluderLineVertex};
 
-pub struct ShadowMapPass {
-    program: Program<(), (OccluderLineVertex, Light), 0>,
+program! {
+    |max_num_lights: u32|
+        Program [
+            (),
+            (),
+            (a_occluder: OccluderLineVertex, i_light: Light)
+        ]
+        => (
+            &VERTEX_SOURCE.replace("{max_num_lights}", &max_num_lights.to_string()),
+            FRAGMENT_SOURCE,
+        )
 }
 
 const VERTEX_SOURCE: &str = r#"
@@ -26,9 +37,9 @@ float angle_to_light(vec2 position) {
 const float PI = 3.141592;
 
 void main() {
-    if (gl_InstanceID == a_ignore_light_index1
-            || gl_InstanceID == a_ignore_light_index2
-            || i_light_position.z >= a_height) {
+    if (gl_InstanceID == a_occluder_ignore_light_index1
+            || gl_InstanceID == a_occluder_ignore_light_index2
+            || i_light_position.z >= a_occluder_height) {
         gl_Position = vec4(-10.0, -10.0, -10.0, 1.0);
         return;
     }
@@ -36,22 +47,22 @@ void main() {
     v_light_position = i_light_position.xy;
     v_light_radius = i_light_radius;
 
-    vec3 c = cross(vec3(a_line_0 - i_light_position.xy, 0.0),
-                   vec3(a_line_1 - i_light_position.xy, 0.0));
-    v_is_front = (((a_order == 0 || a_order == 2) && c.z < 0.0) ||
-                  ((a_order == 1 || a_order == 3) && c.z > 0.0))
+    vec3 c = cross(vec3(a_occluder_line_0 - i_light_position.xy, 0.0),
+                   vec3(a_occluder_line_1 - i_light_position.xy, 0.0));
+    v_is_front = (((a_occluder_order == 0 || a_occluder_order == 2) && c.z < 0.0) ||
+                  ((a_occluder_order == 1 || a_occluder_order == 3) && c.z > 0.0))
                  ? 1 : 0;
 
-    float angle_0 = angle_to_light(a_line_0);
-    float angle_1 = angle_to_light(a_line_1);
+    float angle_0 = angle_to_light(a_occluder_line_0);
+    float angle_1 = angle_to_light(a_occluder_line_1);
 
-    v_edge = vec4(a_line_0, a_line_1);
+    v_edge = vec4(a_occluder_line_0, a_occluder_line_1);
     v_edge = mix(v_edge, v_edge.zwxy, step(angle_0, angle_1));
     v_angle = angle_0;
     if (abs(angle_0 - angle_1) > PI) {
-        if (a_order == 0) {
+        if (a_occluder_order == 0) {
             v_angle = -PI;
-        } else if (a_order == 1 || a_order == 2) {
+        } else if (a_occluder_order == 1 || a_occluder_order == 2) {
             v_angle = min(angle_0, angle_1);
         } else {
             v_angle = PI;
@@ -123,15 +134,13 @@ void main() {
 }
 "#;
 
+pub struct ShadowMapPass {
+    program: Program,
+}
+
 impl ShadowMapPass {
     pub fn new(gl: Rc<gl::Context>, max_num_lights: u32) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniforms: [],
-            samplers: [],
-            vertex_source: &VERTEX_SOURCE.replace("{max_num_lights}", &max_num_lights.to_string()),
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl, max_num_lights)?;
 
         Ok(Self { program })
     }

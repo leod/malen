@@ -5,27 +5,32 @@ use nalgebra::{Point2, Vector2};
 use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
-    gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
+    gl::{self, DrawParams, Texture, Uniform},
     light::LightPipelineParams,
-    Color4,
+    program, Color4,
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct ComposeWithIndirectPass {
-    screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
+program! {
+    |params: LightPipelineParams|
+        Program [
+            (params: GlobalLightParamsBlock = GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
+            (
+                screen_albedo,
+                screen_normals,
+                screen_occlusion,
+                screen_reflector,
+                screen_light,
+            ),
+            (a: SpriteVertex),
+        ] => (
+            VERTEX_SOURCE,
+            format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
+                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
+                .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
+        )
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
-
-const SAMPLERS: [&str; 5] = [
-    "screen_albedo",
-    "screen_normals",
-    "screen_occlusion",
-    "screen_reflector",
-    "screen_light",
-];
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
@@ -125,6 +130,11 @@ void main() {
 }
 "#;
 
+pub struct ComposeWithIndirectPass {
+    screen_rect: Mesh<SpriteVertex>,
+    program: Program,
+}
+
 impl ComposeWithIndirectPass {
     pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let screen_rect = Mesh::from_geometry(
@@ -140,15 +150,7 @@ impl ComposeWithIndirectPass {
             },
         )?;
 
-        let program_def = ProgramDef {
-            uniforms: UNIFORM_BLOCKS,
-            samplers: SAMPLERS,
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
-                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
-                .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl, params)?;
 
         Ok(Self {
             screen_rect,
