@@ -14,24 +14,23 @@ use super::{
     GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
 };
 
-program! {
-    |params: LightPipelineParams|
-        Program [
-            (global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING),
-            (
-                screen_albedo,
-                screen_normals,
-                screen_occlusion,
-                screen_reflector,
-                screen_light,
-            ),
-            (a: SpriteVertex),
-        ] => (
-            VERTEX_SOURCE,
-            format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
-                .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
-                .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
-        )
+program! { |params: LightPipelineParams|
+    Program [
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
+        ;
+        screen_albedo: Sampler2,
+        screen_normals: Sampler2,
+        screen_occlusion: Sampler2,
+        screen_reflector: Sampler2,
+        screen_light: Sampler2,
+        ;
+        a: SpriteVertex,
+    ] -> (
+        VERTEX_SOURCE,
+        format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
+            .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
+            .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
+    )
 }
 
 const VERTEX_SOURCE: &str = r#"

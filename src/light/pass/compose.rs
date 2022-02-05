@@ -13,11 +13,14 @@ use super::{super::GlobalLightProps, GLOBAL_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
     Program [
-        (global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING),
-        (screen_albedo, screen_light),
-        (a: SpriteVertex),
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
+        ;
+        screen_albedo: Sampler2,
+        screen_light: Sampler2,
+        ;
+        a: SpriteVertex,
     ]
-    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"

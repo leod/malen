@@ -10,10 +10,13 @@ use super::{ColorInstance, ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        (matrices: ViewMatrices = MATRICES_BLOCK_BINDING),
-        (),
-        (a: ColorVertex, i: ColorInstance),
-    ] => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+        ;
+        ;
+        a: ColorVertex,
+        i: ColorInstance,
+    ]
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"
