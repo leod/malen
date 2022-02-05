@@ -6,7 +6,7 @@ use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
     gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
-    light::IndirectLightPipelineParams,
+    light::LightPipelineParams,
     Color4,
 };
 
@@ -14,15 +14,16 @@ use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDIN
 
 pub struct ComposeWithIndirectPass {
     screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 4>,
+    program: Program<GlobalLightParamsBlock, SpriteVertex, 5>,
 }
 
 const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
 
-const SAMPLERS: [&str; 4] = [
+const SAMPLERS: [&str; 5] = [
     "screen_albedo",
     "screen_normals",
     "screen_occlusion",
+    "screen_reflector",
     "screen_light",
 ];
 
@@ -45,7 +46,7 @@ vec3 trace_cone(
     const float cone_angle = 2.0 * PI / {num_tracing_cones}.0;
     const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
-    float t = params.indirect_start;
+    float t = params.indirect_initial_offset;
     float occlusion = 0.0;
     vec3 color = vec3(0.0, 0.0, 0.0);
     vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
@@ -57,12 +58,11 @@ vec3 trace_cone(
             break;
 
         float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
-        vec4 read = textureLod(screen_occlusion, p, mip_level);
-        float sample_occlusion = read.a;
-        vec3 sample_color = read.rgb;
+        float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
+        vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
 
         if (sample_occlusion > 0.0) {
-            sample_color *= params.indirect_color_scale;
+            sample_color *= params.indirect_intensity;
 
             color += (1.0 - occlusion) * sample_color;
             occlusion += (1.0 - occlusion) * sample_occlusion;
@@ -84,11 +84,12 @@ vec3 calc_indirect_diffuse_lighting(
     const int n = {num_tracing_cones};
     const float dangle = 2.0 * PI / float(n);
 
-    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).a;
+    float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
 
     vec3 normal_value = texture(screen_normals, origin).xyz;
     vec3 normal = normal_value * 2.0 - 1.0;
     normal.y = -normal.y;
+    normal = normalize(normal);
 
     vec3 color = vec3(0.0, 0.0, 0.0);
     float angle = 0.0;
@@ -97,7 +98,7 @@ vec3 calc_indirect_diffuse_lighting(
         vec2 dir = vec2(cos(angle), sin(angle));
         float scale = normal_value == vec3(0.0) ?
             1.0 :
-            max(dot(normalize(vec3(-dir, params.indirect_z)), normalize(normal)), 0.0);
+            max(dot(normalize(vec3(-dir, params.indirect_z)), normal), 0.0);
 
         color += scale * trace_cone(origin, dir);
         angle += dangle;
@@ -125,10 +126,7 @@ void main() {
 "#;
 
 impl ComposeWithIndirectPass {
-    pub fn new(
-        gl: Rc<gl::Context>,
-        params: IndirectLightPipelineParams,
-    ) -> Result<Self, gl::Error> {
+    pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let screen_rect = Mesh::from_geometry(
             gl.clone(),
             Sprite {
@@ -145,7 +143,7 @@ impl ComposeWithIndirectPass {
         let program_def = ProgramDef {
             uniform_blocks: UNIFORM_BLOCKS,
             samplers: SAMPLERS,
-            vertex_source: &VERTEX_SOURCE,
+            vertex_source: VERTEX_SOURCE,
             fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
                 .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
                 .replace("{num_tracing_steps}", &params.num_tracing_steps.to_string()),
@@ -164,12 +162,19 @@ impl ComposeWithIndirectPass {
         screen_albedo: &Texture,
         screen_normal: &Texture,
         screen_occlusion: &Texture,
+        screen_reflector: &Texture,
         screen_light: &Texture,
     ) {
         gl::draw(
             &self.program,
             params,
-            [screen_albedo, screen_normal, screen_occlusion, screen_light],
+            [
+                screen_albedo,
+                screen_normal,
+                screen_occlusion,
+                screen_reflector,
+                screen_light,
+            ],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),
         );

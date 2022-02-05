@@ -31,7 +31,7 @@ impl Default for ProfileParams {
         Self {
             margin: Vector2::new(10.0, 10.0),
             padding: Vector2::new(15.0, 15.0),
-            text_size: 17.0,
+            text_size: 14.0,
             plot_duration: Duration::from_secs(5),
             plot_size: Vector2::new(700.0, 200.0),
             plot_style: PlotStyle::default(),
@@ -47,6 +47,7 @@ pub struct Profile {
     batch: PlotBatch,
     pass: Rc<PlotPass>,
 
+    dts: VecDeque<(Instant, Duration)>,
     frame_times: FrameTimes,
     draw_times: DrawTimes,
 }
@@ -64,6 +65,7 @@ impl Profile {
         let batch = PlotBatch::new(context.gl())?;
         let pass = context.plot_pass();
 
+        let dts = VecDeque::new();
         let frame_times = Rc::new(RefCell::new(VecDeque::new()));
         let draw_times = Rc::new(RefCell::new(DrawTimer::new(
             context.gl(),
@@ -76,6 +78,7 @@ impl Profile {
             screen_matrices,
             batch,
             pass,
+            dts,
             frame_times,
             draw_times,
         })
@@ -85,17 +88,21 @@ impl Profile {
         &*self.draw_times
     }
 
-    pub fn frame_guard(&self) -> FrameGuard {
+    pub fn frame_guard(&mut self, dt_secs: f32) -> FrameGuard {
         let start_time = Instant::now();
 
-        {
-            let mut frame_times = self.frame_times.borrow_mut();
-            let is_outdated = |(time, _): &(Instant, Duration)| {
-                start_time.duration_since(*time) > self.params.plot_duration
-            };
-            while frame_times.front().map_or(false, is_outdated) {
-                frame_times.pop_front();
-            }
+        let is_outdated = |(time, _): &(Instant, Duration)| {
+            start_time.duration_since(*time) > self.params.plot_duration
+        };
+
+        self.dts
+            .push_back((start_time, Duration::from_secs_f32(dt_secs)));
+        while self.dts.front().map_or(false, is_outdated) {
+            self.dts.pop_front();
+        }
+
+        while self.frame_times.borrow().front().map_or(false, is_outdated) {
+            self.frame_times.borrow_mut().pop_front();
         }
 
         self.draw_times.borrow_mut().start_draw();
@@ -109,21 +116,17 @@ impl Profile {
     }
 
     pub fn draw(&mut self, screen: Screen) -> Result<(), FrameError> {
-        coarse_prof::profile!("Profile::draw");
-
         self.render(screen)?;
         self.pass
-            .draw(&self.screen_matrices, &mut self.font, &mut self.batch);
+            .draw(&self.screen_matrices, &self.font, &mut self.batch);
 
         Ok(())
     }
 
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
-        coarse_prof::profile!("Profile::render");
-
         self.screen_matrices.set(MatricesBlock {
             view: Matrix3::identity(),
-            projection: screen.orthographic_projection(),
+            projection: screen.project_logical_to_ndc(),
         });
 
         self.batch.clear();
@@ -162,22 +165,24 @@ impl Profile {
     }
 
     fn plot(&self, rect: Rect) -> Plot {
-        let frame_times = self.frame_times.borrow();
-
         let mut line_graphs = Vec::new();
-        if let Some((last_time, _)) = frame_times.back() {
+        if let Some((last_time, _)) = self.dts.back() {
+            let point_pos = |(time, dur): &(Instant, Duration)| {
+                (
+                    -last_time.duration_since(*time).as_secs_f32(),
+                    dur.as_secs_f32() * 1000.0,
+                )
+            };
+
+            line_graphs.push(LineGraph {
+                caption: "dt[ms]".to_owned(),
+                color: Color4::new(0.0, 1.0, 0.0, 1.0),
+                points: self.dts.iter().map(point_pos).collect(),
+            });
             line_graphs.push(LineGraph {
                 caption: "frame[ms]".to_owned(),
                 color: Color4::new(1.0, 0.0, 0.0, 1.0),
-                points: frame_times
-                    .iter()
-                    .map(|(time, dur)| {
-                        (
-                            -last_time.duration_since(*time).as_secs_f32(),
-                            dur.as_secs_f32() * 1000.0,
-                        )
-                    })
-                    .collect(),
+                points: self.frame_times.borrow().iter().map(point_pos).collect(),
             });
             line_graphs.push(LineGraph {
                 caption: "draw[ms]".to_owned(),
@@ -187,12 +192,7 @@ impl Profile {
                     .borrow()
                     .samples()
                     .iter()
-                    .map(|(time, dur)| {
-                        (
-                            -last_time.duration_since(*time).as_secs_f32(),
-                            dur.as_secs_f32() * 1000.0,
-                        )
-                    })
+                    .map(point_pos)
                     .collect(),
             });
         }
@@ -210,13 +210,15 @@ impl Profile {
                 range: None,
                 tics: 15.0,
             },
-            line_graphs: line_graphs,
+            line_graphs,
         }
     }
 }
 
 impl Drop for FrameGuard {
     fn drop(&mut self) {
+        coarse_prof::profile!("drop_frame_guard");
+
         let mut frame_times = self.frame_times.borrow_mut();
         frame_times.push_back((
             self.start_time,

@@ -75,19 +75,19 @@ impl Rect {
         self.corners()[3]
     }
 
-    pub fn x_left(self) -> f32 {
+    pub fn left_x(self) -> f32 {
         self.center.x - self.size.x / 2.0
     }
 
-    pub fn x_right(self) -> f32 {
+    pub fn right_x(self) -> f32 {
         self.center.x + self.size.x / 2.0
     }
 
-    pub fn y_top(self) -> f32 {
+    pub fn top_y(self) -> f32 {
         self.center.y - self.size.y / 2.0
     }
 
-    pub fn y_bottom(self) -> f32 {
+    pub fn bottom_y(self) -> f32 {
         self.center.y + self.size.y / 2.0
     }
 
@@ -119,8 +119,8 @@ impl Rect {
     }
 
     pub fn contains_point(self, p: Point2<f32>) -> bool {
-        (self.x_left()..=self.x_right()).contains(&p.x)
-            && (self.y_top()..=self.y_bottom()).contains(&p.y)
+        (self.left_x()..=self.right_x()).contains(&p.x)
+            && (self.top_y()..=self.bottom_y()).contains(&p.y)
     }
 
     pub fn sample<R: Rng>(self, rng: &mut R) -> Point2<f32> {

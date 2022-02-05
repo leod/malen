@@ -34,9 +34,6 @@ where
     }
 
     pub fn set(&self, data: &[V]) {
-        // TODO: Prevent implicit synchronization somehow.
-        // https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
-
         self.set_data_with_usage(data, glow::STREAM_DRAW);
     }
 

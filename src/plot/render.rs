@@ -165,7 +165,7 @@ impl<'a> Render<'a> {
 
         while current_offset <= range.1 {
             let text = &format!("{:.*}", self.style.tic_precision, current_offset);
-            let text_size = self.font.text_size(self.style.normal_font_size, text);
+            let text_size = self.font.text_size(self.style.text_size, text);
 
             let pos = self.map_point(
                 Point2::new(self.x_range.0, self.y_range.0) + (current_offset - range.0) * axis,
@@ -179,7 +179,7 @@ impl<'a> Render<'a> {
             self.font.write(
                 Text {
                     pos: shifted_pos,
-                    size: self.style.normal_font_size,
+                    size: self.style.text_size,
                     z: 0.0,
                     color: self.style.text_color,
                     text,
@@ -236,9 +236,7 @@ impl<'a> Render<'a> {
         width += self.style.legend_entry_margin as f32 * ((self.plot.line_graphs.len() - 1) as f32);
 
         for line in self.plot.line_graphs.iter() {
-            let text_size = self
-                .font
-                .text_size(self.style.normal_font_size, &line.caption);
+            let text_size = self.font.text_size(self.style.text_size, &line.caption);
 
             width += text_size.x;
             max_text_height = max_text_height.max(text_size.y);
@@ -263,7 +261,7 @@ impl<'a> Render<'a> {
             let text_size = self.font.write(
                 Text {
                     pos: pos - Vector2::new(0.0, max_text_height / 2.0 + 2.0),
-                    size: self.style.normal_font_size,
+                    size: self.style.text_size,
                     z: 0.0,
                     color: self.style.text_color,
                     text: &line.caption,

@@ -36,6 +36,13 @@ impl DepthTest {
             ..DepthTest::default()
         }
     }
+
+    pub fn write_only() -> Self {
+        Self {
+            func: DepthFunc::Always,
+            ..DepthTest::default()
+        }
+    }
 }
 
 impl Default for DepthFunc {

@@ -41,9 +41,7 @@ void main() {
     vec4 data = texture(sprite, v_sprite_uv);
     vec3 albedo = pow(data.rgb, vec3(2.2));
     vec3 light = texture(screen_light, v_screen_uv).rgb;
-
-    // FIXME: This is pretty arbitrary, and was designed for mad overdraw with particles...
-    f_color = vec4(v_color.rgb * albedo * light, v_color.a * data.a * data.a * 0.1);
+    f_color = vec4(v_color.rgb * albedo * light, v_color.a * data.a);
 }
 "#;
 

@@ -24,6 +24,7 @@ pub struct Framebuffer {
     gl: Rc<Context>,
     textures: Vec<Rc<Texture>>,
     id: glow::Framebuffer,
+    attachments: Vec<u32>,
 }
 
 impl Framebuffer {
@@ -36,7 +37,7 @@ impl Framebuffer {
         gl: Rc<Context>,
         textures: Vec<Texture>,
     ) -> Result<Self, NewFramebufferError> {
-        Self::new(gl.clone(), textures.into_iter().map(Rc::new).collect())
+        Self::new(gl, textures.into_iter().map(Rc::new).collect())
     }
 
     pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
@@ -69,6 +70,7 @@ impl Framebuffer {
         }
 
         let mut draw_buffers = Vec::new();
+        let mut attachments = Vec::new();
         for (location, texture) in textures
             .iter()
             .filter(|t| !t.params().value_type.is_depth())
@@ -76,6 +78,7 @@ impl Framebuffer {
         {
             let attachment = glow::COLOR_ATTACHMENT0 + location as u32;
             draw_buffers.push(attachment);
+            attachments.push(attachment);
 
             unsafe {
                 gl.framebuffer_texture_2d(
@@ -90,6 +93,7 @@ impl Framebuffer {
 
         for texture in textures.iter().filter(|t| t.params().value_type.is_depth()) {
             let attachment = glow::DEPTH_ATTACHMENT;
+            attachments.push(attachment);
 
             unsafe {
                 gl.framebuffer_texture_2d(
@@ -107,7 +111,12 @@ impl Framebuffer {
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 
-        Ok(Framebuffer { gl, textures, id })
+        Ok(Framebuffer {
+            gl,
+            textures,
+            id,
+            attachments,
+        })
     }
 
     pub fn gl(&self) -> Rc<Context> {
@@ -147,6 +156,16 @@ impl Framebuffer {
         }
 
         data
+    }
+
+    pub fn invalidate(&self) {
+        let gl = self.gl();
+
+        unsafe {
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.id));
+            gl.invalidate_framebuffer(glow::FRAMEBUFFER, &self.attachments);
+            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+        }
     }
 }
 

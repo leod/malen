@@ -50,4 +50,12 @@ impl OccluderBatch {
     pub fn clear(&mut self) {
         self.batch.clear();
     }
+
+    pub fn num_elements(&self) -> usize {
+        self.batch.num_elements()
+    }
+
+    pub fn num_vertices(&self) -> usize {
+        self.batch.num_vertices()
+    }
 }

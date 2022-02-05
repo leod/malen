@@ -69,8 +69,8 @@ fn set_blend(gl: &Context, blend: Option<Blend>) {
                 unsafe {
                     gl.blend_func_separate(
                         func.src_color.to_gl(),
-                        func.src_alpha.to_gl(),
                         func.dst_color.to_gl(),
+                        func.src_alpha.to_gl(),
                         func.dst_alpha.to_gl(),
                     )
                 }

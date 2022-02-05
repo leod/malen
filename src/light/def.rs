@@ -14,11 +14,6 @@ use crate::{
 pub struct LightPipelineParams {
     pub shadow_map_resolution: u32,
     pub max_num_lights: u32,
-    pub indirect_light: IndirectLightPipelineParams,
-}
-
-#[derive(Debug, Clone)]
-pub struct IndirectLightPipelineParams {
     pub num_tracing_cones: u32,
     pub num_tracing_steps: u32,
 }
@@ -27,11 +22,10 @@ pub struct IndirectLightPipelineParams {
 pub struct GlobalLightParams {
     pub ambient: Color3,
     pub gamma: f32,
-    pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
-    pub indirect_color_scale: f32,
-    pub indirect_start: f32,
+    pub indirect_intensity: f32,
+    pub indirect_initial_offset: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
     pub indirect_self_occlusion: f32,
@@ -42,12 +36,11 @@ impl Default for GlobalLightParams {
         Self {
             ambient: Color3::from_u8(0, 0, 0),
             gamma: 2.2,
-            back_glow: 25.0,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_color_scale: 8.0,
-            indirect_start: 2.5,
-            indirect_step_factor: 0.5,
+            indirect_intensity: 4.0,
+            indirect_initial_offset: 4.0,
+            indirect_step_factor: 0.2,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
         }
@@ -58,11 +51,10 @@ impl Default for GlobalLightParams {
 pub struct GlobalLightParamsBlock {
     pub ambient: Vector3<f32>,
     pub gamma: f32,
-    pub back_glow: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
-    pub indirect_color_scale: f32,
-    pub indirect_start: f32,
+    pub indirect_intensity: f32,
+    pub indirect_initial_offset: f32,
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
     pub indirect_self_occlusion: f32,
@@ -75,11 +67,10 @@ impl GlobalLightParamsBlock {
         GlobalLightParamsBlock {
             ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
             gamma: params.gamma,
-            back_glow: params.back_glow,
             angle_fall_off_size: params.angle_fall_off_size,
             angle_fall_off_factor: params.angle_fall_off_factor,
-            indirect_color_scale: params.indirect_color_scale,
-            indirect_start: params.indirect_start,
+            indirect_intensity: params.indirect_intensity,
+            indirect_initial_offset: params.indirect_initial_offset,
             indirect_step_factor: params.indirect_step_factor,
             indirect_z: params.indirect_z,
             indirect_self_occlusion: params.indirect_self_occlusion,
@@ -102,6 +93,7 @@ pub struct Light {
     pub angle: f32,
     pub angle_size: f32,
     pub start: f32,
+    pub back_glow: f32,
     pub color: Color3,
 }
 
@@ -113,6 +105,7 @@ impl Vertex for Light {
             angle,
             angle_size,
             start,
+            back_glow,
             color
         ]
     }
