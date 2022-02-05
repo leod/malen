@@ -56,7 +56,7 @@ impl ComposePass {
         )?;
 
         let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
+            uniforms: UNIFORM_BLOCKS,
             samplers: SAMPLERS,
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,

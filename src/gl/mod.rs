@@ -1,6 +1,9 @@
 #[macro_use]
 mod vertex;
 
+#[macro_use]
+mod program;
+
 mod blend;
 mod context;
 mod depth_test;
@@ -11,7 +14,6 @@ mod draw_unit;
 mod element_buffer;
 mod error;
 mod framebuffer;
-mod program;
 mod texture;
 mod uniform;
 mod uniform_block;

@@ -39,7 +39,7 @@ void main() {
 impl ColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
+            uniforms: UNIFORM_BLOCKS,
             samplers: [],
             vertex_source: VERTEX_SOURCE,
             fragment_source: FRAGMENT_SOURCE,
