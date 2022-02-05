@@ -4,9 +4,9 @@ use nalgebra::Matrix3;
 use crate::gl::UniformBlock;
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
-pub struct MatricesBlock {
+pub struct ViewMatrices {
     pub projection: Matrix3<f32>,
     pub view: Matrix3<f32>,
 }
 
-impl UniformBlock for MatricesBlock {}
+impl UniformBlock for ViewMatrices {}

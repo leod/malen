@@ -13,7 +13,7 @@ use crate::{
         Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
         Uniform, VertexBuffer,
     },
-    pass::{ColorPass, MatricesBlock},
+    pass::{ColorPass, ViewMatrices},
     Canvas, Color4, Context, FrameError,
 };
 
@@ -25,8 +25,7 @@ use super::{
         geometry_sprite_with_normals::GeometrySpriteWithNormalsPass, screen_light::ScreenLightPass,
         shaded_color::ShadedColorPass, shaded_sprite::ShadedSpritePass, shadow_map::ShadowMapPass,
     },
-    GlobalLightParams, GlobalLightParamsBlock, Light, LightPipelineParams, ObjectLightParams,
-    OccluderBatch,
+    GlobalLightProps, Light, LightPipelineParams, ObjectLightProps, OccluderBatch,
 };
 
 pub struct LightPipeline {
@@ -35,7 +34,7 @@ pub struct LightPipeline {
 
     light_instances: Rc<VertexBuffer<Light>>,
     light_area_batch: TriangleBatch<LightAreaVertex>,
-    global_light_params: Uniform<GlobalLightParamsBlock>,
+    global_light_props: Uniform<GlobalLightProps>,
 
     screen_geometry: Framebuffer,
     screen_reflector: Framebuffer,
@@ -79,10 +78,7 @@ impl LightPipeline {
 
         let light_instances = Rc::new(VertexBuffer::new(context.gl())?);
         let light_area_batch = TriangleBatch::new(context.gl())?;
-        let global_light_params = Uniform::new(
-            context.gl(),
-            GlobalLightParamsBlock::new(GlobalLightParams::default()),
-        )?;
+        let global_light_params = Uniform::new(context.gl(), GlobalLightProps::default())?;
 
         let screen_geometry = new_screen_geometry(canvas.clone())?;
         let screen_reflectors = new_screen_reflector(canvas.clone())?;
@@ -106,7 +102,7 @@ impl LightPipeline {
             params,
             light_instances,
             light_area_batch,
-            global_light_params,
+            global_light_props: global_light_params,
             screen_geometry,
             screen_reflector: screen_reflectors,
             shadow_map,
@@ -162,7 +158,7 @@ impl LightPipeline {
 
     pub fn geometry_phase<'a>(
         &'a mut self,
-        matrices: &'a Uniform<MatricesBlock>,
+        matrices: &'a Uniform<ViewMatrices>,
     ) -> Result<GeometryPhase<'a>, FrameError> {
         if self.screen_geometry.textures()[0].size() != screen_light_size(self.canvas.clone()) {
             self.screen_geometry = new_screen_geometry(self.canvas.clone())?;
@@ -189,7 +185,7 @@ impl LightPipeline {
 }
 
 struct PhaseInput<'a> {
-    matrices: &'a Uniform<MatricesBlock>,
+    matrices: &'a Uniform<ViewMatrices>,
 }
 
 #[must_use]
@@ -232,7 +228,7 @@ pub struct ComposeWithIndirectPhase<'a> {
 impl<'a> GeometryPhase<'a> {
     pub fn draw_colors<E>(
         self,
-        object_light_params: &Uniform<ObjectLightParams>,
+        object_light_params: &Uniform<ObjectLightProps>,
         draw_unit: DrawUnit<ColorVertex, E>,
         draw_params: &DrawParams,
     ) -> Self
@@ -253,7 +249,7 @@ impl<'a> GeometryPhase<'a> {
 
     pub fn draw_sprites<E>(
         self,
-        object_light_params: &Uniform<ObjectLightParams>,
+        object_light_params: &Uniform<ObjectLightProps>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         draw_params: &DrawParams,
@@ -276,7 +272,7 @@ impl<'a> GeometryPhase<'a> {
 
     pub fn draw_sprites_with_normals<E>(
         self,
-        object_light_params: &Uniform<ObjectLightParams>,
+        object_light_params: &Uniform<ObjectLightProps>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
@@ -338,11 +334,9 @@ impl<'a> ShadowMapPhase<'a> {
 
     pub fn build_screen_light(
         self,
-        global_light_params: GlobalLightParams,
+        global_light_props: GlobalLightProps,
     ) -> BuiltScreenLightPhase<'a> {
-        self.pipeline
-            .global_light_params
-            .set(GlobalLightParamsBlock::new(global_light_params));
+        self.pipeline.global_light_props.set(global_light_props);
 
         /*self.pipeline
         .light_area_batch
@@ -378,7 +372,7 @@ impl<'a> ShadowMapPhase<'a> {
             let draw_unit = self.pipeline.light_area_batch.draw_unit();
             self.pipeline.screen_light_pass.draw(
                 self.input.matrices,
-                &self.pipeline.global_light_params,
+                &self.pipeline.global_light_props,
                 &self.pipeline.shadow_map.textures()[0],
                 &self.pipeline.screen_geometry.textures()[SCREEN_NORMALS_LOCATION],
                 draw_unit,
@@ -416,7 +410,7 @@ impl<'a> BuiltScreenLightPhase<'a> {
 
     pub fn compose(self) {
         self.pipeline.compose_pass.draw(
-            &self.pipeline.global_light_params,
+            &self.pipeline.global_light_props,
             &self.pipeline.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION],
             &self.pipeline.screen_light.textures()[0],
         );
@@ -500,7 +494,7 @@ impl<'a> IndirectLightPhase<'a> {
 impl<'a> ComposeWithIndirectPhase<'a> {
     pub fn compose(self) {
         self.pipeline.compose_with_indirect_pass.draw(
-            &self.pipeline.global_light_params,
+            &self.pipeline.global_light_props,
             &self.pipeline.screen_geometry.textures()[SCREEN_ALBEDO_LOCATION],
             &self.pipeline.screen_geometry.textures()[SCREEN_NORMALS_LOCATION],
             &self.pipeline.screen_geometry.textures()[SCREEN_OCCLUSION_LOCATION],

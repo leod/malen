@@ -9,15 +9,18 @@ use crate::{
     program, Color4,
 };
 
-use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
+use super::{super::GlobalLightProps, GLOBAL_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
     Program [
-        (params: GlobalLightParamsBlock = GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
-        (screen_albedo, screen_light),
-        (a: SpriteVertex),
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
+        ;
+        screen_albedo: Sampler2,
+        screen_light: Sampler2,
+        ;
+        a: SpriteVertex,
     ]
-    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"
@@ -34,9 +37,9 @@ out vec4 f_color;
 void main() {
     vec4 albedo = texture(screen_albedo, v_tex_coords);
     vec3 light = texture(screen_light, v_tex_coords).rgb;
-    vec3 diffuse = vec3(albedo) * (light + params.ambient);
+    vec3 diffuse = vec3(albedo) * (light + global_light_props.ambient);
     vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    f_color = vec4(pow(mapped, vec3(1.0 / params.gamma)), 1.0);
+    f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
 }
 "#;
 
@@ -70,13 +73,13 @@ impl ComposePass {
 
     pub fn draw(
         &self,
-        params: &Uniform<GlobalLightParamsBlock>,
+        global_light_props: &Uniform<GlobalLightProps>,
         screen_albedo: &Texture,
         screen_light: &Texture,
     ) {
         gl::draw(
             &self.program,
-            params,
+            global_light_props,
             [screen_albedo, screen_light],
             self.screen_rect.draw_unit(),
             &DrawParams::default(),

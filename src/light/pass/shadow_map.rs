@@ -9,17 +9,17 @@ use crate::{
 
 use super::super::{Light, OccluderLineVertex};
 
-program! {
-    |max_num_lights: u32|
-        Program [
-            (),
-            (),
-            (a_occluder: OccluderLineVertex, i_light: Light)
-        ]
-        => (
-            &VERTEX_SOURCE.replace("{max_num_lights}", &max_num_lights.to_string()),
-            FRAGMENT_SOURCE,
-        )
+program! { |max_num_lights: u32|
+    Program [
+        ;
+        ;
+        a_occluder: OccluderLineVertex,
+        i_light: Light,
+    ]
+    -> (
+        &VERTEX_SOURCE.replace("{max_num_lights}", &max_num_lights.to_string()),
+        FRAGMENT_SOURCE,
+    )
 }
 
 const VERTEX_SOURCE: &str = r#"

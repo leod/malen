@@ -1,4 +1,5 @@
 use bytemuck_derive::{Pod, Zeroable};
+use nalgebra::{Vector3, Vector4};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Zeroable, Pod)]
 #[repr(C)]
@@ -74,6 +75,18 @@ impl From<Color3> for [f32; 3] {
     }
 }
 
+impl From<Vector3<f32>> for Color3 {
+    fn from(c: Vector3<f32>) -> Self {
+        Self::new(c.x, c.y, c.z)
+    }
+}
+
+impl From<Color3> for Vector3<f32> {
+    fn from(c: Color3) -> Vector3<f32> {
+        Vector3::new(c.r, c.g, c.b)
+    }
+}
+
 impl From<[f32; 4]> for Color4 {
     fn from(c: [f32; 4]) -> Self {
         Self::new(c[0], c[1], c[2], c[3])
@@ -83,5 +96,17 @@ impl From<[f32; 4]> for Color4 {
 impl From<Color4> for [f32; 4] {
     fn from(c: Color4) -> [f32; 4] {
         [c.r, c.g, c.b, c.a]
+    }
+}
+
+impl From<Vector4<f32>> for Color4 {
+    fn from(c: Vector4<f32>) -> Self {
+        Self::new(c.x, c.y, c.z, c.w)
+    }
+}
+
+impl From<Color4> for Vector4<f32> {
+    fn from(c: Color4) -> Vector4<f32> {
+        Vector4::new(c.r, c.g, c.b, c.a)
     }
 }
