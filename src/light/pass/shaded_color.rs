@@ -8,12 +8,12 @@ use crate::{
 };
 
 program! {
-    Program [
+    Program[
         matrices: ViewMatrices = MATRICES_BLOCK_BINDING;
         screen_light: Sampler2;
         a: ColorVertex,
     ]
-    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"

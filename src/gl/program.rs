@@ -227,7 +227,7 @@ macro_rules! program {
             ;
             $($attribute_name:ident : $attribute_type:ty),* $(,)?
         ]
-        -> ($vertex_source:expr, $fragment_source:expr $(,)?)
+        => ($vertex_source:expr, $fragment_source:expr $(,)?)
     } => {
         $crate::program! {
             | | $name [
@@ -237,7 +237,7 @@ macro_rules! program {
                 ;
                 $($attribute_name : $attribute_type),*
             ]
-            -> ($vertex_source, $fragment_source)
+            => ($vertex_source, $fragment_source)
         }
     };
 
@@ -250,7 +250,7 @@ macro_rules! program {
             ;
             $($attribute_name:ident : $attribute_type:ty),* $(,)?
         ]
-        -> ($vertex_source:expr, $fragment_source:expr $(,)?)
+        => ($vertex_source:expr, $fragment_source:expr $(,)?)
     } => {
         pub struct $name(
             pub <$name as std::ops::Deref>::Target,

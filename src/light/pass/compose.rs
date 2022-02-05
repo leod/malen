@@ -12,13 +12,13 @@ use crate::{
 use super::{super::GlobalLightProps, GLOBAL_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
-    ComposeProgram [
+    ComposeProgram[
         global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
         screen_albedo: Sampler2,
         screen_light: Sampler2;
         a: SpriteVertex,
     ]
-    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 // => struct ComposeProgram(Program<GlobalLightProps, SpriteVertex, 2>)
