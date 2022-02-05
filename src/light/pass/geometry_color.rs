@@ -2,21 +2,25 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Uniform},
+    gl::{self, DrawParams, DrawUnit, Element, Uniform},
+    program,
 };
 
 use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct GeometryColorPass {
-    program: Program<(MatricesBlock, ObjectLightParams), ColorVertex, 0>,
+program! {
+    Program [
+        (
+            matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
+            object_params: ObjectLightParams = OBJECT_LIGHT_PARAMS_BLOCK_BINDING,
+        ),
+        (),
+        (a: ColorVertex),
+    ]
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
-];
 
 const VERTEX_SOURCE: &str = r#"
 out vec4 v_color;
@@ -45,15 +49,13 @@ void main() {
 }
 "#;
 
+pub struct GeometryColorPass {
+    program: Program,
+}
+
 impl GeometryColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniforms: UNIFORM_BLOCKS,
-            samplers: [],
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl)?;
 
         Ok(Self { program })
     }

@@ -3,23 +3,18 @@ use std::rc::Rc;
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
-    program_def,
+    program,
 };
 
 use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
-program_def! {
-    name: Program,
-    params: (),
-    uniforms: {
-        matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
-    },
-    samplers: ["sprite"],
-    attributes: {
-        a: SpriteVertex,
-    },
-    vertex_source: VERTEX_SOURCE,
-    fragment_source: FRAGMENT_SOURCE,
+program! {
+    Program [
+        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (sprite),
+        (a: SpriteVertex),
+    ]
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"

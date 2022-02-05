@@ -74,7 +74,7 @@ pub trait VertexDecls {
 
     type RcVertexBufferTuple: Clone;
 
-    fn attributes() -> Vec<Attribute>;
+    fn attributes(prefixes: &[&str]) -> Vec<Attribute>;
 
     unsafe fn bind_to_vertex_array(
         buffers: Self::RcVertexBufferTuple,
@@ -91,8 +91,16 @@ where
 
     type RcVertexBufferTuple = Rc<VertexBuffer<V>>;
 
-    fn attributes() -> Vec<Attribute> {
+    fn attributes(prefixes: &[&str]) -> Vec<Attribute> {
+        assert!(prefixes.len() == Self::N);
+
         V::attributes()
+            .iter()
+            .map(|a| Attribute {
+                name: format!("{}_{}", prefixes[0], a.name),
+                ..a.clone()
+            })
+            .collect()
     }
 
     unsafe fn bind_to_vertex_array(
@@ -114,8 +122,12 @@ where
 
     type RcVertexBufferTuple = (Rc<VertexBuffer<V0>>, Rc<VertexBuffer<V1>>);
 
-    fn attributes() -> Vec<Attribute> {
-        [&V0::attributes()[..], &V1::attributes()[..]].concat()
+    fn attributes(prefixes: &[&str]) -> Vec<Attribute> {
+        [
+            &<V0 as VertexDecls>::attributes(&prefixes[0..1])[..],
+            &<V1 as VertexDecls>::attributes(&prefixes[1..2])[..],
+        ]
+        .concat()
     }
 
     unsafe fn bind_to_vertex_array(
@@ -146,11 +158,11 @@ where
         Rc<VertexBuffer<V2>>,
     );
 
-    fn attributes() -> Vec<Attribute> {
+    fn attributes(prefixes: &[&str]) -> Vec<Attribute> {
         [
-            &V0::attributes()[..],
-            &V1::attributes()[..],
-            &V2::attributes()[..],
+            &<V0 as VertexDecls>::attributes(&prefixes[0..1])[..],
+            &<V1 as VertexDecls>::attributes(&prefixes[1..2])[..],
+            &<V2 as VertexDecls>::attributes(&prefixes[2..3])[..],
         ]
         .concat()
     }
@@ -176,11 +188,11 @@ where
 
 #[macro_export]
 macro_rules! attributes {
-    [$prefix:literal : $($field:tt),*] => {
+    [$($field:tt),*] => {
         vec![
             $(
                 Attribute {
-                    name: $prefix.to_owned() + &stringify!($field),
+                    name: stringify!($field).into(),
                     offset: bytemuck::offset_of!(Self::zeroed(), Self, $field),
                     glsl_type_name: $crate::gl::DataType::glsl_type_name(&Self::zeroed().$field),
                     value_type: $crate::gl::DataType::value_type(&Self::zeroed().$field),

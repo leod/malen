@@ -19,7 +19,7 @@ pub struct ColorInstance {
 
 impl Vertex for ColorInstance {
     fn attributes() -> Vec<Attribute> {
-        attributes!["i_": position, z, angle, scale, color]
+        attributes![position, z, angle, scale, color]
     }
 }
 

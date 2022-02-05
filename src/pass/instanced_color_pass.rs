@@ -2,16 +2,19 @@ use std::rc::Rc;
 
 use crate::{
     data::ColorVertex,
-    gl::{self, DrawParams, Element, InstancedDrawUnit, Program, ProgramDef, Uniform},
+    gl::{self, DrawParams, Element, InstancedDrawUnit, Uniform},
+    program,
 };
 
 use super::{ColorInstance, MatricesBlock, MATRICES_BLOCK_BINDING};
 
-pub struct InstancedColorPass {
-    program: Program<MatricesBlock, (ColorVertex, ColorInstance), 0>,
+program! {
+    Program [
+        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (),
+        (a: ColorVertex, i: ColorInstance),
+    ] => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
 
 const VERTEX_SOURCE: &str = r#"
 out vec4 v_color;
@@ -42,15 +45,13 @@ const FRAGMENT_SOURCE: &str = r#"
     }
 "#;
 
+pub struct InstancedColorPass {
+    program: Program,
+}
+
 impl InstancedColorPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniforms: UNIFORM_BLOCKS,
-            samplers: [],
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl)?;
 
         Ok(Self { program })
     }

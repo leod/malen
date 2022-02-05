@@ -25,7 +25,7 @@ pub struct LightAreaVertex {
 impl Vertex for LightAreaVertex {
     fn attributes() -> Vec<Attribute> {
         attributes![
-            "a_": position,
+            position,
             light_index,
             light_position,
             light_params,
