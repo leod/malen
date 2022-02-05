@@ -5,9 +5,7 @@ mod occluder_batch;
 pub(super) mod pass;
 mod pipeline;
 
-pub use def::{
-    GlobalLightParams, GlobalLightParamsBlock, Light, LightPipelineParams, ObjectLightParams,
-};
+pub use def::{GlobalLightProps, Light, LightPipelineParams, ObjectLightProps};
 pub use occluder::{
     OccluderCircle, OccluderLine, OccluderLineVertex, OccluderRect, OccluderRotatedRect,
 };

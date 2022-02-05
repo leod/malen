@@ -7,7 +7,7 @@ use crate::{
     data::ColorRect,
     geom::{Rect, Screen},
     gl::{DrawTimer, Uniform},
-    pass::MatricesBlock,
+    pass::ViewMatrices,
     plot::{Axis, LineGraph, Plot, PlotBatch, PlotPass, PlotStyle},
     text::{Font, Text},
     Color4, Context, FrameError, InitError,
@@ -43,7 +43,7 @@ pub struct Profile {
     font: Font,
     params: ProfileParams,
 
-    screen_matrices: Uniform<MatricesBlock>,
+    screen_matrices: Uniform<ViewMatrices>,
     batch: PlotBatch,
     pass: Rc<PlotPass>,
 
@@ -61,7 +61,7 @@ pub struct FrameGuard {
 
 impl Profile {
     pub fn new(context: &Context, font: Font, params: ProfileParams) -> Result<Self, InitError> {
-        let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
+        let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
         let batch = PlotBatch::new(context.gl())?;
         let pass = context.plot_pass();
 
@@ -124,7 +124,7 @@ impl Profile {
     }
 
     fn render(&mut self, screen: Screen) -> Result<(), FrameError> {
-        self.screen_matrices.set(MatricesBlock {
+        self.screen_matrices.set(ViewMatrices {
             view: Matrix3::identity(),
             projection: screen.project_logical_to_ndc(),
         });

@@ -10,4 +10,4 @@ pub mod shaded_color;
 pub mod shaded_sprite;
 pub mod shadow_map;
 
-pub use bindings::{GLOBAL_LIGHT_PARAMS_BLOCK_BINDING, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+pub use bindings::{GLOBAL_LIGHT_PROPS_BLOCK_BINDING, OBJECT_LIGHT_PROPS_BLOCK_BINDING};

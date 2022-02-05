@@ -3,17 +3,17 @@ use std::rc::Rc;
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
-    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    pass::{ViewMatrices, MATRICES_BLOCK_BINDING},
     program,
 };
 
-use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+use super::{super::ObjectLightProps, OBJECT_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
     Program [
         (
-            matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
-            object_params: ObjectLightParams = OBJECT_LIGHT_PARAMS_BLOCK_BINDING,
+            matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+            object_light_props: ObjectLightProps = OBJECT_LIGHT_PROPS_BLOCK_BINDING,
         ),
         (sprite),
         (a: SpriteVertex),
@@ -48,7 +48,7 @@ void main() {
     vec4 albedo = texture(sprite, v_uv);
     f_albedo = v_color * vec4(pow(albedo.rgb, vec3(2.2)), albedo.a);
     f_normal = vec4(0.0, 0.0, 1.0, f_albedo.a);
-    f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, f_albedo.a);
+    f_occlusion = vec4(object_light_props.occlusion, 0.0, 0.0, f_albedo.a);
 }
 "#;
 
@@ -65,8 +65,8 @@ impl GeometrySpritePass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
-        object_params: &Uniform<ObjectLightParams>,
+        matrices: &Uniform<ViewMatrices>,
+        object_light_props: &Uniform<ObjectLightProps>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         draw_params: &DrawParams,
@@ -75,7 +75,7 @@ impl GeometrySpritePass {
     {
         gl::draw(
             &self.program,
-            (matrices, object_params),
+            (matrices, object_light_props),
             [texture],
             draw_unit,
             draw_params,

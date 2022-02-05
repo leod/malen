@@ -3,13 +3,13 @@ use std::rc::Rc;
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
-    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    pass::{ViewMatrices, MATRICES_BLOCK_BINDING},
     program,
 };
 
 program! {
     Program [
-        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (matrices: ViewMatrices = MATRICES_BLOCK_BINDING),
         (sprite, screen_light),
         (a: SpriteVertex),
     ]
@@ -60,7 +60,7 @@ impl ShadedSpritePass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
+        matrices: &Uniform<ViewMatrices>,
         texture: &Texture,
         screen_light: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,

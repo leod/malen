@@ -18,9 +18,9 @@ pub struct LightPipelineParams {
     pub num_tracing_steps: u32,
 }
 
-#[derive(Debug, Clone)]
-pub struct GlobalLightParams {
-    pub ambient: Color3,
+#[derive(Debug, Copy, Clone, AsStd140, GlslStruct)]
+pub struct GlobalLightProps {
+    pub ambient: Vector3<f32>,
     pub gamma: f32,
     pub angle_fall_off_size: f32,
     pub angle_fall_off_factor: f32,
@@ -31,10 +31,12 @@ pub struct GlobalLightParams {
     pub indirect_self_occlusion: f32,
 }
 
-impl Default for GlobalLightParams {
+impl UniformBlock for GlobalLightProps {}
+
+impl Default for GlobalLightProps {
     fn default() -> Self {
         Self {
-            ambient: Color3::from_u8(0, 0, 0),
+            ambient: Vector3::new(0.0, 0.0, 0.0),
             gamma: 2.2,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
@@ -48,42 +50,11 @@ impl Default for GlobalLightParams {
 }
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
-pub struct GlobalLightParamsBlock {
-    pub ambient: Vector3<f32>,
-    pub gamma: f32,
-    pub angle_fall_off_size: f32,
-    pub angle_fall_off_factor: f32,
-    pub indirect_intensity: f32,
-    pub indirect_initial_offset: f32,
-    pub indirect_step_factor: f32,
-    pub indirect_z: f32,
-    pub indirect_self_occlusion: f32,
-}
-
-impl UniformBlock for GlobalLightParamsBlock {}
-
-impl GlobalLightParamsBlock {
-    pub fn new(params: GlobalLightParams) -> Self {
-        GlobalLightParamsBlock {
-            ambient: Vector3::new(params.ambient.r, params.ambient.g, params.ambient.b),
-            gamma: params.gamma,
-            angle_fall_off_size: params.angle_fall_off_size,
-            angle_fall_off_factor: params.angle_fall_off_factor,
-            indirect_intensity: params.indirect_intensity,
-            indirect_initial_offset: params.indirect_initial_offset,
-            indirect_step_factor: params.indirect_step_factor,
-            indirect_z: params.indirect_z,
-            indirect_self_occlusion: params.indirect_self_occlusion,
-        }
-    }
-}
-
-impl UniformBlock for ObjectLightParams {}
-
-#[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
-pub struct ObjectLightParams {
+pub struct ObjectLightProps {
     pub occlusion: f32,
 }
+
+impl UniformBlock for ObjectLightProps {}
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     gl::{Blend, DrawParams, Uniform},
-    pass::{ColorPass, MatricesBlock},
+    pass::{ColorPass, ViewMatrices},
     text::Font,
 };
 
@@ -17,7 +17,7 @@ impl PlotPass {
         Self { color_pass }
     }
 
-    pub fn draw(&self, matrices: &Uniform<MatricesBlock>, font: &Font, batch: &mut PlotBatch) {
+    pub fn draw(&self, matrices: &Uniform<ViewMatrices>, font: &Font, batch: &mut PlotBatch) {
         let draw_params = DrawParams {
             blend: Some(Blend::default()),
             ..DrawParams::default()
