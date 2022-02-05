@@ -6,69 +6,68 @@ use nalgebra::{Point2, Vector2};
 use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
-    gl::{self, DrawParams, Texture, Uniform, UniformBlock},
+    gl::{self, DrawParams, Framebuffer, Texture, Uniform, UniformBlock},
     program, Color4,
 };
 
 use super::BLUR_PROPS_BLOCK_BINDING;
 
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
-struct BlurProps {
-    dir: u32,
+pub struct BlurProps {
+    direction: u32,
 }
 
 impl UniformBlock for BlurProps {}
 
 program! {
-    BlurProgram [
+    BlurProgram[
         blur_props: BlurProps = BLUR_PROPS_BLOCK_BINDING;
         input: Sampler2;
         a: SpriteVertex,
     ]
-    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"
-out vec2 v_tex_coords;
+out vec2 v_uv;
 void main() {
     gl_Position = vec4(a_position.xyz, 1.0);
-    v_tex_coords = a_tex_coords;
+    v_uv = a_tex_coords;
 }
 "#;
 
+// https://learnopengl.com/Advanced-Lighting/Bloom
 const FRAGMENT_SOURCE: &str = r#"
-in vec2 v_tex_coords;
+in vec2 v_uv;
 out vec4 f_color;
-void main() {
-uniform sampler2D image;
   
-uniform bool horizontal;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+const float weight[{num_weights}] = float[] ({weights});
 
-void main()
-{             
-    vec2 tex_offset = 1.0 / textureSize(image, 0); // gets size of single texel
-    vec3 result = texture(image, TexCoords).rgb * weight[0]; // current fragment's contribution
-    if(horizontal)
-    {
-        for(int i = 1; i < 5; ++i)
-        {
-            result += texture(image, TexCoords + vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
-            result += texture(image, TexCoords - vec2(tex_offset.x * i, 0.0)).rgb * weight[i];
+void main() {             
+    vec2 texel = 1.0 / textureSize(input, 0);
+
+    vec3 result = texture(input, v_uv).rgb * weight[0];
+
+    if (blur_props.direction == 0) {
+        for (int i = 1; i < {num_weights}; i++) {
+            result += texture(input, v_uv + vec2(texel.x * i, 0.0)).rgb * weight[i];
+            result += texture(input, v_uv - vec2(texel.x * i, 0.0)).rgb * weight[i];
+        }
+    } else {
+        for (int i = 1; i < {num_weights}; i++) {
+            result += texture(input, v_uv + vec2(0.0, texel.y * i)).rgb * weight[i];
+            result += texture(input, v_uv - vec2(0.0, texel.y * i)).rgb * weight[i];
         }
     }
-    else
-    {
-        for(int i = 1; i < 5; ++i)
-        {
-            result += texture(image, TexCoords + vec2(0.0, tex_offset.y * i)).rgb * weight[i];
-            result += texture(image, TexCoords - vec2(0.0, tex_offset.y * i)).rgb * weight[i];
-        }
-    }
-    FragColor = vec4(result, 1.0);
+
+    f_color = vec4(result, 1.0);
 }
 }
 "#;
+
+pub struct BlurBuffer {
+    buffer: Framebuffer,
+}
 
 pub struct BlurPass {
     screen_rect: Mesh<SpriteVertex>,

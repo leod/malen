@@ -15,7 +15,7 @@ use super::{
 };
 
 program! { |params: LightPipelineParams|
-    Program [
+    Program[
         global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
         screen_albedo: Sampler2,
         screen_normals: Sampler2,
@@ -23,7 +23,7 @@ program! { |params: LightPipelineParams|
         screen_reflector: Sampler2,
         screen_light: Sampler2;
         a: SpriteVertex,
-    ] -> (
+    ] => (
         VERTEX_SOURCE,
         format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)
             .replace("{num_tracing_cones}", &params.num_tracing_cones.to_string())
