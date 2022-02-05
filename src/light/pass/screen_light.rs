@@ -5,21 +5,21 @@ use crate::{
         self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, DrawUnit, Texture,
         Uniform,
     },
-    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    pass::{ViewMatrices, MATRICES_BLOCK_BINDING},
     program,
 };
 
 use super::{
-    super::{light_area::LightAreaVertex, GlobalLightParamsBlock, LightPipelineParams},
-    GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
+    super::{light_area::LightAreaVertex, GlobalLightProps, LightPipelineParams},
+    GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
 };
 
 program! {
     |params: LightPipelineParams|
         Program [
             (
-                matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
-                params: GlobalLightParamsBlock = GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
+                matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+                global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
             ),
             (shadow_map, screen_normals),
             (a: LightAreaVertex)
@@ -87,9 +87,9 @@ float visibility(
         angle_diff = 2.0 * PI - angle_diff;
 
     float angle_to_border = angle_diff * 2.0 - light_angle_size
-        + params.angle_fall_off_size;
+        + global_light_props.angle_fall_off_size;
     if (abs(light_angle_size - 2.0 * PI) > 0.001 && angle_to_border > 0.0) {
-        float t = angle_to_border / params.angle_fall_off_size;
+        float t = angle_to_border / global_light_props.angle_fall_off_size;
         front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
     }
 
@@ -168,15 +168,15 @@ impl ScreenLightPass {
 
     pub fn draw(
         &self,
-        matrices: &Uniform<MatricesBlock>,
-        params: &Uniform<GlobalLightParamsBlock>,
+        matrices: &Uniform<ViewMatrices>,
+        global_light_props: &Uniform<GlobalLightProps>,
         shadow_map: &Texture,
         screen_normals: &Texture,
         draw_unit: DrawUnit<LightAreaVertex>,
     ) {
         gl::draw(
             &self.program,
-            (matrices, params),
+            (matrices, global_light_props),
             [shadow_map, screen_normals],
             draw_unit,
             &DrawParams {

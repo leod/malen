@@ -9,11 +9,11 @@ use malen::{
     geom::{self, Circle, Rect, RotatedRect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
     light::{
-        GlobalLightParams, Light, LightPipeline, LightPipelineParams, ObjectLightParams,
+        GlobalLightProps, Light, LightPipeline, LightPipelineParams, ObjectLightProps,
         OccluderBatch, OccluderCircle, OccluderRect, OccluderRotatedRect,
     },
     particles::Particles,
-    pass::{ColorInstance, MatricesBlock},
+    pass::{ColorInstance, ViewMatrices},
     text::{Font, TextBatch},
     Color3, Color4, Context, FrameError, InitError,
 };
@@ -45,10 +45,10 @@ pub struct Draw {
 
     pub light_pipeline: LightPipeline,
 
-    translucent_light_params: Uniform<ObjectLightParams>,
-    reflector_light_params: Uniform<ObjectLightParams>,
-    camera_matrices: Uniform<MatricesBlock>,
-    screen_matrices: Uniform<MatricesBlock>,
+    translucent_light_props: Uniform<ObjectLightProps>,
+    reflector_light_props: Uniform<ObjectLightProps>,
+    camera_matrices: Uniform<ViewMatrices>,
+    screen_matrices: Uniform<ViewMatrices>,
 
     circle_instances: InstanceBatch<ColorVertex, ColorInstance>,
     translucent_color_batch: ColorTriangleBatch,
@@ -101,11 +101,11 @@ impl Draw {
         )?;
 
         let translucent_light_params =
-            Uniform::new(context.gl(), ObjectLightParams { occlusion: 0.0 })?;
+            Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
         let reflector_light_params =
-            Uniform::new(context.gl(), ObjectLightParams { occlusion: 1.0 })?;
-        let camera_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
-        let screen_matrices = Uniform::new(context.gl(), MatricesBlock::default())?;
+            Uniform::new(context.gl(), ObjectLightProps { occlusion: 1.0 })?;
+        let camera_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
+        let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
 
         let circle_mesh = Mesh::from_geometry::<TriangleTag, _>(
             context.gl(),
@@ -139,8 +139,8 @@ impl Draw {
             enemy_texture,
             enemy_normal_texture,
             light_pipeline,
-            translucent_light_params,
-            reflector_light_params,
+            translucent_light_props: translucent_light_params,
+            reflector_light_props: reflector_light_params,
             camera_matrices,
             screen_matrices,
             circle_instances,
@@ -164,11 +164,11 @@ impl Draw {
     ) -> Result<RenderInfo, FrameError> {
         profile!("render");
 
-        self.camera_matrices.set(MatricesBlock {
+        self.camera_matrices.set(ViewMatrices {
             view: state.camera().matrix(screen),
             projection: screen.project_logical_to_ndc(),
         });
-        self.screen_matrices.set(MatricesBlock {
+        self.screen_matrices.set(ViewMatrices {
             view: Matrix3::identity(),
             projection: screen.project_logical_to_ndc(),
         });
@@ -416,7 +416,7 @@ impl Draw {
                 .light_pipeline
                 .geometry_phase(&self.camera_matrices)?
                 .draw_colors(
-                    &self.translucent_light_params,
+                    &self.translucent_light_props,
                     self.translucent_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: Some(DepthTest::default()),
@@ -424,7 +424,7 @@ impl Draw {
                     },
                 )
                 .draw_colors(
-                    &self.reflector_light_params,
+                    &self.reflector_light_props,
                     self.reflector_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: Some(DepthTest::default()),
@@ -432,7 +432,7 @@ impl Draw {
                     },
                 )
                 .draw_sprites_with_normals(
-                    &self.reflector_light_params,
+                    &self.reflector_light_props,
                     &self.enemy_texture,
                     &self.enemy_normal_texture,
                     self.reflector_sprite_batch.draw_unit(),
@@ -443,7 +443,7 @@ impl Draw {
                     },
                 )
                 .draw_sprites_with_normals(
-                    &self.translucent_light_params,
+                    &self.translucent_light_props,
                     &self.smoke_texture,
                     &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
@@ -453,7 +453,7 @@ impl Draw {
                     },
                 )
                 .draw_colors(
-                    &self.reflector_light_params,
+                    &self.reflector_light_props,
                     self.source_color_batch.draw_unit(),
                     &DrawParams {
                         depth_test: None,
@@ -462,9 +462,9 @@ impl Draw {
                 )
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
-                .build_screen_light(GlobalLightParams {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear(),
-                    ..GlobalLightParams::default()
+                .build_screen_light(GlobalLightProps {
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear().into(),
+                    ..GlobalLightProps::default()
                 });
 
             if indirect_light {

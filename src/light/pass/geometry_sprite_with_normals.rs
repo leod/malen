@@ -3,17 +3,17 @@ use std::rc::Rc;
 use crate::{
     data::SpriteVertex,
     gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
-    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    pass::{ViewMatrices, MATRICES_BLOCK_BINDING},
     program,
 };
 
-use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+use super::{super::ObjectLightProps, OBJECT_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
     Program [
         (
-            matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
-            object_params: ObjectLightParams = OBJECT_LIGHT_PARAMS_BLOCK_BINDING,
+            matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+            object_light_props: ObjectLightProps = OBJECT_LIGHT_PROPS_BLOCK_BINDING,
         ),
         (sprite, normal_map),
         (a: SpriteVertex),
@@ -65,7 +65,7 @@ void main() {
     normal.xy = inverse(rot) * normal.xy;
 
     f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
-    f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, f_albedo.a);
+    f_occlusion = vec4(object_light_props.occlusion, 0.0, 0.0, f_albedo.a);
 
     if (f_albedo.a == 0.0) {
         discard;
@@ -86,8 +86,8 @@ impl GeometrySpriteWithNormalsPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
-        object_params: &Uniform<ObjectLightParams>,
+        matrices: &Uniform<ViewMatrices>,
+        object_light_props: &Uniform<ObjectLightProps>,
         texture: &Texture,
         normal_map: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
@@ -97,7 +97,7 @@ impl GeometrySpriteWithNormalsPass {
     {
         gl::draw(
             &self.program,
-            (matrices, object_params),
+            (matrices, object_light_props),
             [texture, normal_map],
             draw_unit,
             draw_params,

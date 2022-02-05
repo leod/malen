@@ -6,15 +6,15 @@ use crate::{
     program,
 };
 
-use crate::pass::{MatricesBlock, MATRICES_BLOCK_BINDING};
+use crate::pass::{ViewMatrices, MATRICES_BLOCK_BINDING};
 
-use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
+use super::{super::ObjectLightProps, OBJECT_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
     Program [
         (
-            matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
-            object_params: ObjectLightParams = OBJECT_LIGHT_PARAMS_BLOCK_BINDING,
+            matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+            object_light_props: ObjectLightProps = OBJECT_LIGHT_PROPS_BLOCK_BINDING,
         ),
         (),
         (a: ColorVertex),
@@ -45,7 +45,7 @@ layout (location = 2) out vec4 f_occlusion;
 void main() {
     f_albedo = v_color;
     f_normal = vec4(0.5, 0.5, 1.0, f_albedo.a);
-    f_occlusion = vec4(object_params.occlusion, 0.0, 0.0, f_albedo.a);
+    f_occlusion = vec4(object_light_props.occlusion, 0.0, 0.0, f_albedo.a);
 }
 "#;
 
@@ -62,8 +62,8 @@ impl GeometryColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
-        object_light_params: &Uniform<ObjectLightParams>,
+        matrices: &Uniform<ViewMatrices>,
+        object_light_props: &Uniform<ObjectLightProps>,
         draw_unit: DrawUnit<ColorVertex, E>,
         draw_params: &DrawParams,
     ) where
@@ -71,7 +71,7 @@ impl GeometryColorPass {
     {
         gl::draw(
             &self.program,
-            (matrices, object_light_params),
+            (matrices, object_light_props),
             [],
             draw_unit,
             draw_params,

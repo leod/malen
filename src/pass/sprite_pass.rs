@@ -6,11 +6,11 @@ use crate::{
     program,
 };
 
-use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
+use super::{ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (matrices: ViewMatrices = MATRICES_BLOCK_BINDING),
         (sprite),
         (a: SpriteVertex),
     ]
@@ -57,7 +57,7 @@ impl SpritePass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
+        matrices: &Uniform<ViewMatrices>,
         texture: &Texture,
         draw_unit: DrawUnit<SpriteVertex, E>,
         params: &DrawParams,

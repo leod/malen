@@ -6,11 +6,11 @@ use crate::{
     program,
 };
 
-use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
+use super::{ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (matrices: ViewMatrices = MATRICES_BLOCK_BINDING),
         (),
         (a: ColorVertex),
     ]
@@ -53,7 +53,7 @@ impl ColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
+        matrices: &Uniform<ViewMatrices>,
         draw_unit: DrawUnit<ColorVertex, E>,
         params: &DrawParams,
     ) where

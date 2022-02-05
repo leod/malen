@@ -10,7 +10,7 @@ use crate::{
     geom::{Rect, Screen},
     gl::{self, DrawParams, Texture, Uniform},
     input::InputState,
-    pass::{ColorPass, InstancedColorPass, MatricesBlock, SpritePass},
+    pass::{ColorPass, InstancedColorPass, SpritePass, ViewMatrices},
     plot::PlotPass,
     Canvas, Color4, Config, Event, FrameError,
 };
@@ -25,7 +25,7 @@ pub struct Context {
     instanced_color_pass: Rc<InstancedColorPass>,
     plot_pass: Rc<PlotPass>,
 
-    debug_matrices: Option<Uniform<MatricesBlock>>,
+    debug_matrices: Option<Uniform<ViewMatrices>>,
     debug_sprite_batch: Option<SpriteBatch>,
 }
 
@@ -133,7 +133,7 @@ impl Context {
 
     pub fn draw_debug_texture(&mut self, rect: Rect, texture: &Texture) -> Result<(), FrameError> {
         if self.debug_matrices.is_none() {
-            self.debug_matrices = Some(Uniform::new(self.gl(), MatricesBlock::default())?);
+            self.debug_matrices = Some(Uniform::new(self.gl(), ViewMatrices::default())?);
         }
         if self.debug_sprite_batch.is_none() {
             self.debug_sprite_batch = Some(SpriteBatch::new(self.gl())?);
@@ -141,7 +141,7 @@ impl Context {
         let matrices = self.debug_matrices.as_mut().unwrap();
         let batch = self.debug_sprite_batch.as_mut().unwrap();
 
-        matrices.set(MatricesBlock {
+        matrices.set(ViewMatrices {
             projection: self.canvas.borrow().screen().project_logical_to_ndc(),
             view: Matrix3::identity(),
         });
