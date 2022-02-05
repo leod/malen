@@ -10,11 +10,13 @@ use super::{ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        (matrices: ViewMatrices = MATRICES_BLOCK_BINDING),
-        (sprite),
-        (a: SpriteVertex),
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+        ;
+        sprite: Sampler2,
+        ;
+        a: SpriteVertex,
     ]
-    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"

@@ -14,26 +14,26 @@ use super::{
     GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
 };
 
-program! {
-    |params: LightPipelineParams|
-        Program [
-            (
-                matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
-                global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
-            ),
-            (shadow_map, screen_normals),
-            (a: LightAreaVertex)
-        ] => (
-            &VERTEX_SOURCE.replace("{max_num_lights}", &params.max_num_lights.to_string()),
-            &format!(
-                "{}\n{}",
-                VISIBILITY_SOURCE,
-                FRAGMENT_SOURCE.replace(
-                    "{shadow_map_resolution}",
-                    &params.shadow_map_resolution.to_string(),
-                )
+program! { |params: LightPipelineParams|
+    Program [
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
+        ;
+        shadow_map: Sampler2,
+        screen_normals: Sampler2,
+        ;
+        a: LightAreaVertex,
+    ] -> (
+        &VERTEX_SOURCE.replace("{max_num_lights}", &params.max_num_lights.to_string()),
+        &format!(
+            "{}\n{}",
+            VISIBILITY_SOURCE,
+            FRAGMENT_SOURCE.replace(
+                "{shadow_map_resolution}",
+                &params.shadow_map_resolution.to_string(),
             )
         )
+    )
 }
 
 const VERTEX_SOURCE: &str = r#"
