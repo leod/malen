@@ -18,6 +18,17 @@ pub struct LightPipelineParams {
     pub num_tracing_steps: u32,
 }
 
+impl Default for LightPipelineParams {
+    fn default() -> Self {
+        Self {
+            shadow_map_resolution: 2048,
+            max_num_lights: 512,
+            num_tracing_cones: 7,
+            num_tracing_steps: 12,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct GlobalLightProps {
     pub ambient: Vector3<f32>,
