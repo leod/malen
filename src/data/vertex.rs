@@ -25,12 +25,12 @@ pub struct ColorVertex {
 
 impl Vertex for SpriteVertex {
     fn attributes() -> Vec<Attribute> {
-        attributes!["a_": position, tex_coords, color]
+        attributes![position, tex_coords, color]
     }
 }
 
 impl Vertex for ColorVertex {
     fn attributes() -> Vec<Attribute> {
-        attributes!["a_": position, color]
+        attributes![position, color]
     }
 }

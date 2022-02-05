@@ -2,7 +2,7 @@ use std::{marker::PhantomData, rc::Rc};
 
 use glow::HasContext;
 
-use super::{vertex::VertexDecls, Attribute, Context, Error, UniformBlockDecls};
+use super::{vertex::VertexDecls, Attribute, Context, Error, UniformDecls};
 
 pub struct Program<U, V, const S: usize> {
     gl: Rc<Context>,
@@ -31,83 +31,78 @@ impl<U, V, const S: usize> Program<U, V, S> {
     }
 }
 
-pub struct ProgramDef<'a, const N: usize, const S: usize> {
-    pub uniform_blocks: [(&'a str, u32); N],
-    pub samplers: [&'a str; S],
-    pub vertex_source: &'a str,
-    pub fragment_source: &'a str,
+pub struct ProgramDef<const N: usize, const S: usize, const A: usize> {
+    pub uniforms: [(String, u32); N],
+    pub samplers: [String; S],
+    pub attributes: [String; A],
+    pub vertex_source: String,
+    pub fragment_source: String,
 }
 
 impl<U, V, const S: usize> Program<U, V, S>
 where
-    U: UniformBlockDecls,
+    U: UniformDecls,
     V: VertexDecls,
 {
-    pub fn new<const N: usize>(gl: Rc<Context>, def: ProgramDef<N, S>) -> Result<Self, Error> {
+    pub fn new<const N: usize, const A: usize>(
+        gl: Rc<Context>,
+        def: ProgramDef<N, S, A>,
+    ) -> Result<Self, Error> {
         // I think we'll be able to turn this into a compile time check once
         // there is a bit more const-generics on stable.
         assert!(N == U::N);
+        assert!(A == V::N);
 
-        let id = create_program::<U, V, N, S>(&*gl, &def)?;
+        let id = create_program::<U, V, N, S, A>(&*gl, &def)?;
 
         Ok(Self {
             gl,
             id,
-            uniform_block_bindings: def.uniform_block_bindings().to_vec(),
+            uniform_block_bindings: def.uniforms.iter().map(|(_, b)| *b).collect(),
             _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, const N: usize, const S: usize> ProgramDef<'a, N, S> {
-    fn uniform_block_names(&self) -> [&str; N] {
-        let mut result = [""; N];
-        for (i, (instance_name, _)) in self.uniform_blocks.iter().enumerate() {
-            result[i] = instance_name;
-        }
-        result
-    }
-
-    fn uniform_block_bindings(&self) -> [u32; N] {
-        let mut result = [0; N];
-        for (i, (_, binding)) in self.uniform_blocks.iter().enumerate() {
-            result[i] = *binding;
-        }
-        result
-    }
-}
-
-fn create_program<U, V, const N: usize, const S: usize>(
+fn create_program<U, V, const N: usize, const S: usize, const A: usize>(
     gl: &Context,
-    def: &ProgramDef<N, S>,
+    def: &ProgramDef<N, S, A>,
 ) -> Result<glow::Program, Error>
 where
-    U: UniformBlockDecls,
+    U: UniformDecls,
     V: VertexDecls,
 {
     let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
-    let sampler_definitions = def
+    let uniform_decls = U::glsl_decls(
+        &def.uniforms
+            .iter()
+            .map(|(s, _)| s.as_str())
+            .collect::<Vec<_>>(),
+    );
+    let attributes = def
+        .attributes
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>();
+
+    let sampler_decls = def
         .samplers
+        .iter()
         .map(|sampler| format!("uniform sampler2D {};", sampler))
+        .collect::<Vec<_>>()
         .join("\n");
+
+    let header = SOURCE_HEADER.to_owned() + &uniform_decls + &sampler_decls;
 
     let sources = [
         (
             glow::VERTEX_SHADER,
-            SOURCE_HEADER.to_owned()
-                + &vertex_source_header(&V::attributes())
-                + &U::glsl_definitions(&def.uniform_block_names())
-                + &sampler_definitions
-                + def.vertex_source,
+            header.clone()
+                + &vertex_source_header(&V::attributes(&attributes))
+                + &def.vertex_source,
         ),
-        (
-            glow::FRAGMENT_SHADER,
-            SOURCE_HEADER.to_owned()
-                + &U::glsl_definitions(&def.uniform_block_names())
-                + &sampler_definitions
-                + def.fragment_source,
-        ),
+        (glow::FRAGMENT_SHADER, header + &def.fragment_source),
     ];
 
     // TODO:
@@ -148,7 +143,7 @@ where
         .collect::<Result<Vec<_>, Error>>()?;
 
     // Binding attributes must be done before linking.
-    for (index, attribute) in V::attributes().iter().enumerate() {
+    for (index, attribute) in V::attributes(&attributes).iter().enumerate() {
         unsafe {
             gl.bind_attrib_location(program, index as u32, &attribute.name);
         }
@@ -189,7 +184,14 @@ where
     }
 
     // Setting uniform block binding locations should be done after linking.
-    U::bind_to_program(gl, program, &def.uniform_blocks);
+    U::bind_to_program(
+        gl,
+        program,
+        &def.uniforms
+            .iter()
+            .map(|(s, b)| (s.as_str(), *b))
+            .collect::<Vec<_>>(),
+    );
 
     Ok(program)
 }
@@ -213,4 +215,114 @@ impl<U, V, const S: usize> Drop for Program<U, V, S> {
             self.gl.delete_program(self.id);
         }
     }
+}
+
+#[macro_export]
+macro_rules! program {
+    {
+        $name:ident [
+            (
+                $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
+            ),
+            (
+                $($sampler_name:ident),* $(,)?
+            ),
+            (
+                $($attribute_name:ident : $attribute_type:ty),* $(,)?
+            ) $(,)?
+        ]
+        => (
+            $vertex_source:expr,
+            $fragment_source:expr $(,)?
+        )
+    } => {
+        $crate::program! {
+            | | $name [
+                (
+                    $($uniform_name : $uniform_type = $uniform_binding),*
+                ),
+                (
+                    $($sampler_name),*
+                ),
+                (
+                    $($attribute_name : $attribute_type),*
+                ),
+            ]
+            => (
+                $vertex_source,
+                $fragment_source,
+            )
+        }
+    };
+
+    {
+        |$($param_name:ident : $param_type:ty),* $(,)?|
+        $name:ident [
+            (
+                $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
+            ),
+            (
+                $($sampler_name:ident),* $(,)?
+            ),
+            (
+                $($attribute_name:ident : $attribute_type:ty),* $(,)?
+            ) $(,)?
+        ]
+        => (
+            $vertex_source:expr,
+            $fragment_source:expr $(,)?
+        )
+    } => {
+        pub struct $name(
+            pub <$name as std::ops::Deref>::Target,
+        );
+
+        impl $name {
+            pub fn def(
+                $($param_name : $param_type),*
+            ) -> $crate::gl::ProgramDef<
+                { let x: &[&str] = &[$(stringify!($uniform_name)),*]; x.len() },
+                { let x: &[&str] = &[$(stringify!($sampler_name)),*]; x.len() },
+                { let x: &[&str] = &[$(stringify!($attribute_name)),*]; x.len() },
+            > {
+                $crate::gl::ProgramDef {
+                    uniforms: [
+                        $((stringify!($uniform_name).into(), $uniform_binding)),*
+                    ],
+                    samplers: [
+                        $(stringify!($sampler_name).into()),*
+                    ],
+                    attributes: [
+                        $(stringify!($attribute_name).into()),*
+                    ],
+                    vertex_source: $vertex_source.into(),
+                    fragment_source: $fragment_source.into(),
+                }
+            }
+
+            pub fn new(
+                gl: Rc<gl::Context>,
+                $($param_name : $param_type),*
+            ) -> Result<Self, gl::Error> {
+                let program_def = Self::def(
+                    $($param_name),*
+                );
+                let program = $crate::gl::Program::new(gl, program_def)?;
+                Ok($name(program))
+            }
+        }
+
+        impl std::ops::Deref for $name {
+            #[allow(unused_parens)]
+            type Target = $crate::gl::Program<
+                ($($uniform_type),*),
+                ($($attribute_type),*),
+                { let x: &[&str] = &[$(stringify!($sampler_name)),*]; x.len() },
+            >;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+    };
 }
