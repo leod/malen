@@ -146,7 +146,7 @@ void main() {
 impl ScreenLightPass {
     pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
+            uniforms: UNIFORM_BLOCKS,
             samplers: SAMPLERS,
             vertex_source: &VERTEX_SOURCE
                 .replace("{max_num_lights}", &params.max_num_lights.to_string()),

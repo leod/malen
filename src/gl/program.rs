@@ -32,7 +32,7 @@ impl<U, V, const S: usize> Program<U, V, S> {
 }
 
 pub struct ProgramDef<'a, const N: usize, const S: usize> {
-    pub uniform_blocks: [(&'a str, u32); N],
+    pub uniforms: [(&'a str, u32); N],
     pub samplers: [&'a str; S],
     pub vertex_source: &'a str,
     pub fragment_source: &'a str,
@@ -62,7 +62,7 @@ where
 impl<'a, const N: usize, const S: usize> ProgramDef<'a, N, S> {
     fn uniform_block_names(&self) -> [&str; N] {
         let mut result = [""; N];
-        for (i, (instance_name, _)) in self.uniform_blocks.iter().enumerate() {
+        for (i, (instance_name, _)) in self.uniforms.iter().enumerate() {
             result[i] = instance_name;
         }
         result
@@ -70,7 +70,7 @@ impl<'a, const N: usize, const S: usize> ProgramDef<'a, N, S> {
 
     fn uniform_block_bindings(&self) -> [u32; N] {
         let mut result = [0; N];
-        for (i, (_, binding)) in self.uniform_blocks.iter().enumerate() {
+        for (i, (_, binding)) in self.uniforms.iter().enumerate() {
             result[i] = *binding;
         }
         result
@@ -189,7 +189,7 @@ where
     }
 
     // Setting uniform block binding locations should be done after linking.
-    U::bind_to_program(gl, program, &def.uniform_blocks);
+    U::bind_to_program(gl, program, &def.uniforms);
 
     Ok(program)
 }
@@ -211,6 +211,65 @@ impl<U, V, const S: usize> Drop for Program<U, V, S> {
     fn drop(&mut self) {
         unsafe {
             self.gl.delete_program(self.id);
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! program_def {
+    {
+        name: $name:ident,
+        uniforms: {
+            $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
+        },
+        samplers: [
+            $($sampler_name:literal),* $(,)?
+        ],
+        attributes: {
+            $($attribute_name:ident : $attribute_type:ty),* $(,)?
+        },
+        vertex_source: $vertex_source:expr,
+        fragment_source: $fragment_source:expr,
+    } => {
+        pub struct $name(
+            pub <$name as std::ops::Deref>::Target,
+        );
+
+        impl $name {
+            pub fn def() -> $crate::gl::ProgramDef<
+                'static,
+                { [$(stringify!($uniform_name)),*].len() },
+                { [$($sampler_name),*].len() },
+            > {
+                $crate::gl::ProgramDef {
+                    uniforms: [
+                        $((stringify!($uniform_name), $uniform_binding)),*
+                    ],
+                    samplers: [
+                        $($sampler_name),*
+                    ],
+                    vertex_source: $vertex_source,
+                    fragment_source: $fragment_source,
+                }
+            }
+
+            pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
+                let program = $crate::gl::Program::new(gl, Self::def())?;
+                Ok($name(program))
+            }
+        }
+
+        impl std::ops::Deref for $name {
+            #[allow(unused_parens)]
+            type Target = $crate::gl::Program<
+                ($($uniform_type),*),
+                ($($attribute_type),*),
+                { [$($sampler_name),*].len() },
+            >;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
         }
     }
 }

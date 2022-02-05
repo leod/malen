@@ -141,7 +141,7 @@ impl ComposeWithIndirectPass {
         )?;
 
         let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
+            uniforms: UNIFORM_BLOCKS,
             samplers: SAMPLERS,
             vertex_source: VERTEX_SOURCE,
             fragment_source: &format!("{}\n{}", CONE_TRACING_SOURCE, FRAGMENT_SOURCE)

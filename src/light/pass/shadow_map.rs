@@ -126,7 +126,7 @@ void main() {
 impl ShadowMapPass {
     pub fn new(gl: Rc<gl::Context>, max_num_lights: u32) -> Result<Self, gl::Error> {
         let program_def = ProgramDef {
-            uniform_blocks: [],
+            uniforms: [],
             samplers: [],
             vertex_source: &VERTEX_SOURCE.replace("{max_num_lights}", &max_num_lights.to_string()),
             fragment_source: FRAGMENT_SOURCE,
