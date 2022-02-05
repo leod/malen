@@ -90,15 +90,7 @@ impl Draw {
         )
         .await?;
 
-        let light_pipeline = LightPipeline::new(
-            context,
-            LightPipelineParams {
-                shadow_map_resolution: 2048,
-                max_num_lights: 512,
-                num_tracing_cones: 7,
-                num_tracing_steps: 12,
-            },
-        )?;
+        let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
         let translucent_light_params =
             Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
