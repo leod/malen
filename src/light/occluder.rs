@@ -23,7 +23,7 @@ pub struct OccluderLineVertex {
 impl Vertex for OccluderLineVertex {
     fn attributes() -> Vec<Attribute> {
         attributes![
-            "a_": line_0,
+            line_0,
             line_1,
             order,
             height,

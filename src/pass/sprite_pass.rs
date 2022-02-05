@@ -2,18 +2,20 @@ use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
+    gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
+    program,
 };
 
 use super::{MatricesBlock, MATRICES_BLOCK_BINDING};
 
-pub struct SpritePass {
-    program: Program<MatricesBlock, SpriteVertex, 1>,
+program! {
+    Program [
+        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
+        (sprite),
+        (a: SpriteVertex),
+    ]
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 1] = [("matrices", MATRICES_BLOCK_BINDING)];
-
-const SAMPLERS: [&str; 1] = ["sprite"];
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;
@@ -42,15 +44,13 @@ void main() {
 }
 "#;
 
+pub struct SpritePass {
+    program: Program,
+}
+
 impl SpritePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
-            samplers: SAMPLERS,
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl)?;
 
         Ok(Self { program })
     }

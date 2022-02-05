@@ -5,20 +5,20 @@ use nalgebra::{Point2, Vector2};
 use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
-    gl::{self, DrawParams, Program, ProgramDef, Texture, Uniform},
-    Color4,
+    gl::{self, DrawParams, Texture, Uniform},
+    program, Color4,
 };
 
 use super::{super::def::GlobalLightParamsBlock, GLOBAL_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct ComposePass {
-    screen_rect: Mesh<SpriteVertex>,
-    program: Program<GlobalLightParamsBlock, SpriteVertex, 2>,
+program! {
+    Program [
+        (params: GlobalLightParamsBlock = GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
+        (screen_albedo, screen_light),
+        (a: SpriteVertex),
+    ]
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 1] = [("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING)];
-
-const SAMPLERS: [&str; 2] = ["screen_albedo", "screen_light"];
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_tex_coords;
@@ -40,6 +40,11 @@ void main() {
 }
 "#;
 
+pub struct ComposePass {
+    screen_rect: Mesh<SpriteVertex>,
+    program: Program,
+}
+
 impl ComposePass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
         let screen_rect = Mesh::from_geometry(
@@ -55,13 +60,7 @@ impl ComposePass {
             },
         )?;
 
-        let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
-            samplers: SAMPLERS,
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl)?;
 
         Ok(Self {
             screen_rect,

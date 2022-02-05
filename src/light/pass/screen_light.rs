@@ -2,10 +2,11 @@ use std::rc::Rc;
 
 use crate::{
     gl::{
-        self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, DrawUnit, Program,
-        ProgramDef, Texture, Uniform,
+        self, Blend, BlendEquation, BlendFactor, BlendFunc, BlendOp, DrawParams, DrawUnit, Texture,
+        Uniform,
     },
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    program,
 };
 
 use super::{
@@ -13,16 +14,27 @@ use super::{
     GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
 };
 
-pub struct ScreenLightPass {
-    program: Program<(MatricesBlock, GlobalLightParamsBlock), LightAreaVertex, 2>,
+program! {
+    |params: LightPipelineParams|
+        Program [
+            (
+                matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
+                params: GlobalLightParamsBlock = GLOBAL_LIGHT_PARAMS_BLOCK_BINDING,
+            ),
+            (shadow_map, screen_normals),
+            (a: LightAreaVertex)
+        ] => (
+            &VERTEX_SOURCE.replace("{max_num_lights}", &params.max_num_lights.to_string()),
+            &format!(
+                "{}\n{}",
+                VISIBILITY_SOURCE,
+                FRAGMENT_SOURCE.replace(
+                    "{shadow_map_resolution}",
+                    &params.shadow_map_resolution.to_string(),
+                )
+            )
+        )
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("params", GLOBAL_LIGHT_PARAMS_BLOCK_BINDING),
-];
-
-const SAMPLERS: [&str; 2] = ["shadow_map", "screen_normals"];
 
 const VERTEX_SOURCE: &str = r#"
 flat out float v_light_radius;
@@ -143,23 +155,13 @@ void main() {
 }
 "#;
 
+pub struct ScreenLightPass {
+    program: Program,
+}
+
 impl ScreenLightPass {
     pub fn new(gl: Rc<gl::Context>, params: LightPipelineParams) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
-            samplers: SAMPLERS,
-            vertex_source: &VERTEX_SOURCE
-                .replace("{max_num_lights}", &params.max_num_lights.to_string()),
-            fragment_source: &format!(
-                "{}\n{}",
-                VISIBILITY_SOURCE,
-                FRAGMENT_SOURCE.replace(
-                    "{shadow_map_resolution}",
-                    &params.shadow_map_resolution.to_string(),
-                )
-            ),
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl, params)?;
 
         Ok(Self { program })
     }

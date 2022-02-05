@@ -8,22 +8,22 @@ use super::{Context, Uniform};
 pub trait UniformBlock: AsStd140 + GlslStruct {}
 
 pub trait UniformBuffers {
-    type UniformBlockDecls: UniformBlockDecls;
+    type UniformBlockDecls: UniformDecls;
 
     fn bind(&self, bindings: &[u32]);
 }
 
-pub trait UniformBlockDecls {
+pub trait UniformDecls {
     const N: usize;
 
-    fn glsl_definitions(instance_names: &[&str]) -> String;
+    fn glsl_decls(instance_names: &[&str]) -> String;
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]);
 }
 
-impl UniformBlockDecls for () {
+impl UniformDecls for () {
     const N: usize = 0;
 
-    fn glsl_definitions(instance_names: &[&str]) -> String {
+    fn glsl_decls(instance_names: &[&str]) -> String {
         assert!(instance_names.len() == Self::N);
 
         String::new()
@@ -34,13 +34,13 @@ impl UniformBlockDecls for () {
     }
 }
 
-impl<U> UniformBlockDecls for U
+impl<U> UniformDecls for U
 where
     U: UniformBlock,
 {
     const N: usize = 1;
 
-    fn glsl_definitions(instance_names: &[&str]) -> String {
+    fn glsl_decls(instance_names: &[&str]) -> String {
         assert!(instance_names.len() == Self::N);
 
         let mut output = String::new();
@@ -79,17 +79,17 @@ where
     }
 }
 
-impl<U0, U1> UniformBlockDecls for (U0, U1)
+impl<U0, U1> UniformDecls for (U0, U1)
 where
     U0: UniformBlock,
     U1: UniformBlock,
 {
     const N: usize = 2;
 
-    fn glsl_definitions(instance_names: &[&str]) -> String {
+    fn glsl_decls(instance_names: &[&str]) -> String {
         assert!(instance_names.len() == Self::N);
 
-        U0::glsl_definitions(&[instance_names[0]]) + &U1::glsl_definitions(&[instance_names[1]])
+        U0::glsl_decls(&[instance_names[0]]) + &U1::glsl_decls(&[instance_names[1]])
     }
 
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]) {
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<U0, U1, U2> UniformBlockDecls for (U0, U1, U2)
+impl<U0, U1, U2> UniformDecls for (U0, U1, U2)
 where
     U0: UniformBlock,
     U1: UniformBlock,
@@ -108,12 +108,12 @@ where
 {
     const N: usize = 3;
 
-    fn glsl_definitions(instance_names: &[&str]) -> String {
+    fn glsl_decls(instance_names: &[&str]) -> String {
         assert!(instance_names.len() == Self::N);
 
-        U0::glsl_definitions(&[instance_names[0]])
-            + &U1::glsl_definitions(&[instance_names[1]])
-            + &U2::glsl_definitions(&[instance_names[2]])
+        U0::glsl_decls(&[instance_names[0]])
+            + &U1::glsl_decls(&[instance_names[1]])
+            + &U2::glsl_decls(&[instance_names[2]])
     }
 
     fn bind_to_program(gl: &Context, id: glow::Program, uniform_blocks: &[(&str, u32)]) {
@@ -129,7 +129,7 @@ impl UniformBuffers for () {
     type UniformBlockDecls = ();
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformDecls>::N);
     }
 }
 
@@ -140,7 +140,7 @@ where
     type UniformBlockDecls = U;
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformDecls>::N);
 
         unsafe {
             self.gl()
@@ -157,7 +157,7 @@ where
     type UniformBlockDecls = (U0, U1);
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformDecls>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
 
         unsafe {
@@ -180,7 +180,7 @@ where
     type UniformBlockDecls = (U0, U1, U2);
 
     fn bind(&self, bindings: &[u32]) {
-        assert!(bindings.len() == <Self::UniformBlockDecls as UniformBlockDecls>::N);
+        assert!(bindings.len() == <Self::UniformBlockDecls as UniformDecls>::N);
         assert!(Rc::ptr_eq(&self.0.gl(), &self.1.gl()));
         assert!(Rc::ptr_eq(&self.0.gl(), &self.2.gl()));
 

@@ -1,6 +1,9 @@
 #[macro_use]
 mod vertex;
 
+#[macro_use]
+mod program;
+
 mod blend;
 mod context;
 mod depth_test;
@@ -11,7 +14,6 @@ mod draw_unit;
 mod element_buffer;
 mod error;
 mod framebuffer;
-mod program;
 mod texture;
 mod uniform;
 mod uniform_block;
@@ -36,7 +38,7 @@ pub use texture::{
     TextureValueType, TextureWrap,
 };
 pub use uniform::Uniform;
-pub use uniform_block::{UniformBlock, UniformBlockDecls};
+pub use uniform_block::{UniformBlock, UniformDecls};
 pub use vertex::{Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
 pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;

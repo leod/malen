@@ -2,22 +2,24 @@ use std::rc::Rc;
 
 use crate::{
     data::SpriteVertex,
-    gl::{self, DrawParams, DrawUnit, Element, Program, ProgramDef, Texture, Uniform},
+    gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
     pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    program,
 };
 
 use super::{super::ObjectLightParams, OBJECT_LIGHT_PARAMS_BLOCK_BINDING};
 
-pub struct GeometrySpriteWithNormalsPass {
-    program: Program<(MatricesBlock, ObjectLightParams), SpriteVertex, 2>,
+program! {
+    Program [
+        (
+            matrices: MatricesBlock = MATRICES_BLOCK_BINDING,
+            object_params: ObjectLightParams = OBJECT_LIGHT_PARAMS_BLOCK_BINDING,
+        ),
+        (sprite, normal_map),
+        (a: SpriteVertex),
+    ]
+    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
-
-const UNIFORM_BLOCKS: [(&str, u32); 2] = [
-    ("matrices", MATRICES_BLOCK_BINDING),
-    ("object_params", OBJECT_LIGHT_PARAMS_BLOCK_BINDING),
-];
-
-const SAMPLERS: [&str; 2] = ["sprite", "normal_map"];
 
 const VERTEX_SOURCE: &str = r#"
 out vec2 v_uv;
@@ -71,15 +73,13 @@ void main() {
 }
 "#;
 
+pub struct GeometrySpriteWithNormalsPass {
+    program: Program,
+}
+
 impl GeometrySpriteWithNormalsPass {
     pub fn new(gl: Rc<gl::Context>) -> Result<Self, gl::Error> {
-        let program_def = ProgramDef {
-            uniform_blocks: UNIFORM_BLOCKS,
-            samplers: SAMPLERS,
-            vertex_source: VERTEX_SOURCE,
-            fragment_source: FRAGMENT_SOURCE,
-        };
-        let program = Program::new(gl, program_def)?;
+        let program = Program::new(gl)?;
 
         Ok(Self { program })
     }
