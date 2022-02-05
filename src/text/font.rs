@@ -12,7 +12,7 @@ use crate::{
     data::{Sprite, SpriteBatch},
     geom::Rect,
     gl::{self, Blend, DrawParams, NewTextureError, Texture, Uniform},
-    pass::{MatricesBlock, SpritePass},
+    pass::{SpritePass, ViewMatrices},
     util, Color4, Context, FetchError,
 };
 
@@ -208,7 +208,7 @@ impl Font {
         Ok(size)
     }
 
-    pub fn draw(&self, matrices: &Uniform<MatricesBlock>, batch: &mut TextBatch) {
+    pub fn draw(&self, matrices: &Uniform<ViewMatrices>, batch: &mut TextBatch) {
         for (atlas_batch, atlas) in batch.atlas_batches.iter_mut().zip(&self.atlases) {
             self.sprite_pass.draw(
                 matrices,

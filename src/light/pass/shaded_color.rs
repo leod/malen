@@ -3,17 +3,19 @@ use std::rc::Rc;
 use crate::{
     data::ColorVertex,
     gl::{self, DrawParams, DrawUnit, Element, Texture, Uniform},
-    pass::{MatricesBlock, MATRICES_BLOCK_BINDING},
+    pass::{ViewMatrices, MATRICES_BLOCK_BINDING},
     program,
 };
 
 program! {
     Program [
-        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
-        (screen_light),
-        (a: ColorVertex),
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+        ;
+        screen_light: Sampler2,
+        ;
+        a: ColorVertex,
     ]
-    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"
@@ -55,7 +57,7 @@ impl ShadedColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
+        matrices: &Uniform<ViewMatrices>,
         screen_light: &Texture,
         draw_unit: DrawUnit<ColorVertex, E>,
         draw_params: &DrawParams,

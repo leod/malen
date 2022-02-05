@@ -221,57 +221,36 @@ impl<U, V, const S: usize> Drop for Program<U, V, S> {
 macro_rules! program {
     {
         $name:ident [
-            (
-                $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
-            ),
-            (
-                $($sampler_name:ident),* $(,)?
-            ),
-            (
-                $($attribute_name:ident : $attribute_type:ty),* $(,)?
-            ) $(,)?
+            $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
+            ;
+            $($sampler_name:ident : Sampler2),* $(,)?
+            ;
+            $($attribute_name:ident : $attribute_type:ty),* $(,)?
         ]
-        => (
-            $vertex_source:expr,
-            $fragment_source:expr $(,)?
-        )
+        -> ($vertex_source:expr, $fragment_source:expr $(,)?)
     } => {
         $crate::program! {
             | | $name [
-                (
-                    $($uniform_name : $uniform_type = $uniform_binding),*
-                ),
-                (
-                    $($sampler_name),*
-                ),
-                (
-                    $($attribute_name : $attribute_type),*
-                ),
+                $($uniform_name : $uniform_type = $uniform_binding),*
+                ;
+                $($sampler_name : Sampler2),*
+                ;
+                $($attribute_name : $attribute_type),*
             ]
-            => (
-                $vertex_source,
-                $fragment_source,
-            )
+            -> ($vertex_source, $fragment_source)
         }
     };
 
     {
         |$($param_name:ident : $param_type:ty),* $(,)?|
         $name:ident [
-            (
-                $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
-            ),
-            (
-                $($sampler_name:ident),* $(,)?
-            ),
-            (
-                $($attribute_name:ident : $attribute_type:ty),* $(,)?
-            ) $(,)?
+            $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
+            ;
+            $($sampler_name:ident : Sampler2),* $(,)?
+            ;
+            $($attribute_name:ident : $attribute_type:ty),* $(,)?
         ]
-        => (
-            $vertex_source:expr,
-            $fragment_source:expr $(,)?
-        )
+        -> ($vertex_source:expr, $fragment_source:expr $(,)?)
     } => {
         pub struct $name(
             pub <$name as std::ops::Deref>::Target,

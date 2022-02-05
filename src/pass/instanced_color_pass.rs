@@ -6,14 +6,17 @@ use crate::{
     program,
 };
 
-use super::{ColorInstance, MatricesBlock, MATRICES_BLOCK_BINDING};
+use super::{ColorInstance, ViewMatrices, MATRICES_BLOCK_BINDING};
 
 program! {
     Program [
-        (matrices: MatricesBlock = MATRICES_BLOCK_BINDING),
-        (),
-        (a: ColorVertex, i: ColorInstance),
-    ] => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+        matrices: ViewMatrices = MATRICES_BLOCK_BINDING,
+        ;
+        ;
+        a: ColorVertex,
+        i: ColorInstance,
+    ]
+    -> (VERTEX_SOURCE, FRAGMENT_SOURCE)
 }
 
 const VERTEX_SOURCE: &str = r#"
@@ -58,7 +61,7 @@ impl InstancedColorPass {
 
     pub fn draw<E>(
         &self,
-        matrices: &Uniform<MatricesBlock>,
+        matrices: &Uniform<ViewMatrices>,
         draw_unit: InstancedDrawUnit<(ColorVertex, ColorInstance), E>,
         params: &DrawParams,
     ) where
