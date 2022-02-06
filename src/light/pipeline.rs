@@ -10,8 +10,7 @@ use crate::{
     data::{ColorVertex, SpriteVertex, TriangleBatch},
     gl::{
         self, DrawParams, DrawUnit, Element, Framebuffer, NewFramebufferError, NewTextureError,
-        Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
-        Uniform, VertexBuffer,
+        Texture, TextureParams, TextureValueType, Uniform, VertexBuffer,
     },
     pass::{BlurBuffer, BlurParams, BlurPass, ColorPass, GaussianMipmapStack, ViewMatrices},
     Canvas, Color4, Context, FrameError,
@@ -409,6 +408,7 @@ impl<'a> ShadowMapPhase<'a> {
         /*self.pipeline.blur_pass.blur(
             10,
             &self.pipeline.screen_light.textures()[0],
+            0,
             &mut self.pipeline.blur_buffer,
             &self.pipeline.screen_light,
         )?;*/

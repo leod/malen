@@ -8,7 +8,7 @@ use crate::{
         self, DrawParams, Framebuffer, NewFramebufferError, Texture, TextureParams,
         TextureValueType,
     },
-    program, FrameError, InitError,
+    program, FrameError,
 };
 
 use super::{BlurBuffer, BlurPass};
@@ -33,7 +33,7 @@ impl GaussianMipmapStack {
         let mut blur_buffers = Vec::new();
         let mut mipmap_targets = Vec::new();
 
-        for level in 0..levels {
+        for level in 0..levels - 1 {
             if level + 1 < levels {
                 let blur_level = BlurLevel::new(texture.gl(), texture.params().value_type, size)?;
                 blur_buffers.push(blur_level);
@@ -45,8 +45,8 @@ impl GaussianMipmapStack {
                 mipmap_targets.push(mipmap_target);
             }
 
-            size.x /= 2;
-            size.y /= 2;
+            size.x = (size.x / 2).max(1);
+            size.y = (size.y / 2).max(1);
         }
 
         Ok(Self {

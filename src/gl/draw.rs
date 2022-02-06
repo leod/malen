@@ -117,8 +117,8 @@ where
         gl.viewport(
             0,
             0,
-            i32::try_from(framebuffer.textures()[0].size().x).unwrap(),
-            i32::try_from(framebuffer.textures()[0].size().y).unwrap(),
+            i32::try_from(framebuffer.sizes()[0].x).unwrap(),
+            i32::try_from(framebuffer.sizes()[0].y).unwrap(),
         );
     }
 
