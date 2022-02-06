@@ -35,6 +35,8 @@ pub struct ProgramDef<const N: usize, const S: usize, const A: usize> {
     pub uniforms: [(String, u32); N],
     pub samplers: [String; S],
     pub attributes: [String; A],
+    pub defines: Vec<(String, String)>,
+    pub includes: Vec<String>,
     pub vertex_source: String,
     pub fragment_source: String,
 }
@@ -64,16 +66,13 @@ where
     }
 }
 
-fn create_program<U, V, const N: usize, const S: usize, const A: usize>(
-    gl: &Context,
+fn shader_sources<U, V, const N: usize, const S: usize, const A: usize>(
     def: &ProgramDef<N, S, A>,
-) -> Result<glow::Program, Error>
+) -> [(u32, String); 2]
 where
     U: UniformDecls,
     V: VertexDecls,
 {
-    let program = unsafe { gl.create_program().map_err(Error::Glow)? };
-
     let uniform_decls = U::glsl_decls(
         &def.uniforms
             .iter()
@@ -85,7 +84,6 @@ where
         .iter()
         .map(|s| s.as_str())
         .collect::<Vec<_>>();
-
     let sampler_decls = def
         .samplers
         .iter()
@@ -95,15 +93,56 @@ where
 
     let header = SOURCE_HEADER.to_owned() + &uniform_decls + &sampler_decls;
 
-    let sources = [
+    let remove_outer_braces = |s: &str| {
+        if s.starts_with("{") {
+            s[1..s.len() - 1].to_string()
+        } else {
+            s.to_string()
+        }
+    };
+    let preproc = |s: &str| {
+        let code = def
+            .includes
+            .iter()
+            .map(|c| remove_outer_braces(c))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + &remove_outer_braces(s);
+        def.defines.iter().fold(code, |code, (from, to)| {
+            code.replace(&format!("{{ {0} }}", from), to)
+        })
+    };
+
+    [
         (
             glow::VERTEX_SHADER,
             header.clone()
                 + &vertex_source_header(&V::attributes(&attributes))
-                + &def.vertex_source,
+                + &preproc(&def.vertex_source),
         ),
-        (glow::FRAGMENT_SHADER, header + &def.fragment_source),
-    ];
+        (
+            glow::FRAGMENT_SHADER,
+            header + &preproc(&def.fragment_source),
+        ),
+    ]
+}
+
+fn create_program<U, V, const N: usize, const S: usize, const A: usize>(
+    gl: &Context,
+    def: &ProgramDef<N, S, A>,
+) -> Result<glow::Program, Error>
+where
+    U: UniformDecls,
+    V: VertexDecls,
+{
+    let sources = shader_sources::<U, V, N, S, A>(def);
+    let attributes = def
+        .attributes
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>();
+
+    let program = unsafe { gl.create_program().map_err(Error::Glow)? };
 
     // TODO:
     // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices#compile_shaders_and_link_programs_in_parallel
@@ -217,40 +256,26 @@ impl<U, V, const S: usize> Drop for Program<U, V, S> {
     }
 }
 
+pub type Glsl = &'static str;
+
+#[macro_export]
+macro_rules! glsl {
+    { $code:tt } => { stringify!($code) };
+    { $head:tt $($tail:tt)+ } => { $crate::glsl!{{$head $($tail)*}} }
+}
+
 #[macro_export]
 macro_rules! program {
     {
-        $name:ident [
-            $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
-            ;
-            $($sampler_name:ident : Sampler2),* $(,)?
-            ;
-            $($attribute_name:ident : $attribute_type:ty),* $(,)?
-        ]
-        => ($vertex_source:expr, $fragment_source:expr $(,)?)
-    } => {
-        $crate::program! {
-            | | $name [
-                $($uniform_name : $uniform_type = $uniform_binding),*
-                ;
-                $($sampler_name : Sampler2),*
-                ;
-                $($attribute_name : $attribute_type),*
-            ]
-            => ($vertex_source, $fragment_source)
-        }
-    };
-
-    {
-        |$($param_name:ident : $param_type:ty),* $(,)?|
-        $name:ident [
-            $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)?
-            ;
-            $($sampler_name:ident : Sampler2),* $(,)?
-            ;
-            $($attribute_name:ident : $attribute_type:ty),* $(,)?
-        ]
-        => ($vertex_source:expr, $fragment_source:expr $(,)?)
+        program $name:ident
+        $(params { $($param_name:ident : $param_type:ty),* $(,)? })?
+        $(uniforms { $($uniform_name:ident : $uniform_type:ty = $uniform_binding:expr),* $(,)? } )?
+        $(samplers { $($sampler_name:ident : Sampler2),* $(,)? })?
+        $(attributes { $($attribute_name:ident : $attribute_type:ty),* $(,)? })?
+        $(defines [ $($define_name:ident => $define_value:expr),* $(,)? ])?
+        $(includes [ $($include:expr),* $(,)? ])?
+        vertex glsl!$vertex_source:tt
+        fragment glsl!$fragment_source:tt
     } => {
         pub struct $name(
             pub <$name as std::ops::Deref>::Target,
@@ -258,33 +283,38 @@ macro_rules! program {
 
         impl $name {
             pub fn def(
-                $($param_name : $param_type),*
+                $($($param_name : $param_type),*)?
             ) -> $crate::gl::ProgramDef<
-                { let x: &[&str] = &[$(stringify!($uniform_name)),*]; x.len() },
-                { let x: &[&str] = &[$(stringify!($sampler_name)),*]; x.len() },
-                { let x: &[&str] = &[$(stringify!($attribute_name)),*]; x.len() },
+                { let x: &[&str] = &[$($(stringify!($uniform_name)),*)?]; x.len() },
+                { let x: &[&str] = &[$($(stringify!($sampler_name)),*)?]; x.len() },
+                { let x: &[&str] = &[$($(stringify!($attribute_name)),*)?]; x.len() },
             > {
+                let define_names: Vec<String> = vec![$($(stringify!($define_name).into()),*)?];
+                let define_values: Vec<String> = vec![$($($define_value.to_string()),*)?];
+
                 $crate::gl::ProgramDef {
                     uniforms: [
-                        $((stringify!($uniform_name).into(), $uniform_binding)),*
+                        $($((stringify!($uniform_name).into(), $uniform_binding)),*)?
                     ],
                     samplers: [
-                        $(stringify!($sampler_name).into()),*
+                        $($(stringify!($sampler_name).into()),*)?
                     ],
                     attributes: [
-                        $(stringify!($attribute_name).into()),*
+                        $($(stringify!($attribute_name).into()),*)?
                     ],
-                    vertex_source: $vertex_source.into(),
-                    fragment_source: $fragment_source.into(),
+                    includes: vec![$($($include.to_string()),*)?],
+                    defines: define_names.into_iter().zip(define_values.into_iter()).collect(),
+                    vertex_source: stringify!($vertex_source).into(),
+                    fragment_source: stringify!($fragment_source).into(),
                 }
             }
 
             pub fn new(
                 gl: Rc<gl::Context>,
-                $($param_name : $param_type),*
+                $($($param_name : $param_type),*)?
             ) -> Result<Self, gl::Error> {
                 let program_def = Self::def(
-                    $($param_name),*
+                    $($($param_name),*)?
                 );
                 let program = $crate::gl::Program::new(gl, program_def)?;
                 Ok($name(program))
@@ -294,9 +324,9 @@ macro_rules! program {
         impl std::ops::Deref for $name {
             #[allow(unused_parens)]
             type Target = $crate::gl::Program<
-                ($($uniform_type),*),
-                ($($attribute_type),*),
-                { let x: &[&str] = &[$(stringify!($sampler_name)),*]; x.len() },
+                ($($($uniform_type),*)?),
+                ($($($attribute_type),*)?),
+                { let x: &[&str] = &[$($(stringify!($sampler_name)),*)?]; x.len() },
             >;
 
             fn deref(&self) -> &Self::Target {

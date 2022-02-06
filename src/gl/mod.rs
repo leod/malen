@@ -32,7 +32,7 @@ pub use draw_unit::{DrawUnit, InstancedDrawUnit, PrimitiveMode};
 pub use element_buffer::{Element, ElementBuffer};
 pub use error::Error;
 pub use framebuffer::{Framebuffer, NewFramebufferError};
-pub use program::{Program, ProgramDef};
+pub use program::{Glsl, Program, ProgramDef};
 pub use texture::{
     LoadTextureError, NewTextureError, Texture, TextureMagFilter, TextureMinFilter, TextureParams,
     TextureValueType, TextureWrap,
@@ -42,5 +42,3 @@ pub use uniform_block::{UniformBlock, UniformDecls};
 pub use vertex::{Attribute, AttributeValueType, DataType, Vertex, VertexDecls};
 pub use vertex_array::VertexArray;
 pub use vertex_buffer::VertexBuffer;
-
-pub use crate::attributes;
