@@ -60,14 +60,14 @@ program! {
             .join(", "),
     ]
     vertex glsl! {
-        out vec2 v_uv;
+        out vec2 v_tex_coords;
         void main() {
             gl_Position = vec4(a_position.xyz, 1.0);
-            v_uv = a_tex_coords;
+            v_tex_coords = a_tex_coords;
         }
     }
     fragment glsl! {
-        in vec2 v_uv;
+        in vec2 v_tex_coords;
         out vec4 f_color;
 
         const float weight[{{num_weights}}] = float[] ({{weights}});
@@ -75,18 +75,18 @@ program! {
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
 
-            vec3 result = weight[0] * textureLod(tex, v_uv, blur_props.level).rgb;
+            vec3 result = weight[0] * textureLod(tex, v_tex_coords, blur_props.level).rgb;
 
             if (blur_props.direction == 0.0) {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += weight[i] * textureLod(
                         tex,
-                        v_uv + vec2(texel.x * float(i), 0.0),
+                        v_tex_coords + vec2(texel.x * float(i), 0.0),
                         blur_props.level
                     ).rgb;
                     result += weight[i] * textureLod(
                         tex,
-                        v_uv - vec2(texel.x * float(i), 0.0),
+                        v_tex_coords - vec2(texel.x * float(i), 0.0),
                         blur_props.level
                     ).rgb;
                 }
@@ -94,12 +94,12 @@ program! {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += weight[i] * textureLod(
                         tex,
-                        v_uv + vec2(0.0, texel.y * float(i)),
+                        v_tex_coords + vec2(0.0, texel.y * float(i)),
                         blur_props.level
                     ).rgb;
                     result += weight[i] * textureLod(
                         tex,
-                        v_uv - vec2(0.0, texel.y * float(i)),
+                        v_tex_coords - vec2(0.0, texel.y * float(i)),
                         blur_props.level
                     ).rgb;
                 }

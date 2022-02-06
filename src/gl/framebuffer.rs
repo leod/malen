@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use glow::{HasContext, PixelPackData};
 use half::f16;
+use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::gl::TextureValueType;
@@ -23,6 +24,7 @@ pub enum NewFramebufferError {
 pub struct Framebuffer {
     gl: Rc<Context>,
     textures: Vec<Rc<Texture>>,
+    sizes: Vec<Vector2<u32>>,
     id: glow::Framebuffer,
     attachments: Vec<u32>,
 }
@@ -98,7 +100,7 @@ impl Framebuffer {
 
         for (texture, mipmap_level) in textures
             .iter()
-            .filter(|(t, mipmap_level)| t.params().value_type.is_depth())
+            .filter(|(t, _)| t.params().value_type.is_depth())
         {
             let attachment = glow::DEPTH_ATTACHMENT;
             attachments.push(attachment);
@@ -119,9 +121,19 @@ impl Framebuffer {
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 
+        let sizes = textures
+            .iter()
+            .map(|(t, level)| {
+                let w = (t.size().x / 2_u32.pow(*level)).max(1);
+                let h = (t.size().y / 2_u32.pow(*level)).max(1);
+                Vector2::new(w, h)
+            })
+            .collect();
+
         Ok(Framebuffer {
             gl,
             textures: textures.into_iter().map(|(t, _)| t).collect(),
+            sizes,
             id,
             attachments,
         })
@@ -133,6 +145,10 @@ impl Framebuffer {
 
     pub fn textures(&self) -> &[Rc<Texture>] {
         &self.textures
+    }
+
+    pub fn sizes(&self) -> &[Vector2<u32>] {
+        &self.sizes
     }
 
     pub fn id(&self) -> glow::Framebuffer {
