@@ -70,7 +70,7 @@ impl GaussianMipmapStack {
             .enumerate();
         for (mipmap_level, (blur_level, mipmap_target)) in it {
             self.blur_pass.blur(
-                10,
+                5,
                 &self.texture,
                 mipmap_level as u32,
                 &mut blur_level.buffer,
@@ -103,7 +103,7 @@ impl BlurLevel {
         size: Vector2<u32>,
     ) -> Result<Self, NewFramebufferError> {
         let blur_buffer = BlurBuffer::new(gl.clone())?;
-        let blur_target_texture = Texture::new(gl, size, TextureParams::nearest(value_type))?;
+        let blur_target_texture = Texture::new(gl, size, TextureParams::linear(value_type))?;
         let blur_target = Framebuffer::from_textures(vec![blur_target_texture])?;
 
         Ok(Self {
@@ -133,6 +133,7 @@ program! {
         out vec4 f_color;
 
         void main() {
+            vec2 uv = v_uv; //- 0.5 / vec2(textureSize(tex, 0));
             f_color = textureLod(tex, v_uv, 0.0);
         }
     }

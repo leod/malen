@@ -23,6 +23,7 @@ pub struct BlurParams {
 impl Default for BlurParams {
     fn default() -> Self {
         Self {
+            //weights: vec![0.99999],
             weights: vec![0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216],
         }
     }
