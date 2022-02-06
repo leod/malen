@@ -12,36 +12,38 @@ use crate::{
 use super::{super::GlobalLightProps, GLOBAL_LIGHT_PROPS_BLOCK_BINDING};
 
 program! {
-    ComposeProgram[
-        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING;
+    program ComposeProgram
+    uniforms {
+        global_light_props: GlobalLightProps = GLOBAL_LIGHT_PROPS_BLOCK_BINDING,
+    }
+    samplers {
         screen_albedo: Sampler2,
-        screen_light: Sampler2;
+        screen_light: Sampler2,
+    }
+    attributes {
         a: SpriteVertex,
-    ]
-    => (VERTEX_SOURCE, FRAGMENT_SOURCE)
+    }
+    vertex glsl! {
+        out vec2 v_tex_coords;
+        void main() {
+            gl_Position = vec4(a_position.xyz, 1.0);
+            v_tex_coords = a_tex_coords;
+        }
+    }
+    fragment glsl! {
+        in vec2 v_tex_coords;
+        out vec4 f_color;
+        void main() {
+            vec4 albedo = texture(screen_albedo, v_tex_coords);
+            vec3 light = texture(screen_light, v_tex_coords).rgb;
+            vec3 diffuse = vec3(albedo) * (light + global_light_props.ambient);
+            vec3 mapped = diffuse / (diffuse + vec3(1.0));
+            f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
+        }
+    }
 }
 
 // => struct ComposeProgram(Program<GlobalLightProps, SpriteVertex, 2>)
-
-const VERTEX_SOURCE: &str = r#"
-out vec2 v_tex_coords;
-void main() {
-    gl_Position = vec4(a_position.xyz, 1.0);
-    v_tex_coords = a_tex_coords;
-}
-"#;
-
-const FRAGMENT_SOURCE: &str = r#"
-in vec2 v_tex_coords;
-out vec4 f_color;
-void main() {
-    vec4 albedo = texture(screen_albedo, v_tex_coords);
-    vec3 light = texture(screen_light, v_tex_coords).rgb;
-    vec3 diffuse = vec3(albedo) * (light + global_light_props.ambient);
-    vec3 mapped = diffuse / (diffuse + vec3(1.0));
-    f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
-}
-"#;
 
 pub struct ComposePass {
     screen_rect: Mesh<SpriteVertex>,
