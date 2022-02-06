@@ -68,25 +68,25 @@ impl Draw {
         let smoke_texture = Texture::load(
             context.gl(),
             "resources/smoke1.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let smoke_normal_texture = Texture::load(
             context.gl(),
             "resources/smoke1_Nrm.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let enemy_texture = Texture::load(
             context.gl(),
             "resources/enemy.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let enemy_normal_texture = Texture::load(
             context.gl(),
             "resources/enemy_Nrm.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
 

@@ -151,13 +151,7 @@ impl BlurPass {
             let back = Texture::new(
                 texture.gl(),
                 texture.size(),
-                TextureParams {
-                    value_type: output.textures()[0].params().value_type,
-                    min_filter: TextureMinFilter::Nearest,
-                    mag_filter: TextureMagFilter::Nearest,
-                    wrap_vertical: TextureWrap::ClampToEdge,
-                    wrap_horizontal: TextureWrap::ClampToEdge,
-                },
+                TextureParams::nearest(output.textures()[0].params().value_type),
             )?;
             buffer.back = Some(Framebuffer::from_textures(texture.gl(), vec![back])?);
         }

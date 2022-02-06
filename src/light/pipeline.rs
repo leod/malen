@@ -538,13 +538,7 @@ fn new_shadow_map(
         vec![Texture::new(
             gl,
             Vector2::new(params.shadow_map_resolution, params.max_num_lights),
-            TextureParams {
-                value_type: TextureValueType::RgF16,
-                min_filter: TextureMinFilter::Linear,
-                mag_filter: TextureMagFilter::Linear,
-                wrap_vertical: TextureWrap::ClampToEdge,
-                wrap_horizontal: TextureWrap::ClampToEdge,
-            },
+            TextureParams::linear(TextureValueType::RgF16),
         )?],
     )
 }
@@ -554,46 +548,22 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
     let albedo = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::RgbaU8,
-            min_filter: TextureMinFilter::Nearest,
-            mag_filter: TextureMagFilter::Nearest,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::nearest(TextureValueType::RgbaU8),
     )?;
     let normals = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::RgbaF16,
-            min_filter: TextureMinFilter::Nearest,
-            mag_filter: TextureMagFilter::Nearest,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::nearest(TextureValueType::RgbaF16),
     )?;
     let occluder = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::RgbaU8,
-            min_filter: TextureMinFilter::LinearMipmapLinear,
-            mag_filter: TextureMagFilter::Linear,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::linear_mipmapped(TextureValueType::RgbaU8),
     )?;
     let depth = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::Depth,
-            min_filter: TextureMinFilter::Nearest,
-            mag_filter: TextureMagFilter::Nearest,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::nearest(TextureValueType::Depth),
     )?;
 
     // Texture order corresponds to SCREEN_ALBEDO_LOCATION, etc.
@@ -605,13 +575,7 @@ fn new_screen_reflector(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewF
     let reflector = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::RgbaU8,
-            min_filter: TextureMinFilter::LinearMipmapLinear,
-            mag_filter: TextureMagFilter::Linear,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::linear_mipmapped(TextureValueType::RgbaU8),
     )?;
 
     Framebuffer::from_textures(canvas.borrow().gl(), vec![reflector])
@@ -622,13 +586,7 @@ fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFrame
     let light = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams {
-            value_type: TextureValueType::RgbaF32,
-            min_filter: TextureMinFilter::Nearest,
-            mag_filter: TextureMagFilter::Nearest,
-            wrap_vertical: TextureWrap::ClampToEdge,
-            wrap_horizontal: TextureWrap::ClampToEdge,
-        },
+        TextureParams::nearest(TextureValueType::RgbaF32),
     )?;
 
     Framebuffer::from_textures(canvas.borrow().gl(), vec![light])
