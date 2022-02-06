@@ -582,7 +582,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
     let occluder = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::linear_mipmapped(TextureValueType::RgbaU8),
+        TextureParams::linear_mipmapped(TextureValueType::RgbaF16),
     )?;
     let depth = Texture::new(
         canvas.borrow().gl(),
@@ -599,7 +599,7 @@ fn new_screen_reflector(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewF
     let reflector = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::linear_mipmapped(TextureValueType::RgbaU8),
+        TextureParams::linear_mipmapped(TextureValueType::RgbaF16),
     )?;
 
     Framebuffer::from_textures(vec![reflector])

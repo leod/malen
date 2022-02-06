@@ -59,7 +59,8 @@ program! {
             vec3 diffuse = vec3(albedo) * (light + global_light_props.ambient);
 
             vec3 mapped = diffuse / (diffuse + vec3(1.0));
-            f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
+            //f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
+            f_color = vec4(indirect_light, 1.0);
         }
     }
 }
