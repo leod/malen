@@ -479,7 +479,7 @@ impl Draw {
                         },
                     )
                     .draw_color_sources(self.source_color_batch.draw_unit())
-                    .prepare_cone_tracing()
+                    .prepare_cone_tracing()?
                     .compose();
             } else {
                 phase.compose();
