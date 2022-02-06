@@ -13,6 +13,7 @@ pub use bindings::{
 };
 pub use blur_pass::{BlurBuffer, BlurParams, BlurPass};
 pub use color_pass::ColorPass;
+pub use gaussian_mipmap_stack::GaussianMipmapStack;
 pub use instance::ColorInstance;
 pub use instanced_color_pass::InstancedColorPass;
 pub use sprite_pass::SpritePass;

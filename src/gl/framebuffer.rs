@@ -33,19 +33,15 @@ impl Framebuffer {
         max_color_attachments as u32
     }
 
-    pub fn from_textures(
-        gl: Rc<Context>,
-        textures: Vec<Texture>,
-    ) -> Result<Self, NewFramebufferError> {
-        Self::new(gl, textures.into_iter().map(Rc::new).collect())
+    pub fn from_textures(textures: Vec<Texture>) -> Result<Self, NewFramebufferError> {
+        Self::new(textures.into_iter().map(Rc::new).collect())
     }
 
-    pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
-        Self::new_with_mipmap_levels(gl, textures.into_iter().map(|t| (t, 0)).collect())
+    pub fn new(textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
+        Self::new_with_mipmap_levels(textures.into_iter().map(|t| (t, 0)).collect())
     }
 
     pub fn new_with_mipmap_levels(
-        gl: Rc<Context>,
         textures: Vec<(Rc<Texture>, u32)>,
     ) -> Result<Self, NewFramebufferError> {
         let num_color = textures
@@ -62,6 +58,8 @@ impl Framebuffer {
         assert!(textures
             .iter()
             .all(|(t, _)| t.size() == textures.first().unwrap().0.size()));
+
+        let gl = textures[0].0.gl();
 
         if num_color > Self::max_color_attachments(&gl) as usize {
             return Err(NewFramebufferError::TooManyColorAttachments(
