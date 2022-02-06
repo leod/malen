@@ -482,7 +482,7 @@ impl State {
             let delta = dt_secs * self.enemies[i].vel;
             self.enemies[i].vel =
                 target_vel - (target_vel - self.enemies[i].vel) * (-10.0 * dt_secs).exp();
-            self.enemies[i].pos += delta;
+            //self.enemies[i].pos += delta;
 
             self.grid.remove(self.enemies[i].grid_key);
 

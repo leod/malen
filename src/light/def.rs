@@ -23,8 +23,8 @@ impl Default for LightPipelineParams {
         Self {
             shadow_map_resolution: 2048,
             max_num_lights: 512,
-            num_tracing_cones: 7,
-            num_tracing_steps: 12,
+            num_tracing_cones: 6,
+            num_tracing_steps: 8,
         }
     }
 }
@@ -52,8 +52,8 @@ impl Default for GlobalLightProps {
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
             indirect_intensity: 4.0,
-            indirect_initial_offset: 4.0,
-            indirect_step_factor: 0.2,
+            indirect_initial_offset: 1.0,
+            indirect_step_factor: 0.4,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
         }
