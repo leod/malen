@@ -1,6 +1,7 @@
 mod bindings;
 mod blur_pass;
 mod color_pass;
+mod gaussian_mipmap_stack;
 mod instance;
 mod instanced_color_pass;
 mod sprite_pass;

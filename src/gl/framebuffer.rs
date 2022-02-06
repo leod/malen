@@ -41,9 +41,16 @@ impl Framebuffer {
     }
 
     pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
+        Self::new_with_mipmap_levels(gl, textures.into_iter().map(|t| (t, 0)).collect())
+    }
+
+    pub fn new_with_mipmap_levels(
+        gl: Rc<Context>,
+        textures: Vec<(Rc<Texture>, u32)>,
+    ) -> Result<Self, NewFramebufferError> {
         let num_color = textures
             .iter()
-            .filter(|t| !t.params().value_type.is_depth())
+            .filter(|(t, _)| !t.params().value_type.is_depth())
             .count();
         let num_depth = textures.len() - num_color;
 
@@ -54,12 +61,12 @@ impl Framebuffer {
         assert!(num_depth <= 1, "Can have at most one depth attachment");
         assert!(textures
             .iter()
-            .all(|t| t.size() == textures.first().unwrap().size()));
+            .all(|(t, _)| t.size() == textures.first().unwrap().0.size()));
 
-        if num_color > Self::max_color_attachments(&*gl) as usize {
+        if num_color > Self::max_color_attachments(&gl) as usize {
             return Err(NewFramebufferError::TooManyColorAttachments(
                 num_color,
-                Self::max_color_attachments(&*gl),
+                Self::max_color_attachments(&gl),
             ));
         }
 
@@ -71,9 +78,9 @@ impl Framebuffer {
 
         let mut draw_buffers = Vec::new();
         let mut attachments = Vec::new();
-        for (location, texture) in textures
+        for (location, (texture, mipmap_level)) in textures
             .iter()
-            .filter(|t| !t.params().value_type.is_depth())
+            .filter(|(t, _)| !t.params().value_type.is_depth())
             .enumerate()
         {
             let attachment = glow::COLOR_ATTACHMENT0 + location as u32;
@@ -86,12 +93,15 @@ impl Framebuffer {
                     attachment,
                     glow::TEXTURE_2D,
                     Some(texture.id()),
-                    0,
+                    i32::try_from(*mipmap_level).unwrap(),
                 );
             }
         }
 
-        for texture in textures.iter().filter(|t| t.params().value_type.is_depth()) {
+        for (texture, mipmap_level) in textures
+            .iter()
+            .filter(|(t, mipmap_level)| t.params().value_type.is_depth())
+        {
             let attachment = glow::DEPTH_ATTACHMENT;
             attachments.push(attachment);
 
@@ -101,7 +111,7 @@ impl Framebuffer {
                     attachment,
                     glow::TEXTURE_2D,
                     Some(texture.id()),
-                    0,
+                    i32::try_from(*mipmap_level).unwrap(),
                 );
             }
         }
@@ -113,7 +123,7 @@ impl Framebuffer {
 
         Ok(Framebuffer {
             gl,
-            textures,
+            textures: textures.into_iter().map(|(t, _)| t).collect(),
             id,
             attachments,
         })
