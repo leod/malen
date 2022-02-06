@@ -10,7 +10,7 @@ pub use bindings::{
     BLUR_PROPS_BLOCK_BINDING, MATRICES_BLOCK_BINDING, SPRITE_INFO_BLOCK_BINDING,
     SPRITE_SAMPLER_BINDING,
 };
-pub use blur_pass::BlurPass;
+pub use blur_pass::{BlurBuffer, BlurParams, BlurPass};
 pub use color_pass::ColorPass;
 pub use instance::ColorInstance;
 pub use instanced_color_pass::InstancedColorPass;
