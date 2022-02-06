@@ -92,9 +92,9 @@ impl Draw {
 
         let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
-        let translucent_light_params =
+        let translucent_light_props =
             Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
-        let reflector_light_params =
+        let reflector_light_props =
             Uniform::new(context.gl(), ObjectLightProps { occlusion: 1.0 })?;
         let camera_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
         let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
@@ -131,8 +131,8 @@ impl Draw {
             enemy_texture,
             enemy_normal_texture,
             light_pipeline,
-            translucent_light_props: translucent_light_params,
-            reflector_light_props: reflector_light_params,
+            translucent_light_props,
+            reflector_light_props,
             camera_matrices,
             screen_matrices,
             circle_instances,
@@ -455,7 +455,7 @@ impl Draw {
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightProps {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear().into(),
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.08).to_linear().into(),
                     ..GlobalLightProps::default()
                 })?;
 
