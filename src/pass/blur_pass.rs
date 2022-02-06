@@ -69,7 +69,7 @@ program! {
         in vec2 v_uv;
         out vec4 f_color;
 
-        const float weight[{num_weights}] = float[] ({weights});
+        const float weight[{{num_weights}}] = float[] ({{weights}});
 
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
@@ -77,12 +77,12 @@ program! {
             vec3 result = texture(tex, v_uv).rgb * weight[0];
 
             if (blur_props.direction == 0.0) {
-                for (int i = 1; i < {num_weights}; i += 1) {
+                for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += texture(tex, v_uv + vec2(texel.x * float(i), 0.0)).rgb * weight[i];
                     result += texture(tex, v_uv - vec2(texel.x * float(i), 0.0)).rgb * weight[i];
                 }
             } else {
-                for (int i = 1; i < {num_weights}; i += 1) {
+                for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += texture(tex, v_uv + vec2(0.0, texel.y * float(i))).rgb * weight[i];
                     result += texture(tex, v_uv - vec2(0.0, texel.y * float(i))).rgb * weight[i];
                 }

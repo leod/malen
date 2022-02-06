@@ -109,7 +109,8 @@ where
             .join("\n")
             + &remove_outer_braces(s);
         def.defines.iter().fold(code, |code, (from, to)| {
-            code.replace(&format!("{{ {0} }}", from), to)
+            code.replace(&format!("{{ {{ {0} }} }}", from), to)
+                .replace(&format!("{{{{{0}}}}}", from), to)
         })
     };
 
