@@ -57,19 +57,19 @@ program! {
             v_edge = vec4(a_occluder_line_0, a_occluder_line_1);
             v_edge = mix(v_edge, v_edge.zwxy, step(angle_0, angle_1));
             v_angle = angle_0;
-            if (abs(angle_0 - angle_1) > {pi}) {
+            if (abs(angle_0 - angle_1) > {{pi}}) {
                 if (a_occluder_order == 0) {
-                    v_angle = -{pi};
+                    v_angle = -{{pi}};
                 } else if (a_occluder_order == 1 || a_occluder_order == 2) {
                     v_angle = min(angle_0, angle_1);
                 } else {
-                    v_angle = {pi};
+                    v_angle = {{pi}};
                 }
             }
 
             gl_Position = vec4(
-                v_angle / {pi},
-                (float(gl_InstanceID) + 0.5) / float({max_num_lights}) * 2.0 - 1.0,
+                v_angle / {{pi}},
+                (float(gl_InstanceID) + 0.5) / float({{max_num_lights}}) * 2.0 - 1.0,
                 0.0,
                 1.0
             );

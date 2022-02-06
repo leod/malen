@@ -35,7 +35,6 @@ program! {
         pi => std::f32::consts::PI,
         depth_texels => "2.0f",
         max_num_lights => params.max_num_lights,
-        shadow_map_resolution => params.shadow_map_resolution,
     ]
     includes [VISIBILITY_SOURCE]
     vertex glsl! {
@@ -50,7 +49,7 @@ program! {
             v_light_radius = a_light_position.w;
             v_light_params = a_light_params;
             v_light_color = a_light_color;
-            v_light_offset = (float(a_light_index) + 0.5) / float({max_num_lights});
+            v_light_offset = (float(a_light_index) + 0.5) / float({{max_num_lights}});
 
             vec3 p = matrices.projection * matrices.view * vec3(a_position, 1.0);
             gl_Position = vec4(p.xy, 0.0, 1.0);
@@ -112,30 +111,30 @@ const VISIBILITY_SOURCE: Glsl = glsl! {
 
         float angle = atan(delta.y, delta.x);
 
-        float fall_on = (1.0 + sin({pi} * (3.0/2.0 +
+        float fall_on = (1.0 + sin({{pi}} * (3.0/2.0 +
             clamp(dist_to_light / light_start - 1.0, 0.0, 1.0)))) / 2.0;
         float front_light = fall_on * pow(1.0 - dist_to_light / light_radius, 2.0);
-        float angle_diff = mod(abs(angle - light_angle), 2.0 * {pi});
-        if (angle_diff > {pi})
-            angle_diff = 2.0 * {pi} - angle_diff;
+        float angle_diff = mod(abs(angle - light_angle), 2.0 * {{pi}});
+        if (angle_diff > {{pi}})
+            angle_diff = 2.0 * {{pi}} - angle_diff;
 
         float angle_to_border = angle_diff * 2.0 - light_angle_size
             + global_light_props.angle_fall_off_size;
-        if (abs(light_angle_size - 2.0 * {pi}) > 0.001 && angle_to_border > 0.0) {
+        if (abs(light_angle_size - 2.0 * {{pi}}) > 0.001 && angle_to_border > 0.0) {
             float t = angle_to_border / global_light_props.angle_fall_off_size;
             front_light *= 2.0 / (1.0 + 1.0 * exp(10.0 * t));
         }
 
-        vec2 c = vec2(angle / (2.0 * {pi}) + 0.5, light_offset);
+        vec2 c = vec2(angle / (2.0 * {{pi}}) + 0.5, light_offset);
         vec2 texel = vec2(1.0 / float(textureSize(shadow_map, 0).x), 0.0);
 
-        vec2 depth3l = texture(shadow_map, c - 3.0 * {depth_texels} * texel).xy * light_radius;
-        vec2 depth2l = texture(shadow_map, c - 2.0 * {depth_texels} * texel).xy * light_radius;
-        vec2 depth1l = texture(shadow_map, c - 1.0 * {depth_texels} * texel).xy * light_radius;
-        vec2 depth0  = texture(shadow_map, c                               ).xy * light_radius;
-        vec2 depth1r = texture(shadow_map, c + 1.0 * {depth_texels} * texel).xy * light_radius;
-        vec2 depth2r = texture(shadow_map, c + 2.0 * {depth_texels} * texel).xy * light_radius;
-        vec2 depth3r = texture(shadow_map, c + 3.0 * {depth_texels} * texel).xy * light_radius;
+        vec2 depth3l = texture(shadow_map, c - 3.0 * {{depth_texels}} * texel).xy * light_radius;
+        vec2 depth2l = texture(shadow_map, c - 2.0 * {{depth_texels}} * texel).xy * light_radius;
+        vec2 depth1l = texture(shadow_map, c - 1.0 * {{depth_texels}} * texel).xy * light_radius;
+        vec2 depth0  = texture(shadow_map, c                                 ).xy * light_radius;
+        vec2 depth1r = texture(shadow_map, c + 1.0 * {{depth_texels}} * texel).xy * light_radius;
+        vec2 depth2r = texture(shadow_map, c + 2.0 * {{depth_texels}} * texel).xy * light_radius;
+        vec2 depth3r = texture(shadow_map, c + 3.0 * {{depth_texels}} * texel).xy * light_radius;
 
         vec2 depth2lm = min(depth2l, min(depth1l, depth3l));
         vec2 depth1lm = min(depth1l, min(depth2l, depth0 ));

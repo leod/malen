@@ -66,7 +66,7 @@ program! {
 
 const CONE_TRACING_SOURCE: Glsl = glsl! {
     vec3 trace_cone(vec2 origin, vec2 dir) {
-        const float cone_angle = 2.0 * {pi} / {num_tracing_cones}.0;
+        const float cone_angle = 2.0 * {{pi}} / {{num_tracing_cones}}.0;
         const float diameter_scale = 2.0 * tan(cone_angle / 2.0);
 
         float t = global_light_props.indirect_initial_offset;
@@ -74,7 +74,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
         vec3 color = vec3(0.0, 0.0, 0.0);
         vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
 
-        for (int i = 0; i < {num_tracing_steps} && occlusion <= 0.9; i += 1) {
+        for (int i = 0; i < {{num_tracing_steps}} && occlusion <= 0.9; i += 1) {
             float cone_diameter = diameter_scale * t;
             vec2 p = origin + dir / screen_size * t;
             if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
@@ -98,8 +98,8 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
     }
 
     vec3 calc_indirect_diffuse_light(vec2 origin) {
-        const int n = {num_tracing_cones};
-        const float dangle = 2.0 * {pi} / float(n);
+        const int n = {{num_tracing_cones}};
+        const float dangle = 2.0 * {{pi}} / float(n);
 
         float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
         float self_occlusion_scale =
