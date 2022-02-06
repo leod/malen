@@ -107,17 +107,19 @@ impl Texture {
     ) -> Result<Self, NewTextureError> {
         let texture = Self::new_impl(gl.clone(), size, params.clone())?;
 
+        let levels = if params.min_filter.uses_mipmap() {
+            (size.x as f32).max(size.y as f32).log2() as i32 + 1
+        } else {
+            1
+        };
+
         unsafe {
-            gl.tex_image_2d(
+            gl.tex_storage_2d(
                 glow::TEXTURE_2D,
-                0,
-                params.value_type.internal_format_gl(),
+                levels,
+                params.value_type.internal_format_gl() as u32,
                 i32::try_from(size.x).unwrap(),
                 i32::try_from(size.y).unwrap(),
-                0,
-                params.value_type.format_gl(),
-                params.value_type.type_gl(),
-                None,
             );
         }
 

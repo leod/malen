@@ -13,7 +13,7 @@ use crate::{
         Texture, TextureMagFilter, TextureMinFilter, TextureParams, TextureValueType, TextureWrap,
         Uniform, VertexBuffer,
     },
-    pass::{ColorPass, ViewMatrices},
+    pass::{BlurBuffer, BlurParams, BlurPass, ColorPass, ViewMatrices},
     Canvas, Color4, Context, FrameError,
 };
 
@@ -40,6 +40,7 @@ pub struct LightPipeline {
     screen_reflector: Framebuffer,
     shadow_map: Framebuffer,
     screen_light: Framebuffer,
+    blur_buffer: BlurBuffer,
 
     color_pass: Rc<ColorPass>,
     geometry_color_pass: GeometryColorPass,
@@ -51,6 +52,7 @@ pub struct LightPipeline {
     shaded_sprite_pass: ShadedSpritePass,
     compose_pass: ComposePass,
     compose_with_indirect_pass: ComposeWithIndirectPass,
+    blur_pass: BlurPass,
 }
 
 #[derive(Debug, Error)]
@@ -84,6 +86,7 @@ impl LightPipeline {
         let screen_reflectors = new_screen_reflector(canvas.clone())?;
         let shadow_map = new_shadow_map(context.gl(), &params)?;
         let screen_light = new_screen_light(canvas.clone())?;
+        let blur_buffer = BlurBuffer::new(context.gl())?;
 
         let color_pass = context.color_pass();
         let geometry_color_pass = GeometryColorPass::new(context.gl())?;
@@ -96,6 +99,7 @@ impl LightPipeline {
         let compose_pass = ComposePass::new(context.gl())?;
         let compose_with_indirect_pass =
             ComposeWithIndirectPass::new(context.gl(), params.clone())?;
+        let blur_pass = BlurPass::new(context.gl(), BlurParams::default())?;
 
         Ok(Self {
             canvas,
@@ -107,6 +111,7 @@ impl LightPipeline {
             screen_reflector: screen_reflectors,
             shadow_map,
             screen_light,
+            blur_buffer,
             color_pass,
             geometry_color_pass,
             geometry_sprite_pass,
@@ -117,6 +122,7 @@ impl LightPipeline {
             shaded_sprite_pass,
             compose_pass,
             compose_with_indirect_pass,
+            blur_pass,
         })
     }
 
@@ -335,7 +341,7 @@ impl<'a> ShadowMapPhase<'a> {
     pub fn build_screen_light(
         self,
         global_light_props: GlobalLightProps,
-    ) -> BuiltScreenLightPhase<'a> {
+    ) -> Result<BuiltScreenLightPhase<'a>, FrameError> {
         self.pipeline.global_light_props.set(global_light_props);
 
         /*self.pipeline
@@ -379,16 +385,23 @@ impl<'a> ShadowMapPhase<'a> {
             );
         });
 
+        /*self.pipeline.blur_pass.blur(
+            10,
+            &self.pipeline.screen_light.textures()[0],
+            &mut self.pipeline.blur_buffer,
+            &self.pipeline.screen_light,
+        )?;*/
+
         //self.pipeline.shadow_map.invalidate();
 
         drop(self.guard);
 
-        BuiltScreenLightPhase {
+        Ok(BuiltScreenLightPhase {
             pipeline: self.pipeline,
             input: self.input,
             #[cfg(feature = "coarse-prof")]
             guard: coarse_prof::enter("screen_light"),
-        }
+        })
     }
 }
 

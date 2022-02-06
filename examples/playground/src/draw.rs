@@ -457,7 +457,7 @@ impl Draw {
                 .build_screen_light(GlobalLightProps {
                     ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear().into(),
                     ..GlobalLightProps::default()
-                });
+                })?;
 
             if indirect_light {
                 phase
