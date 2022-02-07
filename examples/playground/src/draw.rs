@@ -402,7 +402,9 @@ impl Draw {
         &mut self,
         context: &Context,
         indirect_light: bool,
+        blur: bool,
         debug_mode: u32,
+        debug_mipmap: u32,
     ) -> Result<(), FrameError> {
         profile!("draw");
 
@@ -462,6 +464,7 @@ impl Draw {
                 .build_screen_light(GlobalLightProps {
                     ambient: Color3::new(1.0, 1.0, 1.0).scale(0.08).to_linear().into(),
                     debug_mode,
+                    debug_mipmap,
                     ..GlobalLightProps::default()
                 })?;
 
@@ -485,7 +488,7 @@ impl Draw {
                         },
                     )
                     .draw_color_sources(self.source_color_batch.draw_unit())
-                    .prepare_cone_tracing()?
+                    .prepare_cone_tracing(blur)?
                     .compose();
             } else {
                 phase.compose();
