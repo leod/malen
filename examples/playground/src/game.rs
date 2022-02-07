@@ -34,6 +34,7 @@ pub struct Game {
     indirect_light: bool,
     show_profile: bool,
     show_textures: bool,
+    debug_mode: u32,
 
     update_budget_secs: f32,
 }
@@ -88,6 +89,7 @@ impl Game {
             indirect_light: true,
             show_profile: false,
             show_textures: false,
+            debug_mode: 0,
             update_budget_secs: 0.0,
         })
     }
@@ -149,16 +151,22 @@ impl Game {
                         self.show_profile = !self.show_profile;
                         coarse_prof::reset();
                     }
-                    Key::U => {
-                        self.show_textures = !self.show_textures;
-                    }
-                    Key::L => {
-                        self.indirect_light = !self.indirect_light;
-                    }
+                    Key::U => self.show_textures = !self.show_textures,
+                    Key::L => self.indirect_light = !self.indirect_light,
                     Key::R => {
                         log::info!("Profiling:\n{}", coarse_prof::to_string());
                         coarse_prof::reset();
                     }
+                    Key::Key1 => self.debug_mode = 1,
+                    Key::Key2 => self.debug_mode = 2,
+                    Key::Key3 => self.debug_mode = 3,
+                    Key::Key4 => self.debug_mode = 4,
+                    Key::Key5 => self.debug_mode = 5,
+                    Key::Key6 => self.debug_mode = 6,
+                    Key::Key7 => self.debug_mode = 7,
+                    Key::Key8 => self.debug_mode = 8,
+                    Key::Key9 => self.debug_mode = 9,
+                    Key::Key0 => self.debug_mode = 0,
                     _ => (),
                 }
             }
@@ -388,7 +396,8 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&self.context, self.indirect_light)?;
+        self.draw
+            .draw(&self.context, self.indirect_light, self.debug_mode)?;
 
         if self.show_profile {
             profile!("profile");

@@ -398,7 +398,12 @@ impl Draw {
         });
     }
 
-    pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
+    pub fn draw(
+        &mut self,
+        context: &Context,
+        indirect_light: bool,
+        debug_mode: u32,
+    ) -> Result<(), FrameError> {
         profile!("draw");
 
         let light = true;
@@ -456,6 +461,7 @@ impl Draw {
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightProps {
                     ambient: Color3::new(1.0, 1.0, 1.0).scale(0.08).to_linear().into(),
+                    debug_mode,
                     ..GlobalLightProps::default()
                 })?;
 

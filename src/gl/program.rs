@@ -238,6 +238,7 @@ where
 
 const SOURCE_HEADER: &str = r#"#version 300 es
     precision highp float;
+    precision highp int;
     precision highp sampler2D;"#;
 
 fn vertex_source_header(attributes: &[Attribute]) -> String {
