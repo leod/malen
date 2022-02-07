@@ -40,6 +40,7 @@ pub struct GlobalLightProps {
     pub indirect_step_factor: f32,
     pub indirect_z: f32,
     pub indirect_self_occlusion: f32,
+    pub debug_mode: u32,
 }
 
 impl UniformBlock for GlobalLightProps {}
@@ -56,6 +57,7 @@ impl Default for GlobalLightProps {
             indirect_step_factor: 0.4,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
+            debug_mode: 0,
         }
     }
 }
