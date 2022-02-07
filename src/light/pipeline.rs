@@ -513,12 +513,17 @@ impl<'a> IndirectLightPhase<'a> {
         self
     }
 
-    pub fn prepare_cone_tracing(self) -> Result<ComposeWithIndirectPhase<'a>, FrameError> {
-        /*self.pipeline.screen_occlusion().generate_mipmap();
-        self.pipeline.screen_reflector().generate_mipmap();*/
-
-        self.pipeline.occlusion_mipmap_stack.create_mipmaps()?;
-        self.pipeline.reflector_mipmap_stack.create_mipmaps()?;
+    pub fn prepare_cone_tracing(
+        self,
+        blur: bool,
+    ) -> Result<ComposeWithIndirectPhase<'a>, FrameError> {
+        if blur {
+            self.pipeline.occlusion_mipmap_stack.create_mipmaps()?;
+            self.pipeline.reflector_mipmap_stack.create_mipmaps()?;
+        } else {
+            self.pipeline.screen_occlusion().generate_mipmap();
+            self.pipeline.screen_reflector().generate_mipmap();
+        }
 
         #[cfg(feature = "coarse-prof")]
         drop(self.guard);

@@ -65,23 +65,59 @@ program! {
                 f_color = vec4(pow(mapped, vec3(1.0 / global_light_props.gamma)), 1.0);
                 break;
             case 1:
-                f_color = vec4(texture(screen_albedo, v_tex_coords).rgb, 1.0);
+                f_color = vec4(
+                    textureLod(
+                        screen_albedo,
+                        v_tex_coords,
+                        float(global_light_props.debug_mipmap)
+                    ).rgb,
+                    1.0
+                );
                 break;
             case 2:
-                f_color = vec4(texture(screen_normals, v_tex_coords).rgb, 1.0);
+                f_color = vec4(
+                    textureLod(
+                        screen_normals,
+                        v_tex_coords,
+                        float(global_light_props.debug_mipmap)
+                    ).rgb,
+                    1.0
+                );
                 break;
             case 3:
-                f_color = vec4(texture(screen_occlusion, v_tex_coords).rgb, 1.0);
+                f_color = vec4(
+                    textureLod(
+                        screen_occlusion,
+                        v_tex_coords,
+                        float(global_light_props.debug_mipmap)
+                    ).rgb,
+                    1.0
+                );
                 break;
             case 4:
-                f_color = vec4(texture(screen_light, v_tex_coords).rgb, 1.0);
+                f_color = vec4(
+                    textureLod(
+                        screen_light,
+                        v_tex_coords,
+                        float(global_light_props.debug_mipmap)
+                    ).rgb,
+                    1.0
+                );
                 break;
             case 5:
-                f_color = vec4(texture(screen_reflector, v_tex_coords).rgb, 1.0);
+                f_color = vec4(
+                    textureLod(
+                        screen_reflector,
+                        v_tex_coords,
+                        float(global_light_props.debug_mipmap)
+                    ).rgb,
+                    1.0
+                );
+                break;
+            case 6:
+                f_color = vec4(indirect_light, 1.0);
                 break;
             }
-            //f_color = vec4(indirect_light, 1.0);
-            //f_color = textureLod(screen_reflector, v_tex_coords, 2.0);
         }
     }
 }

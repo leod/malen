@@ -41,6 +41,7 @@ pub struct GlobalLightProps {
     pub indirect_z: f32,
     pub indirect_self_occlusion: f32,
     pub debug_mode: u32,
+    pub debug_mipmap: u32,
 }
 
 impl UniformBlock for GlobalLightProps {}
@@ -58,6 +59,7 @@ impl Default for GlobalLightProps {
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
             debug_mode: 0,
+            debug_mipmap: 0,
         }
     }
 }
