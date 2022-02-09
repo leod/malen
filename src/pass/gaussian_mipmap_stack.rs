@@ -133,8 +133,8 @@ program! {
         out vec4 f_color;
 
         void main() {
-            vec2 uv = v_uv; //- 0.5 / vec2(textureSize(tex, 0));
-            f_color = textureLod(tex, v_uv, 0.0);
+            vec2 uv = v_uv + 0.5 / vec2(textureSize(tex, 0));
+            f_color = textureLod(tex, uv, 0.0);
         }
     }
 }
