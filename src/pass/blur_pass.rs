@@ -75,6 +75,8 @@ program! {
 
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
+            f_color = vec4(textureLod(tex, v_tex_coords, blur_props.level).rgb, 1.0);
+            return;
 
             vec3 result = weight[0] * textureLod(tex, v_tex_coords, blur_props.level).rgb;
 

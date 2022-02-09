@@ -353,6 +353,16 @@ impl TextureParams {
         }
     }
 
+    pub fn nearest_mipmapped(value_type: TextureValueType) -> Self {
+        Self {
+            value_type,
+            min_filter: TextureMinFilter::NearestMipmapNearest,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        }
+    }
+
     pub fn linear_mipmapped_rgbau8() -> Self {
         Self::linear_mipmapped(TextureValueType::RgbaU8)
     }

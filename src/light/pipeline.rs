@@ -587,7 +587,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
     let occluder = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::linear_mipmapped(TextureValueType::RgbaF16),
+        TextureParams::nearest_mipmapped(TextureValueType::RgbaF16),
     )?;
     let depth = Texture::new(
         canvas.borrow().gl(),
