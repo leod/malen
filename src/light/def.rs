@@ -55,7 +55,7 @@ impl Default for GlobalLightProps {
             angle_fall_off_factor: 10.0,
             indirect_intensity: 4.0,
             indirect_initial_offset: 1.0,
-            indirect_step_factor: 0.4,
+            indirect_step_factor: 0.6,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
             debug_mode: 0,
