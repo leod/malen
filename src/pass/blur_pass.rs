@@ -75,8 +75,8 @@ program! {
 
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
-            f_color = vec4(textureLod(tex, v_tex_coords, blur_props.level).rgb, 1.0);
-            return;
+            /*f_color = vec4(textureLod(tex, v_tex_coords, blur_props.level).rgb, 1.0);
+            return;*/
 
             vec3 result = weight[0] * textureLod(tex, v_tex_coords, blur_props.level).rgb;
 
@@ -164,15 +164,20 @@ impl BlurPass {
         buffer: &mut BlurBuffer,
         output: &Framebuffer,
     ) -> Result<(), FrameError> {
+        let input_size = Vector2::new(
+            texture.size().x / 2u32.pow(mipmap_level),
+            texture.size().y / 2u32.pow(mipmap_level),
+        );
+
         if buffer
             .back
             .as_ref()
-            .map_or(true, |b| texture.size() != b.textures()[0].size())
+            .map_or(true, |b| input_size != b.textures()[0].size())
         {
             let back = Texture::new(
                 texture.gl(),
-                texture.size(),
-                TextureParams::nearest(output.textures()[0].params().value_type),
+                input_size,
+                TextureParams::linear(output.textures()[0].params().value_type),
             )?;
             buffer.back = Some(Framebuffer::from_textures(vec![back])?);
         }
