@@ -111,7 +111,7 @@ impl Draw {
         let smoke_light_props = Uniform::new(
             context.gl(),
             ObjectLightProps {
-                occlusion: 0.7,
+                occlusion: 0.1,
                 reflectance: 20.0,
             },
         )?;

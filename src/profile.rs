@@ -208,7 +208,7 @@ impl Profile {
                 label: "dur[ms]".to_owned(),
                 //range: Some((0.0, 30.0)),
                 range: None,
-                tics: 15.0,
+                tics: 5.0,
             },
             line_graphs,
         }
