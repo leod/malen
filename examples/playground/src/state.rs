@@ -463,7 +463,7 @@ impl State {
             }
 
             let to_player = self.player.pos - self.enemies[i].pos;
-            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) && i % 2 == 0 {
+            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) && i % 5 == 0 {
                 let target_angle = to_player.y.atan2(to_player.x);
                 let angle_dist = target_angle - self.enemies[i].angle;
                 let angle_dist = angle_dist.sin().atan2(angle_dist.cos());
