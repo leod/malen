@@ -11,8 +11,8 @@ use malen::{
 
 pub const MAP_SIZE: f32 = 4096.0;
 pub const ENEMY_RADIUS: f32 = 15.0;
-pub const LAMP_RADIUS: f32 = 12.0;
-pub const PLAYER_SIZE: f32 = 35.0;
+pub const LAMP_RADIUS: f32 = 8.0;
+pub const PLAYER_SIZE: f32 = 25.0;
 pub const PLAYER_SHOT_COOLDOWN_SECS: f32 = 0.005;
 pub const LASER_LENGTH: f32 = 7.0;
 pub const LASER_WIDTH: f32 = 2.0;
@@ -223,7 +223,7 @@ impl State {
         for _ in 0..50 {
             state.add_ball();
         }
-        for _ in 0..500 {
+        for _ in 0..100 {
             state.add_lamp();
         }
 
@@ -423,7 +423,7 @@ impl State {
 
             while self.player.shot_cooldown_secs < time_budget {
                 let mut angle = self.player.dir.y.atan2(self.player.dir.x);
-                //angle += 0.1 * rand::thread_rng().gen_range(-1.0, 1.0);
+                angle += 0.1 * rand::thread_rng().gen_range(-1.0, 1.0);
                 let dir = Vector2::new(angle.cos(), angle.sin());
 
                 let start_pos = self.player.pos + dir * PLAYER_SIZE * 0.5;
@@ -463,7 +463,7 @@ impl State {
             }
 
             let to_player = self.player.pos - self.enemies[i].pos;
-            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) {
+            let target_vel = if (0.1..1000.0).contains(&to_player.norm()) && i % 2 == 0 {
                 let target_angle = to_player.y.atan2(to_player.x);
                 let angle_dist = target_angle - self.enemies[i].angle;
                 let angle_dist = angle_dist.sin().atan2(angle_dist.cos());
@@ -482,7 +482,7 @@ impl State {
             let delta = dt_secs * self.enemies[i].vel;
             self.enemies[i].vel =
                 target_vel - (target_vel - self.enemies[i].vel) * (-10.0 * dt_secs).exp();
-            //self.enemies[i].pos += delta;
+            self.enemies[i].pos += delta;
 
             self.grid.remove(self.enemies[i].grid_key);
 
