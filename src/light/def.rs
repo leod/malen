@@ -24,7 +24,7 @@ impl Default for LightPipelineParams {
             shadow_map_resolution: 2048,
             max_num_lights: 512,
             num_tracing_cones: 6,
-            num_tracing_steps: 8,
+            num_tracing_steps: 24,
         }
     }
 }
@@ -38,6 +38,7 @@ pub struct GlobalLightProps {
     pub indirect_intensity: f32,
     pub indirect_initial_offset: f32,
     pub indirect_step_factor: f32,
+    pub indirect_max_step: f32,
     pub indirect_z: f32,
     pub indirect_self_occlusion: f32,
     pub debug_mode: u32,
@@ -53,9 +54,10 @@ impl Default for GlobalLightProps {
             gamma: 2.2,
             angle_fall_off_size: std::f32::consts::PI / 20.0,
             angle_fall_off_factor: 10.0,
-            indirect_intensity: 4.0,
+            indirect_intensity: 1.0,
             indirect_initial_offset: 1.0,
-            indirect_step_factor: 0.6,
+            indirect_step_factor: 0.2,
+            indirect_max_step: 0.5,
             indirect_z: 0.5,
             indirect_self_occlusion: 1.0,
             debug_mode: 0,
@@ -67,6 +69,7 @@ impl Default for GlobalLightProps {
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct ObjectLightProps {
     pub occlusion: f32,
+    pub reflectance: f32,
 }
 
 impl UniformBlock for ObjectLightProps {}

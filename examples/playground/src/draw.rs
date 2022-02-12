@@ -3,8 +3,8 @@ use nalgebra::{Matrix3, Point2, Point3, Vector2};
 
 use malen::{
     data::{
-        ColorCircle, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex, InstanceBatch,
-        Mesh, RotatedSprite, SpriteBatch, TriangleTag,
+        ColorCircle, ColorLineBatch, ColorRect, ColorRotatedRect, ColorTriangleBatch, ColorVertex,
+        InstanceBatch, Mesh, RotatedSprite, SpriteBatch, TriangleTag,
     },
     geom::{self, Circle, Rect, RotatedRect, Screen},
     gl::{Blend, DepthTest, DrawParams, Texture, TextureParams, Uniform},
@@ -47,6 +47,7 @@ pub struct Draw {
 
     translucent_light_props: Uniform<ObjectLightProps>,
     reflector_light_props: Uniform<ObjectLightProps>,
+    smoke_light_props: Uniform<ObjectLightProps>,
     camera_matrices: Uniform<ViewMatrices>,
     screen_matrices: Uniform<ViewMatrices>,
 
@@ -58,6 +59,7 @@ pub struct Draw {
     source_color_batch: ColorTriangleBatch,
     occluder_batch: OccluderBatch,
     smoke_batch: SpriteBatch,
+    outline_batch: ColorLineBatch,
     lights: Vec<Light>,
     pub text_batch: TextBatch,
 }
@@ -92,10 +94,27 @@ impl Draw {
 
         let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
-        let translucent_light_props =
-            Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
-        let reflector_light_props =
-            Uniform::new(context.gl(), ObjectLightProps { occlusion: 1.0 })?;
+        let translucent_light_props = Uniform::new(
+            context.gl(),
+            ObjectLightProps {
+                occlusion: 0.0,
+                reflectance: 0.0,
+            },
+        )?;
+        let reflector_light_props = Uniform::new(
+            context.gl(),
+            ObjectLightProps {
+                occlusion: 1.0,
+                reflectance: 200.0,
+            },
+        )?;
+        let smoke_light_props = Uniform::new(
+            context.gl(),
+            ObjectLightProps {
+                occlusion: 0.7,
+                reflectance: 20.0,
+            },
+        )?;
         let camera_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
         let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
 
@@ -121,6 +140,7 @@ impl Draw {
         let source_color_batch = ColorTriangleBatch::new(context.gl())?;
         let occluder_batch = light_pipeline.new_occluder_batch()?;
         let smoke_batch = SpriteBatch::new(context.gl())?;
+        let outline_batch = ColorLineBatch::new(context.gl())?;
         let lights = Vec::new();
         let text_batch = TextBatch::new(context.gl())?;
 
@@ -133,6 +153,7 @@ impl Draw {
             light_pipeline,
             translucent_light_props,
             reflector_light_props,
+            smoke_light_props,
             camera_matrices,
             screen_matrices,
             circle_instances,
@@ -143,6 +164,7 @@ impl Draw {
             source_color_batch,
             occluder_batch,
             smoke_batch,
+            outline_batch,
             lights,
             text_batch,
         })
@@ -178,6 +200,7 @@ impl Draw {
         self.text_batch.clear();
         self.occluder_batch.clear();
         self.smoke_batch.clear();
+        self.outline_batch.clear();
         self.lights.clear();
 
         self.render_player(&state.player);
@@ -229,6 +252,11 @@ impl Draw {
             depth: 0.4,
             color: color.to_color4(),
         });
+        self.outline_batch.push(ColorRotatedRect {
+            rect: player.rotated_rect(),
+            depth: 0.4,
+            color: Color4::new(1.0, 1.0, 1.0, 1.0),
+        });
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 600.0,
@@ -243,7 +271,7 @@ impl Draw {
     fn render_floor(&mut self, state: &State) {
         self.translucent_color_batch.push(ColorRect {
             rect: state.floor_rect(),
-            color: Color4::new(0.5, 0.5, 0.8, 1.0),
+            color: Color4::new(0.6, 0.6, 0.6, 1.0),
             z: 0.9,
         });
     }
@@ -285,7 +313,7 @@ impl Draw {
                 circle: enemy.circle(),
                 angle: 0.0,
                 num_segments: 16,
-                height: 75.0,
+                height: 200.0,
                 ignore_light_index1: Some(self.lights.len() as u32),
                 ignore_light_index2: None,
             });
@@ -324,7 +352,7 @@ impl Draw {
                 angle: enemy.angle,
                 angle_size: std::f32::consts::PI / 3.0,
                 start: enemy.circle().radius,
-                back_glow: 5.0,
+                back_glow: 10.0,
                 color: Color3::from_u8(200, 240, 200).to_linear().scale(0.5),
             });
         }
@@ -379,7 +407,7 @@ impl Draw {
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
                 back_glow: 25.0,
-                color: color.to_linear().scale(1.0),
+                color: color.to_linear().scale(0.3),
             });
         }
     }
@@ -442,7 +470,7 @@ impl Draw {
                     },
                 )
                 .draw_sprites_with_normals(
-                    &self.translucent_light_props,
+                    &self.smoke_light_props,
                     &self.smoke_texture,
                     &self.smoke_normal_texture,
                     self.smoke_batch.draw_unit(),
@@ -521,11 +549,11 @@ impl Draw {
             );
         }
 
-        /*context.color_pass().draw(
+        context.color_pass().draw(
             &self.camera_matrices,
-            self.source_color_batch.draw_unit(),
+            self.outline_batch.draw_unit(),
             &DrawParams::default(),
-        );*/
+        );
 
         self.font.draw(&self.screen_matrices, &mut self.text_batch);
 
