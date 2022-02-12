@@ -68,33 +68,33 @@ impl Draw {
         let smoke_texture = Texture::load(
             context.gl(),
             "resources/smoke1.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let smoke_normal_texture = Texture::load(
             context.gl(),
             "resources/smoke1_Nrm.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let enemy_texture = Texture::load(
             context.gl(),
             "resources/enemy.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
         let enemy_normal_texture = Texture::load(
             context.gl(),
             "resources/enemy_Nrm.png",
-            TextureParams::mipmapped(),
+            TextureParams::linear_mipmapped_rgbau8(),
         )
         .await?;
 
         let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
-        let translucent_light_params =
+        let translucent_light_props =
             Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
-        let reflector_light_params =
+        let reflector_light_props =
             Uniform::new(context.gl(), ObjectLightProps { occlusion: 1.0 })?;
         let camera_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
         let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
@@ -131,8 +131,8 @@ impl Draw {
             enemy_texture,
             enemy_normal_texture,
             light_pipeline,
-            translucent_light_props: translucent_light_params,
-            reflector_light_props: reflector_light_params,
+            translucent_light_props,
+            reflector_light_props,
             camera_matrices,
             screen_matrices,
             circle_instances,
@@ -398,7 +398,14 @@ impl Draw {
         });
     }
 
-    pub fn draw(&mut self, context: &Context, indirect_light: bool) -> Result<(), FrameError> {
+    pub fn draw(
+        &mut self,
+        context: &Context,
+        indirect_light: bool,
+        blur: bool,
+        debug_mode: u32,
+        debug_mipmap: u32,
+    ) -> Result<(), FrameError> {
         profile!("draw");
 
         let light = true;
@@ -455,7 +462,9 @@ impl Draw {
                 .shadow_map_phase(&self.lights)
                 .draw_occluders(&mut self.occluder_batch)
                 .build_screen_light(GlobalLightProps {
-                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.15).to_linear().into(),
+                    ambient: Color3::new(1.0, 1.0, 1.0).scale(0.08).to_linear().into(),
+                    debug_mode,
+                    debug_mipmap,
                     ..GlobalLightProps::default()
                 })?;
 
@@ -479,7 +488,7 @@ impl Draw {
                         },
                     )
                     .draw_color_sources(self.source_color_batch.draw_unit())
-                    .prepare_cone_tracing()
+                    .prepare_cone_tracing(blur)?
                     .compose();
             } else {
                 phase.compose();

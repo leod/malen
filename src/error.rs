@@ -63,6 +63,9 @@ pub enum FrameError {
     #[error("write text error: {0}")]
     WriteTextError(#[from] WriteTextError),
 
+    #[error("new texture error: {0}")]
+    NewTexture(#[from] NewTextureError),
+
     #[error("new framebuffer error: {0}")]
     NewFramebuffer(#[from] NewFramebufferError),
 

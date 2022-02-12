@@ -322,27 +322,63 @@ impl Drop for Texture {
     }
 }
 
-impl Default for TextureParams {
-    fn default() -> Self {
+impl TextureParams {
+    pub fn linear(value_type: TextureValueType) -> Self {
         Self {
-            value_type: TextureValueType::RgbaU8,
+            value_type,
             min_filter: TextureMinFilter::Linear,
             mag_filter: TextureMagFilter::Linear,
-            wrap_vertical: TextureWrap::Repeat,
-            wrap_horizontal: TextureWrap::Repeat,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
         }
     }
-}
 
-impl TextureParams {
-    pub fn mipmapped() -> Self {
+    pub fn nearest(value_type: TextureValueType) -> Self {
         Self {
-            value_type: TextureValueType::RgbaU8,
+            value_type,
+            min_filter: TextureMinFilter::Nearest,
+            mag_filter: TextureMagFilter::Nearest,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        }
+    }
+
+    pub fn linear_mipmapped(value_type: TextureValueType) -> Self {
+        Self {
+            value_type,
+            min_filter: TextureMinFilter::LinearMipmapLinear,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        }
+    }
+
+    pub fn nearest_mipmapped(value_type: TextureValueType) -> Self {
+        Self {
+            value_type,
+            min_filter: TextureMinFilter::NearestMipmapNearest,
+            mag_filter: TextureMagFilter::Linear,
+            wrap_vertical: TextureWrap::ClampToEdge,
+            wrap_horizontal: TextureWrap::ClampToEdge,
+        }
+    }
+
+    pub fn linear_mipmapped_rgbau8() -> Self {
+        Self::linear_mipmapped(TextureValueType::RgbaU8)
+    }
+
+    pub fn linear_mipmapped_repeat(value_type: TextureValueType) -> Self {
+        Self {
+            value_type,
             min_filter: TextureMinFilter::LinearMipmapLinear,
             mag_filter: TextureMagFilter::Linear,
             wrap_vertical: TextureWrap::Repeat,
             wrap_horizontal: TextureWrap::Repeat,
         }
+    }
+
+    pub fn linear_mipmapped_repeat_rgbau8() -> Self {
+        Self::linear_mipmapped_repeat(TextureValueType::RgbaU8)
     }
 }
 

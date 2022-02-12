@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crevice::{glsl::GlslStruct, std140::AsStd140};
 use nalgebra::{Point2, Vector2};
@@ -7,10 +7,10 @@ use crate::{
     data::{Mesh, Sprite, SpriteVertex},
     geom::Rect,
     gl::{
-        self, DrawParams, Framebuffer, NewFramebufferError, Texture, TextureMagFilter,
-        TextureMinFilter, TextureParams, TextureWrap, Uniform, UniformBlock,
+        self, DrawParams, DrawUnit, Framebuffer, NewFramebufferError, Texture, TextureParams,
+        Uniform, UniformBlock,
     },
-    program, Color4,
+    program, Color4, FrameError,
 };
 
 use super::BLUR_PROPS_BLOCK_BINDING;
@@ -23,6 +23,7 @@ pub struct BlurParams {
 impl Default for BlurParams {
     fn default() -> Self {
         Self {
+            //weights: vec![0.99999],
             weights: vec![0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216],
         }
     }
@@ -31,6 +32,7 @@ impl Default for BlurParams {
 #[derive(Default, Debug, Copy, Clone, AsStd140, GlslStruct)]
 pub struct BlurProps {
     direction: f32,
+    level: f32,
 }
 
 impl UniformBlock for BlurProps {}
@@ -59,32 +61,50 @@ program! {
             .join(", "),
     ]
     vertex glsl! {
-        out vec2 v_uv;
+        out vec2 v_tex_coords;
         void main() {
             gl_Position = vec4(a_position.xyz, 1.0);
-            v_uv = a_tex_coords;
+            v_tex_coords = a_tex_coords;
         }
     }
     fragment glsl! {
-        in vec2 v_uv;
+        in vec2 v_tex_coords;
         out vec4 f_color;
 
         const float weight[{{num_weights}}] = float[] ({{weights}});
 
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
+            /*f_color = vec4(textureLod(tex, v_tex_coords, blur_props.level).rgb, 1.0);
+            return;*/
 
-            vec3 result = texture(tex, v_uv).rgb * weight[0];
+            vec3 result = weight[0] * textureLod(tex, v_tex_coords, blur_props.level).rgb;
 
             if (blur_props.direction == 0.0) {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
-                    result += texture(tex, v_uv + vec2(texel.x * float(i), 0.0)).rgb * weight[i];
-                    result += texture(tex, v_uv - vec2(texel.x * float(i), 0.0)).rgb * weight[i];
+                    result += weight[i] * textureLod(
+                        tex,
+                        v_tex_coords + vec2(texel.x * float(i), 0.0),
+                        blur_props.level
+                    ).rgb;
+                    result += weight[i] * textureLod(
+                        tex,
+                        v_tex_coords - vec2(texel.x * float(i), 0.0),
+                        blur_props.level
+                    ).rgb;
                 }
             } else {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
-                    result += texture(tex, v_uv + vec2(0.0, texel.y * float(i))).rgb * weight[i];
-                    result += texture(tex, v_uv - vec2(0.0, texel.y * float(i))).rgb * weight[i];
+                    result += weight[i] * textureLod(
+                        tex,
+                        v_tex_coords + vec2(0.0, texel.y * float(i)),
+                        blur_props.level
+                    ).rgb;
+                    result += weight[i] * textureLod(
+                        tex,
+                        v_tex_coords - vec2(0.0, texel.y * float(i)),
+                        blur_props.level
+                    ).rgb;
                 }
             }
 
@@ -105,9 +125,8 @@ impl BlurBuffer {
 
 pub struct BlurPass {
     screen_rect: Mesh<SpriteVertex>,
-    horizontal_props: Uniform<BlurProps>,
-    vertical_props: Uniform<BlurProps>,
     program: BlurProgram,
+    blur_props: RefCell<HashMap<u32, (Uniform<BlurProps>, Uniform<BlurProps>)>>,
 }
 
 impl BlurPass {
@@ -124,49 +143,73 @@ impl BlurPass {
                 color: Color4::new(1.0, 1.0, 1.0, 1.0),
             },
         )?;
-        let horizontal_props = Uniform::new(gl.clone(), BlurProps { direction: 0.0 })?;
-        let vertical_props = Uniform::new(gl.clone(), BlurProps { direction: 1.0 })?;
         let program = BlurProgram::new(gl, params)?;
 
         Ok(Self {
             screen_rect,
-            horizontal_props,
-            vertical_props,
             program,
+            blur_props: RefCell::new(HashMap::new()),
         })
+    }
+
+    pub fn screen_rect(&self) -> DrawUnit<SpriteVertex> {
+        self.screen_rect.draw_unit()
     }
 
     pub fn blur(
         &self,
         iters: usize,
         texture: &Texture,
+        mipmap_level: u32,
         buffer: &mut BlurBuffer,
         output: &Framebuffer,
-    ) -> Result<(), NewFramebufferError> {
+    ) -> Result<(), FrameError> {
+        let input_size = Vector2::new(
+            texture.size().x / 2u32.pow(mipmap_level),
+            texture.size().y / 2u32.pow(mipmap_level),
+        );
+
         if buffer
             .back
             .as_ref()
-            .map_or(true, |b| texture.size() != b.textures()[0].size())
+            .map_or(true, |b| input_size != b.textures()[0].size())
         {
             let back = Texture::new(
                 texture.gl(),
-                texture.size(),
-                TextureParams {
-                    value_type: output.textures()[0].params().value_type,
-                    min_filter: TextureMinFilter::Nearest,
-                    mag_filter: TextureMagFilter::Nearest,
-                    wrap_vertical: TextureWrap::ClampToEdge,
-                    wrap_horizontal: TextureWrap::ClampToEdge,
+                input_size,
+                TextureParams::linear(output.textures()[0].params().value_type),
+            )?;
+            buffer.back = Some(Framebuffer::from_textures(vec![back])?);
+        }
+
+        if !self.blur_props.borrow().contains_key(&mipmap_level) {
+            let horizontal_props = Uniform::new(
+                self.program.gl(),
+                BlurProps {
+                    direction: 0.0,
+                    level: mipmap_level as f32,
                 },
             )?;
-            buffer.back = Some(Framebuffer::from_textures(texture.gl(), vec![back])?);
+            let vertical_props = Uniform::new(
+                self.program.gl(),
+                BlurProps {
+                    direction: 1.0,
+                    level: mipmap_level as f32,
+                },
+            )?;
+            self.blur_props
+                .borrow_mut()
+                .insert(mipmap_level, (horizontal_props, vertical_props));
         }
+
+        let blur_props = self.blur_props.borrow();
+        let (horizontal_props, vertical_props) = blur_props.get(&mipmap_level).as_ref().unwrap();
 
         for i in 0..iters {
             gl::with_framebuffer(&buffer.back.as_ref().unwrap(), || {
                 gl::draw(
                     &self.program,
-                    &self.horizontal_props,
+                    horizontal_props,
                     [if i == 0 {
                         texture
                     } else {
@@ -179,7 +222,7 @@ impl BlurPass {
             gl::with_framebuffer(&output, || {
                 gl::draw(
                     &self.program,
-                    &self.vertical_props,
+                    vertical_props,
                     [&buffer.back.as_ref().unwrap().textures()[0]],
                     self.screen_rect.draw_unit(),
                     &DrawParams::default(),

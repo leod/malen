@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use glow::{HasContext, PixelPackData};
 use half::f16;
+use nalgebra::Vector2;
 use thiserror::Error;
 
 use crate::gl::TextureValueType;
@@ -23,6 +24,7 @@ pub enum NewFramebufferError {
 pub struct Framebuffer {
     gl: Rc<Context>,
     textures: Vec<Rc<Texture>>,
+    sizes: Vec<Vector2<u32>>,
     id: glow::Framebuffer,
     attachments: Vec<u32>,
 }
@@ -33,17 +35,20 @@ impl Framebuffer {
         max_color_attachments as u32
     }
 
-    pub fn from_textures(
-        gl: Rc<Context>,
-        textures: Vec<Texture>,
-    ) -> Result<Self, NewFramebufferError> {
-        Self::new(gl, textures.into_iter().map(Rc::new).collect())
+    pub fn from_textures(textures: Vec<Texture>) -> Result<Self, NewFramebufferError> {
+        Self::new(textures.into_iter().map(Rc::new).collect())
     }
 
-    pub fn new(gl: Rc<Context>, textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
+    pub fn new(textures: Vec<Rc<Texture>>) -> Result<Self, NewFramebufferError> {
+        Self::new_with_mipmap_levels(textures.into_iter().map(|t| (t, 0)).collect())
+    }
+
+    pub fn new_with_mipmap_levels(
+        textures: Vec<(Rc<Texture>, u32)>,
+    ) -> Result<Self, NewFramebufferError> {
         let num_color = textures
             .iter()
-            .filter(|t| !t.params().value_type.is_depth())
+            .filter(|(t, _)| !t.params().value_type.is_depth())
             .count();
         let num_depth = textures.len() - num_color;
 
@@ -54,12 +59,14 @@ impl Framebuffer {
         assert!(num_depth <= 1, "Can have at most one depth attachment");
         assert!(textures
             .iter()
-            .all(|t| t.size() == textures.first().unwrap().size()));
+            .all(|(t, _)| t.size() == textures.first().unwrap().0.size()));
 
-        if num_color > Self::max_color_attachments(&*gl) as usize {
+        let gl = textures[0].0.gl();
+
+        if num_color > Self::max_color_attachments(&gl) as usize {
             return Err(NewFramebufferError::TooManyColorAttachments(
                 num_color,
-                Self::max_color_attachments(&*gl),
+                Self::max_color_attachments(&gl),
             ));
         }
 
@@ -71,9 +78,9 @@ impl Framebuffer {
 
         let mut draw_buffers = Vec::new();
         let mut attachments = Vec::new();
-        for (location, texture) in textures
+        for (location, (texture, mipmap_level)) in textures
             .iter()
-            .filter(|t| !t.params().value_type.is_depth())
+            .filter(|(t, _)| !t.params().value_type.is_depth())
             .enumerate()
         {
             let attachment = glow::COLOR_ATTACHMENT0 + location as u32;
@@ -86,12 +93,15 @@ impl Framebuffer {
                     attachment,
                     glow::TEXTURE_2D,
                     Some(texture.id()),
-                    0,
+                    i32::try_from(*mipmap_level).unwrap(),
                 );
             }
         }
 
-        for texture in textures.iter().filter(|t| t.params().value_type.is_depth()) {
+        for (texture, mipmap_level) in textures
+            .iter()
+            .filter(|(t, _)| t.params().value_type.is_depth())
+        {
             let attachment = glow::DEPTH_ATTACHMENT;
             attachments.push(attachment);
 
@@ -101,7 +111,7 @@ impl Framebuffer {
                     attachment,
                     glow::TEXTURE_2D,
                     Some(texture.id()),
-                    0,
+                    i32::try_from(*mipmap_level).unwrap(),
                 );
             }
         }
@@ -111,9 +121,19 @@ impl Framebuffer {
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
         }
 
+        let sizes = textures
+            .iter()
+            .map(|(t, level)| {
+                let w = (t.size().x / 2_u32.pow(*level)).max(1);
+                let h = (t.size().y / 2_u32.pow(*level)).max(1);
+                Vector2::new(w, h)
+            })
+            .collect();
+
         Ok(Framebuffer {
             gl,
-            textures,
+            textures: textures.into_iter().map(|(t, _)| t).collect(),
+            sizes,
             id,
             attachments,
         })
@@ -125,6 +145,10 @@ impl Framebuffer {
 
     pub fn textures(&self) -> &[Rc<Texture>] {
         &self.textures
+    }
+
+    pub fn sizes(&self) -> &[Vector2<u32>] {
+        &self.sizes
     }
 
     pub fn id(&self) -> glow::Framebuffer {

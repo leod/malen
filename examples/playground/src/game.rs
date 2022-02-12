@@ -32,6 +32,9 @@ pub struct Game {
     shoot_node: Option<SpatialPlayNode>,
 
     indirect_light: bool,
+    blur: bool,
+    debug_mode: u32,
+    debug_mipmap: u32,
     show_profile: bool,
     show_textures: bool,
 
@@ -86,6 +89,9 @@ impl Game {
             hit_sound_cooldown_secs: 0.0,
             shoot_node: None,
             indirect_light: true,
+            blur: true,
+            debug_mode: 0,
+            debug_mipmap: 0,
             show_profile: false,
             show_textures: false,
             update_budget_secs: 0.0,
@@ -149,16 +155,25 @@ impl Game {
                         self.show_profile = !self.show_profile;
                         coarse_prof::reset();
                     }
-                    Key::U => {
-                        self.show_textures = !self.show_textures;
-                    }
-                    Key::L => {
-                        self.indirect_light = !self.indirect_light;
-                    }
+                    Key::U => self.show_textures = !self.show_textures,
                     Key::R => {
                         log::info!("Profiling:\n{}", coarse_prof::to_string());
                         coarse_prof::reset();
                     }
+                    Key::L => self.indirect_light = !self.indirect_light,
+                    Key::B => self.blur = !self.blur,
+                    Key::Key1 => self.debug_mode = 1,
+                    Key::Key2 => self.debug_mode = 2,
+                    Key::Key3 => self.debug_mode = 3,
+                    Key::Key4 => self.debug_mode = 4,
+                    Key::Key5 => self.debug_mode = 5,
+                    Key::Key6 => self.debug_mode = 6,
+                    Key::Key7 => self.debug_mode = 7,
+                    Key::Key8 => self.debug_mode = 8,
+                    Key::Key9 => self.debug_mode = 9,
+                    Key::Key0 => self.debug_mode = 0,
+                    Key::Up => self.debug_mipmap += 1,
+                    Key::Down => self.debug_mipmap = self.debug_mipmap.saturating_sub(1),
                     _ => (),
                 }
             }
@@ -388,7 +403,13 @@ impl Game {
 
         self.context
             .clear_color_and_depth(Color4::new(1.0, 1.0, 1.0, 1.0), 1.0);
-        self.draw.draw(&self.context, self.indirect_light)?;
+        self.draw.draw(
+            &self.context,
+            self.indirect_light,
+            self.blur,
+            self.debug_mode,
+            self.debug_mipmap,
+        )?;
 
         if self.show_profile {
             profile!("profile");
