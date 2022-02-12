@@ -66,7 +66,12 @@ program! {
             normal.xy = inverse(rot) * normal.xy;
 
             f_normal = vec4((normal + 1.0) / 2.0, f_albedo.a);
-            f_occlusion = vec4(object_light_props.occlusion, 0.0, 0.0, f_albedo.a);
+            f_occlusion = vec4(
+                object_light_props.occlusion,
+                object_light_props.reflectance,
+                0.0,
+                f_albedo.a
+            );
 
             if (f_albedo.a == 0.0)
                 discard;

@@ -139,14 +139,14 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
                 break;
 
             float mip_level = clamp(log2(cone_diameter), 0.0, 10.0);
-            float sample_occlusion = textureLod(screen_occlusion, p, mip_level).r;
+            vec2 sample_occlusion = textureLod(screen_occlusion, p, mip_level).rg;
             vec3 sample_color = textureLod(screen_reflector, p, mip_level).rgb;
 
-            if (sample_occlusion > 0.0) {
+            if (sample_occlusion.x > 0.0) {
                 sample_color *= global_light_props.indirect_intensity;
 
                 color += (1.0 - occlusion) * sample_color;
-                occlusion += (1.0 - occlusion) * sample_occlusion;
+                occlusion += (1.0 - occlusion) * sample_occlusion.x;
             }
 
             t += global_light_props.indirect_step_factor * cone_diameter;
@@ -176,6 +176,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
             float scale = normal_value == vec3(0.0) ?
                 1.0 :
                 max(dot(normalize(vec3(-dir, global_light_props.indirect_z)), normal), 0.0);
+            scale = 1.0;
 
             color += scale * trace_cone(origin, dir);
             angle += dangle;
