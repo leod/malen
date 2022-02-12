@@ -92,10 +92,20 @@ impl Draw {
 
         let light_pipeline = LightPipeline::new(context, LightPipelineParams::default())?;
 
-        let translucent_light_props =
-            Uniform::new(context.gl(), ObjectLightProps { occlusion: 0.0 })?;
-        let reflector_light_props =
-            Uniform::new(context.gl(), ObjectLightProps { occlusion: 1.0 })?;
+        let translucent_light_props = Uniform::new(
+            context.gl(),
+            ObjectLightProps {
+                occlusion: 0.0,
+                reflectance: 0.5,
+            },
+        )?;
+        let reflector_light_props = Uniform::new(
+            context.gl(),
+            ObjectLightProps {
+                occlusion: 1.0,
+                reflectance: 8.0,
+            },
+        )?;
         let camera_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
         let screen_matrices = Uniform::new(context.gl(), ViewMatrices::default())?;
 
@@ -285,7 +295,7 @@ impl Draw {
                 circle: enemy.circle(),
                 angle: 0.0,
                 num_segments: 16,
-                height: 75.0,
+                height: 200.0,
                 ignore_light_index1: Some(self.lights.len() as u32),
                 ignore_light_index2: None,
             });
@@ -379,7 +389,7 @@ impl Draw {
                 angle_size: std::f32::consts::PI * 2.0,
                 start: 0.0,
                 back_glow: 25.0,
-                color: color.to_linear().scale(1.0),
+                color: color.to_linear().scale(0.3),
             });
         }
     }

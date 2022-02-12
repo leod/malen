@@ -423,7 +423,7 @@ impl State {
 
             while self.player.shot_cooldown_secs < time_budget {
                 let mut angle = self.player.dir.y.atan2(self.player.dir.x);
-                angle += 0.1 * rand::thread_rng().gen_range(-1.0, 1.0);
+                //angle += 0.1 * rand::thread_rng().gen_range(-1.0, 1.0);
                 let dir = Vector2::new(angle.cos(), angle.sin());
 
                 let start_pos = self.player.pos + dir * PLAYER_SIZE * 0.5;

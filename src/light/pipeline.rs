@@ -615,7 +615,7 @@ fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFrame
     let light = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::nearest(TextureValueType::RgbaF32),
+        TextureParams::linear_mipmapped(TextureValueType::RgbaF32),
     )?;
 
     Framebuffer::from_textures(vec![light])
