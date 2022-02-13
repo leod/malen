@@ -155,6 +155,10 @@ impl Framebuffer {
         self.id
     }
 
+    pub fn attachments(&self) -> &[u32] {
+        &self.attachments
+    }
+
     pub fn read_pixel_row_f16(&self, location: usize, y: u32) -> Vec<f16> {
         let texture = &self.textures[location];
         let attachment = glow::COLOR_ATTACHMENT0 + location as u32;

@@ -25,6 +25,7 @@ pub use context::Context;
 pub use depth_test::{DepthFunc, DepthTest};
 pub use draw::{
     clear_color, clear_color_and_depth, clear_depth, draw, draw_instanced, with_framebuffer,
+    with_framebuffer_invalidating,
 };
 pub use draw_params::DrawParams;
 pub use draw_timer::{DrawTimer, DrawTimingInfo};

@@ -206,7 +206,7 @@ impl BlurPass {
         let (horizontal_props, vertical_props) = blur_props.get(&mipmap_level).as_ref().unwrap();
 
         for i in 0..iters {
-            gl::with_framebuffer(&buffer.back.as_ref().unwrap(), || {
+            gl::with_framebuffer_invalidating(&buffer.back.as_ref().unwrap(), || {
                 gl::draw(
                     &self.program,
                     horizontal_props,
@@ -219,7 +219,7 @@ impl BlurPass {
                     &DrawParams::default(),
                 );
             });
-            gl::with_framebuffer(&output, || {
+            gl::with_framebuffer_invalidating(&output, || {
                 gl::draw(
                     &self.program,
                     vertical_props,

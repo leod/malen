@@ -138,6 +138,20 @@ where
     result
 }
 
+pub fn with_framebuffer_invalidating<F, R>(framebuffer: &Framebuffer, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    let gl = framebuffer.gl();
+
+    with_framebuffer(framebuffer, || {
+        unsafe {
+            gl.invalidate_framebuffer(glow::FRAMEBUFFER, framebuffer.attachments());
+        }
+        f()
+    })
+}
+
 pub fn clear_color_and_depth(gl: &Context, color: Color4, depth: f32) {
     unsafe {
         gl.color_mask(true, true, true, true);

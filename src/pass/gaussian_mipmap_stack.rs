@@ -70,13 +70,13 @@ impl GaussianMipmapStack {
             .enumerate();
         for (mipmap_level, (blur_level, mipmap_target)) in it {
             self.blur_pass.blur(
-                5,
+                2,
                 &self.texture,
                 mipmap_level as u32,
                 &mut blur_level.buffer,
                 &blur_level.output,
             )?;
-            gl::with_framebuffer(mipmap_target, || {
+            gl::with_framebuffer_invalidating(mipmap_target, || {
                 gl::draw(
                     &self.downsample_program,
                     (),
