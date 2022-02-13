@@ -18,13 +18,15 @@ use super::BLUR_PROPS_BLOCK_BINDING;
 #[derive(Debug, Clone)]
 pub struct BlurParams {
     pub weights: Vec<f32>,
+    pub offsets: Vec<f32>,
 }
 
 impl Default for BlurParams {
     fn default() -> Self {
         Self {
             //weights: vec![0.99999],
-            weights: vec![0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216],
+            weights: vec![0.2270270270, 0.3162162162, 0.0702702703],
+            offsets: vec![0.0, 1.3846153846, 3.2307692308],
         }
     }
 }
@@ -56,7 +58,13 @@ program! {
         weights => params
             .weights
             .iter()
-            .map(f32::to_string)
+            .map(|x| format!("{:.8}", x))
+            .collect::<Vec<_>>()
+            .join(", "),
+        offsets => params
+            .offsets
+            .iter()
+            .map(|x| format!("{:.8}", x))
             .collect::<Vec<_>>()
             .join(", "),
     ]
@@ -72,6 +80,7 @@ program! {
         out vec4 f_color;
 
         const float weight[{{num_weights}}] = float[] ({{weights}});
+        const float offset[{{num_weights}}] = float[] ({{offsets}});
 
         void main() {
             vec2 texel = 1.0 / vec2(textureSize(tex, 0));
@@ -84,12 +93,12 @@ program! {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += weight[i] * textureLod(
                         tex,
-                        v_tex_coords + vec2(texel.x * float(i), 0.0),
+                        v_tex_coords + vec2(texel.x * offset[i], 0.0),
                         blur_props.level
                     ).rgb;
                     result += weight[i] * textureLod(
                         tex,
-                        v_tex_coords - vec2(texel.x * float(i), 0.0),
+                        v_tex_coords - vec2(texel.x * offset[i], 0.0),
                         blur_props.level
                     ).rgb;
                 }
@@ -97,12 +106,12 @@ program! {
                 for (int i = 1; i < {{num_weights}}; i += 1) {
                     result += weight[i] * textureLod(
                         tex,
-                        v_tex_coords + vec2(0.0, texel.y * float(i)),
+                        v_tex_coords + vec2(0.0, texel.y * offset[i]),
                         blur_props.level
                     ).rgb;
                     result += weight[i] * textureLod(
                         tex,
-                        v_tex_coords - vec2(0.0, texel.y * float(i)),
+                        v_tex_coords - vec2(0.0, texel.y * offset[i]),
                         blur_props.level
                     ).rgb;
                 }
