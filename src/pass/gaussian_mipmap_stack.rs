@@ -70,7 +70,7 @@ impl GaussianMipmapStack {
             .enumerate();
         for (mipmap_level, (blur_level, mipmap_target)) in it {
             self.blur_pass.blur(
-                2,
+                3,
                 &self.texture,
                 mipmap_level as u32,
                 &mut blur_level.buffer,

@@ -104,7 +104,7 @@ impl Draw {
         let reflector_light_props = Uniform::new(
             context.gl(),
             ObjectLightProps {
-                occlusion: 3.0,
+                occlusion: 5.0,
                 reflectance: 200.0,
             },
         )?;
@@ -252,17 +252,17 @@ impl Draw {
             depth: 0.4,
             color: color.to_color4(),
         });
-        self.outline_batch.push(ColorRotatedRect {
+        /*self.outline_batch.push(ColorRotatedRect {
             rect: player.rotated_rect(),
             depth: 0.4,
             color: Color4::new(1.0, 1.0, 1.0, 1.0),
-        });
+        });*/
         self.lights.push(Light {
             position: Point3::new(player.pos.x, player.pos.y, 50.0),
             radius: 600.0,
             angle: player.dir.y.atan2(player.dir.x),
             angle_size: std::f32::consts::PI / 5.0,
-            start: 18.0,
+            start: 10.0,
             back_glow: 30.0,
             color: Color3::from_u8(200, 200, 200).to_linear().scale(2.0),
         });
