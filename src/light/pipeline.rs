@@ -577,7 +577,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
     let albedo = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::nearest(TextureValueType::RgbaU8),
+        TextureParams::nearest(TextureValueType::RgbU8),
     )?;
     let normals = Texture::new(
         canvas.borrow().gl(),
@@ -587,7 +587,7 @@ fn new_screen_geometry(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFr
     let occluder = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::linear_mipmapped(TextureValueType::RgbaF16),
+        TextureParams::linear_mipmapped(TextureValueType::RgF16),
     )?;
     let depth = Texture::new(
         canvas.borrow().gl(),
@@ -615,7 +615,7 @@ fn new_screen_light(canvas: Rc<RefCell<Canvas>>) -> Result<Framebuffer, NewFrame
     let light = Texture::new(
         canvas.borrow().gl(),
         size,
-        TextureParams::linear(TextureValueType::RgbaF32),
+        TextureParams::linear(TextureValueType::RgbaF16),
     )?;
 
     Framebuffer::from_textures(vec![light])

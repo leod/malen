@@ -59,7 +59,12 @@ pub enum TextureValueType {
     RgbaU8,
     RgbaF16,
     RgbaF32,
+    RgbU8,
+    RgbF16,
+    RgbF32,
+    RgU8,
     RgF16,
+    RgF32,
     Depth,
     // TODO: Texture value type is incomplete
 }
@@ -402,7 +407,12 @@ impl TextureValueType {
             RgbaU8 => glow::RGBA8 as i32,
             RgbaF16 => glow::RGBA16F as i32,
             RgbaF32 => glow::RGBA32F as i32,
+            RgbU8 => glow::RGB8 as i32,
+            RgbF16 => glow::RGB16F as i32,
+            RgbF32 => glow::RGB32F as i32,
+            RgU8 => glow::RG8 as i32,
             RgF16 => glow::RG16F as i32,
+            RgF32 => glow::RG32F as i32,
             Depth => glow::DEPTH_COMPONENT24 as i32,
         }
     }
@@ -414,7 +424,12 @@ impl TextureValueType {
             RgbaU8 => glow::RGBA,
             RgbaF16 => glow::RGBA,
             RgbaF32 => glow::RGBA,
+            RgbU8 => glow::RGB,
+            RgbF16 => glow::RGB,
+            RgbF32 => glow::RGB,
+            RgU8 => glow::RG,
             RgF16 => glow::RG,
+            RgF32 => glow::RG,
             Depth => glow::DEPTH_COMPONENT,
         }
     }
@@ -426,7 +441,12 @@ impl TextureValueType {
             RgbaU8 => glow::UNSIGNED_BYTE,
             RgbaF16 => glow::HALF_FLOAT,
             RgbaF32 => glow::FLOAT,
+            RgbU8 => glow::UNSIGNED_BYTE,
+            RgbF16 => glow::HALF_FLOAT,
+            RgbF32 => glow::FLOAT,
+            RgU8 => glow::UNSIGNED_BYTE,
             RgF16 => glow::HALF_FLOAT,
+            RgF32 => glow::FLOAT,
             Depth => glow::UNSIGNED_INT,
         }
     }
