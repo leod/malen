@@ -132,7 +132,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
         vec3 color = vec3(0.0, 0.0, 0.0);
         vec2 screen_size = vec2(textureSize(screen_occlusion, 0));
 
-        for (int i = 0; i < {{num_tracing_steps}} && occlusion <= 1.0; i += 1) {
+        for (int i = 0; i < {{num_tracing_steps}} && occlusion <= 0.9; i += 1) {
             float cone_diameter = diameter_scale * t;
             vec2 p = origin + dir / screen_size * t;
             if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
@@ -151,7 +151,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
 
             t += min(
                 global_light_props.indirect_step_factor * cone_diameter,
-                global_light_props.indirect_max_step
+                global_light_props.indirect_max_step / diameter_scale
             );
         }
 

@@ -104,14 +104,14 @@ impl Draw {
         let reflector_light_props = Uniform::new(
             context.gl(),
             ObjectLightProps {
-                occlusion: 5.0,
+                occlusion: 3.0,
                 reflectance: 200.0,
             },
         )?;
         let smoke_light_props = Uniform::new(
             context.gl(),
             ObjectLightProps {
-                occlusion: 0.1,
+                occlusion: 0.3,
                 reflectance: 20.0,
             },
         )?;
@@ -318,7 +318,7 @@ impl Draw {
                 ignore_light_index2: None,
             });
             if geom::rect_circle_overlap(visible_rect, enemy.circle()).is_some() {
-                self.reflector_sprite_batch.push(RotatedSprite {
+                /*self.reflector_sprite_batch.push(RotatedSprite {
                     rect: RotatedRect {
                         center: enemy.pos,
                         size: 2.0 * ENEMY_RADIUS * (1.0 + enemy.bump) * Vector2::new(1.0, 1.0),
@@ -330,6 +330,13 @@ impl Draw {
                         Point2::origin(),
                         self.enemy_texture.size().cast(),
                     ),
+                });*/
+                self.reflector_color_batch.push(ColorCircle {
+                    circle: enemy.circle(),
+                    angle: enemy.angle,
+                    depth: 0.8,
+                    num_segments: 16,
+                    color: color.to_color4(),
                 });
                 self.reflector_color_batch2.push(ColorCircle {
                     circle: enemy.circle(),
