@@ -146,7 +146,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
                 sample_color *= sample_occlusion.y * global_light_props.indirect_intensity;
 
                 color += (1.0 - occlusion) * sample_color;
-                occlusion += (1.0 - occlusion) * sample_occlusion.x;
+                occlusion += (1.0 - occlusion) * clamp(sample_occlusion.x, 0.0, 1.0);
             }
 
             t += min(
@@ -162,7 +162,7 @@ const CONE_TRACING_SOURCE: Glsl = glsl! {
         const int n = {{num_tracing_cones}};
         const float dangle = 2.0 * {{pi}} / float(n);
 
-        float self_occlusion = textureLod(screen_occlusion, origin, 0.0).r;
+        float self_occlusion = clamp(textureLod(screen_occlusion, origin, 0.0).r, 0.0, 1.0);
         float self_occlusion_scale =
             1.0 - global_light_props.indirect_self_occlusion * self_occlusion;
 

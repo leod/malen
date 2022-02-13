@@ -104,7 +104,7 @@ impl Draw {
         let reflector_light_props = Uniform::new(
             context.gl(),
             ObjectLightProps {
-                occlusion: 1.0,
+                occlusion: 5.0,
                 reflectance: 200.0,
             },
         )?;
