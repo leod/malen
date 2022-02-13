@@ -190,7 +190,7 @@ impl Game {
                 pos,
                 dir,
             } => {
-                self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 5);
+                self.spawn_smoke(pos, dir.y.atan2(dir.x), 0.95 * std::f32::consts::PI, 1);
                 if self.hit_sound_cooldown_secs == 0.0 {
                     let hit_sound = match entity_type {
                         EntityType::Ball | EntityType::Enemy(_) => &self.hit1_sound,
@@ -216,7 +216,7 @@ impl Game {
                 }
             }
             EnemyDied { pos, dir } => {
-                self.spawn_smoke_explosion(pos, dir, 200);
+                self.spawn_smoke_explosion(pos, dir, 50);
                 al::play_spatial(
                     &self.explosion_sound,
                     &SpatialPlayParams {
